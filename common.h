@@ -1,0 +1,260 @@
+﻿/* Copyright 2025 国家地方共建人形机器人创新中心/人形机器人（上海）有限公司
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Designed and built with love @zhihu by @cjrcl.
+ */
+
+#pragma once
+
+#include <ecrt.h>
+#include <string>
+#include <atomic>
+
+#define NSEC_PER_SEC 1000000000L
+#define TIMESPEC2NS(T) T.tv_sec * NSEC_PER_SEC + T.tv_nsec
+
+namespace DriverSDK{
+class SwapNode{
+public:
+    char* memPtr;
+    SwapNode* previous, * next;
+    SwapNode(int const size);
+    ~SwapNode();
+};
+
+class SwapList{
+public:
+    std::atomic<SwapNode*> nodePtr;
+    SwapList(int const size);
+    void advanceNodePtr();
+    void copyTo(unsigned char* domainPtr, int const domainSize);
+    void copyFrom(unsigned char const* domainPtr, int const domainSize);
+    ~SwapList();
+};
+
+struct SDOMsg{
+    ec_sdo_request_t* sdoHandler;
+    long value;
+    int alias;
+    short state;                // -1: error; 0: pending; 1, 2: processing; 3: ready
+    unsigned short index;
+    unsigned char subindex;
+    unsigned char signed_;      // 0: unsigned; 1: signed
+    unsigned char bitLength;    // 8, 16 or 32
+    unsigned char operation;    // 0: write; 1: read
+    int recycled;
+};
+
+struct DriverRxData{
+    int TargetPosition;
+    int TargetVelocity;
+    short TargetTorque;
+    unsigned short ControlWord;
+    char Mode;
+    char Undefined;
+    short TorqueOffset;
+    int VelocityOffset;
+};
+
+struct DriverTxData{
+    int ActualPosition;
+    int ActualVelocity;
+    short ActualTorque;
+    unsigned short StatusWord;
+    char ModeDisplay;
+    char Undefined;
+    unsigned short ErrorCode;
+};
+
+class MotorParameters{
+public:
+    float polarity, countBias, encoderResolution, gearRatioTor, gearRatioPosVel, ratedCurrent, torqueConstant, maximumTorque, minimumPosition, maximumPosition;
+    SDOMsg sdoTemplate, temperatureSDO, clearErrorSDO;
+    MotorParameters();
+    int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
+    ~MotorParameters();
+};
+
+struct HandRxData{
+    unsigned char stop;
+    char Undefined;
+    unsigned short TargetSpeedThumb;
+    unsigned short TargetSpeedThumbBend;
+    unsigned short TargetSpeedForefinger;
+    unsigned short TargetSpeedMiddle;
+    unsigned short TargetSpeedRing;
+    unsigned short TargetSpeedLittle;
+    unsigned short TargetAngleThumb;
+    unsigned short TargetAngleThumbBend;
+    unsigned short TargetAngleForefinger;
+    unsigned short TargetAngleMiddle;
+    unsigned short TargetAngleRing;
+    unsigned short TargetAngleLittle;
+    unsigned short CurrentLimitThumb;
+    unsigned short CurrentLimitThumbBend;
+    unsigned short CurrentLimitForefinger;
+    unsigned short CurrentLimitMiddle;
+    unsigned short CurrentLimitRing;
+    unsigned short CurrentLimitLittle;
+};
+
+struct HandTxData{
+    unsigned short TouchSensorThumb[4];
+    unsigned short TouchSensorForefinger[4];
+    unsigned short TouchSensorMiddle[4];
+    unsigned short TouchSensorRing[4];
+    unsigned short TouchSensorLittle[4];
+    unsigned short ActualAngleThumb;
+    unsigned short ActualAngleThumbBend;
+    unsigned short ActualAngleForefinger;
+    unsigned short ActualAngleMiddle;
+    unsigned short ActualAngleRing;
+    unsigned short ActualAngleLittle;
+    unsigned short ActualCurrentThumb;
+    unsigned short ActualCurrentThumbBend;
+    unsigned short ActualCurrentForefinger;
+    unsigned short ActualCurrentMiddle;
+    unsigned short ActualCurrentRing;
+    unsigned short ActualCurrentLittle;
+};
+
+struct DigitRxData{
+    unsigned short TargetPosition;
+};
+
+struct DigitTxData{
+    unsigned short ActualPosition;
+};
+
+class EffectorParameters{
+public:
+    EffectorParameters();
+    int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
+    ~EffectorParameters();
+};
+
+struct SensorRxData{
+    int ControlCode;
+    float x;
+    float y;
+    float z;
+    float a;
+    float b;
+    float c;
+    float d;
+};
+
+struct SensorTxData{
+    int Fx;
+    int Fy;
+    int Fz;
+    int Mx;
+    int My;
+    int Mz;
+    unsigned int StatusCode;
+    unsigned int SampleCounter;
+    int Temper;
+};
+
+class SensorParameters{
+public:
+    SensorParameters();
+    int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
+    ~SensorParameters();
+};
+
+template<typename Data>
+class DataWrapper
+{
+public:
+    Data* data;
+    int offset;
+    SwapList* swap;
+    DataWrapper(){
+        data = new Data();
+        memset(data, 0, sizeof(Data));
+        offset = -1;
+        swap = nullptr;
+    }
+    void init(int const offset){
+        this->offset = offset;
+    }
+    void config(SwapList* const swap){
+        this->swap = swap;
+    }
+    Data* operator->(){
+        if(swap != nullptr){
+            return (Data*)(swap->nodePtr.load()->memPtr + offset);
+        }
+        return data;
+    }
+    ~DataWrapper(){
+        delete data;
+    }
+};
+
+template<typename RxData, typename TxData, typename Parameters>
+class WrapperPair{
+public:
+    int order, slave, alias, enabled;
+    std::string bus, type;
+    DataWrapper<RxData> rx;
+    DataWrapper<TxData> tx;
+    ec_sdo_request_t* sdoHandler;
+    Parameters parameters;
+    WrapperPair(){
+        order = -1;
+        slave = -1;
+        alias = 0;
+        enabled = 0;
+        bus = "";
+        type = "";
+        sdoHandler = nullptr;
+    }
+    int init(std::string const& bus, int const order, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler){
+        if(this->bus != ""){
+            printf("trying to re-init %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
+            return -1;
+        }
+        this->order = order;
+        this->slave = slave;
+        this->alias = alias;
+        this->bus = bus;
+        this->type = type;
+        rx.init(rxOffset);
+        tx.init(txOffset);
+        this->sdoHandler = sdoHandler;
+        return 0;
+    }
+    int config(std::string const& bus, int const order, SwapList* const rxSwap, SwapList* const txSwap){
+        if(this->bus != bus){
+            return 1;
+        }
+        if(this->order == -1){
+            return 2;
+        }else if(this->order != order){
+            return 1;
+        }
+        rx.config(rxSwap);
+        tx.config(txSwap);
+        if(parameters.load(bus, alias, type, sdoHandler) < 0){
+            printf("loading parameters failed for %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
+            return -1;
+        }
+        return 0;
+    }
+    ~WrapperPair(){
+    }
+};
+}
