@@ -29,10 +29,21 @@ extern WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
 void changingTekRX(modbus_t* const ctx, int const alias){
     int position = 0;
     if(alias == 200){
+        static unsigned int count = -1;
+        count++;
+        if(count % 8 != 0){
+            return;
+        }
         position = digits[0].rx->TargetPosition;
     }else if(alias == 201){
+        static unsigned int count = -1;
+        count++;
+        if(count % 8 != 0){
+            return;
+        }
         position = digits[dofLeftEffector].rx->TargetPosition;
     }
+    position *= 100;
     modbus_set_slave(ctx, alias);
     modbus_write_register(ctx, 0x0100, 1);
     modbus_write_register(ctx, 0x0102, position >> 16 & 0xffff);
@@ -51,11 +62,58 @@ void changingTekTX(modbus_t* const ctx, int const alias){
     if(modbus_read_registers(ctx, 0x060a, 1, (unsigned short*)&position) != 1){
         return;
     }
-    position = (position - 100) * 9000 / (1150 - 100);
+    position = (position - 100) * 90 / (1150 - 100);
     if(alias == 200){
         digits[0].tx->ActualPosition = position;
     }else if(alias == 201){
         digits[dofLeftEffector].tx->ActualPosition = position;
+    }
+}
+
+unsigned int const TargetPosRegs[] = {0x05d8, 0x05d6, 0x05d4, 0x05d2, 0x05d0, 0x05ce};
+unsigned short targetPositions[] = {0, 0, 0, 0, 0, 0};
+
+void InspireRX(modbus_t* const ctx, int const alias){
+    int i = 0, j = 0;
+    if(alias == 200){
+        i = 0;
+    }else if(alias == 201){
+        i = dofLeftEffector;
+    }
+    while(j < 6){
+        targetPositions[j] = 1000 - digits[i + j].rx->TargetPosition * 1000 / 90;
+        j++;
+    }
+    modbus_set_slave(ctx, alias);
+    j = 0;
+    while(j < 6){
+        modbus_write_register(ctx, TargetPosRegs[j], targetPositions[j]);
+        j++;
+    }
+}
+
+unsigned int const ActualPosRegs[] = {0x0614, 0x0612, 0x0610, 0x060e, 0x060c, 0x060a};
+unsigned short actualPositions[] = {0, 0, 0, 0, 0, 0};
+int readResults[] = {0, 0, 0, 0, 0, 0};
+
+void InspireTX(modbus_t* const ctx, int const alias){
+    modbus_set_slave(ctx, alias);
+    int i = 0, j = 0;
+    while(j < 6){
+        readResults[j] = modbus_read_registers(ctx, ActualPosRegs[j], 1, actualPositions + j);
+        j++;
+    }
+    if(alias == 200){
+        i = 0;
+    }else if(alias == 201){
+        i = dofLeftEffector;
+    }
+    j = 0;
+    while(j < 6){
+        if(readResults[j] == 1){
+            digits[i + j].tx->ActualPosition = 90 - actualPositions[j] * 90 / 1000;
+        }
+        j++;
     }
 }
 
@@ -91,14 +149,23 @@ int RS485::config(){
     if(itr != alias2type.end()){
         int i = 0;
         while(i < dofLeftEffector){
-            digits[i].init("RS485", order, i, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr);
-            digits[i].config("RS485", order, rxSwap, txSwap);
+            if(digits[i].init("RS485", order, 200, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
+                printf("\tdigits[%d] init failed\n", i);
+                return -1;
+            }
+            if(digits[i].config("RS485", order, rxSwap, txSwap) != 0){
+                printf("digits[%d] config failed\n", i);
+                return -1;
+            }
             i++;
         }
         if(itr->second == "ChangingTek"){
             leftRX = changingTekRX;
             leftTX = changingTekTX;
         }else if(itr->second == "Inspire"){
+            leftRX = InspireRX;
+            leftTX = InspireTX;
+        }else{
             ;
         }
     }
@@ -106,14 +173,23 @@ int RS485::config(){
     if(itr != alias2type.end()){
         int i = dofLeftEffector;
         while(i < dofEffector){
-            digits[i].init("RS485", order, i, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr);
-            digits[i].config("RS485", order, rxSwap, txSwap);
+            if(digits[i].init("RS485", order, 201, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
+                printf("\tdigits[%d] init failed\n", i);
+                return -1;
+            }
+            if(digits[i].config("RS485", order, rxSwap, txSwap) != 0){
+                printf("digits[%d] config failed\n", i);
+                return -1;
+            }
             i++;
         }
         if(itr->second == "ChangingTek"){
             rightRX = changingTekRX;
             rightTX = changingTekTX;
         }else if(itr->second == "Inspire"){
+            rightRX = InspireRX;
+            rightTX = InspireTX;
+        }else{
             ;
         }
     }
@@ -130,19 +206,15 @@ void* RS485::rxtx(void* arg){
     }
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     bool sleep = true;
-    int count = 0;
     while(true){
-        if(count % 8 == 0){
-            if(rs485->leftRX != nullptr){
-                rs485->leftRX(rs485->ctx, 200);
-                nanosleep(&step, nullptr);
-            }
-            if(rs485->rightRX != nullptr){
-                rs485->rightRX(rs485->ctx, 201);
-                nanosleep(&step, nullptr);
-            }
+        if(rs485->leftRX != nullptr){
+            rs485->leftRX(rs485->ctx, 200);
+            nanosleep(&step, nullptr);
         }
-        count++;
+        if(rs485->rightRX != nullptr){
+            rs485->rightRX(rs485->ctx, 201);
+            nanosleep(&step, nullptr);
+        }
         wakeupTime.tv_nsec += rs485->period;
         while(wakeupTime.tv_nsec >= NSEC_PER_SEC){
             wakeupTime.tv_nsec -= NSEC_PER_SEC;

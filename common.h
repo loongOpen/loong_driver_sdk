@@ -223,7 +223,7 @@ public:
         sdoHandler = nullptr;
     }
     int init(std::string const& bus, int const order, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler){
-        if(this->bus != ""){
+        if(this->order != -1){
             printf("trying to re-init %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
             return -1;
         }
@@ -238,12 +238,10 @@ public:
         return 0;
     }
     int config(std::string const& bus, int const order, SwapList* const rxSwap, SwapList* const txSwap){
-        if(this->bus != bus){
-            return 1;
-        }
         if(this->order == -1){
             return 2;
-        }else if(this->order != order){
+        }
+        if(this->order != order || this->bus != bus){
             return 1;
         }
         rx.config(rxSwap);

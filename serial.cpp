@@ -45,6 +45,7 @@ void Serial::cleanup(void* arg){
     while(current != nullptr){
         ChainNode* node = current;
         current = current->next;
+        node->previous->next = nullptr;
         delete node;
     }
 }
@@ -109,23 +110,6 @@ void* Serial::serialRead(void* arg){
     do{
         j += read(fd, buffA + j, obj->frameLength - j);
     }while(j < obj->frameLength);
-    while(true){
-        if(node->nr == obj->frameLength - 1){
-            j = 0;
-            do{
-                j += read(fd, buffB + j, obj->frameLength - j);
-            }while(j < obj->frameLength);
-        }else if(node->nr == 2 * obj->frameLength - 1){
-            j = 0;
-            do{
-                j += read(fd, buffA + j, obj->frameLength - j);
-            }while(j < obj->frameLength);
-        }
-        node = node->next;
-        if(buff[node->previous->nr] == obj->header0 && buff[node->nr] == obj->header1){
-            break;
-        }
-    }
     struct timespec step{0, 1000};
     i = 2;
     while(true){
@@ -173,7 +157,9 @@ Serial::~Serial(){
     if(pth > 0){
         pthread_cancel(pth);
     }
-    delete txSwap;
+    if(txSwap != nullptr){
+        delete txSwap;
+    }
     free(device);
 }
 
@@ -191,7 +177,7 @@ float IMU::quadchar2float(char const* qc){
 }
 
 bool IMU::valid(unsigned char const* buff){
-    if(buff[4] != 0x20 || buff[5] != 0x30 || buff[6] != 0x0c ||
+    if( buff[ 4] != 0x20 || buff[ 5] != 0x30 || buff[ 6] != 0x0c ||
         buff[19] != 0x40 || buff[20] != 0x20 || buff[21] != 0x0c ||
         buff[34] != 0x80 || buff[35] != 0x20 || buff[36] != 0x0c){
         return false;

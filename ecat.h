@@ -37,7 +37,7 @@ public:
     pthread_t pth;
     ECAT(int const order);
     int init();
-    int readAlias(unsigned short const slave, unsigned short const index, unsigned char const subindex, unsigned char const bitLength);
+    int readAlias(unsigned short const slave, std::string const& type, unsigned short const index, unsigned char const subindex, unsigned char const bitLength);
     int requestState(unsigned short const slave, char const* stateString);
     int check();
     int config();

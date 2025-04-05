@@ -190,7 +190,7 @@ int main(int argc, char** argv){
         j = 0;
         while(j < digitNr){
             if(i % 8 == 0){
-                digitTargetData[j].pos = std::abs(digitTargetData[j].pos - 9000);
+                digitTargetData[j].pos = std::abs(digitTargetData[j].pos - 90);
             }
             printf("%8d\t", digitActualData[j].pos);
             j++;
