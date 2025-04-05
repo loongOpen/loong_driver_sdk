@@ -30,14 +30,15 @@ struct imuStruct{
 
 struct sensorStruct{
     float F[3], M[3];
+    unsigned int statusCode;
 };
 
 struct digitTargetStruct{
-    unsigned short pos;         // 0 ~ 9000: relaxed ~ tense
+    unsigned short pos;         // 0 ~ 90: relaxed ~ tense
 };
 
 struct digitActualStruct{
-    unsigned short pos;         // 0 ~ 9000: relaxed ~ tense
+    unsigned short pos;         // 0 ~ 90: relaxed ~ tense
 };
 
 struct motorTargetStruct{

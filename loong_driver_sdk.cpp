@@ -22,6 +22,7 @@
 #include "rs485.h"
 #include "ecat.h"
 #include <unistd.h>
+#include <atomic>
 #include <sstream>
 #include <limits>
 
@@ -36,6 +37,7 @@ WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
 char operatingMode;
 unsigned short processor;
 std::vector<unsigned short> maxCurrent;
+std::atomic<bool> ecatStalled;
 
 motorSDOClass::motorSDOClass(int i){
     this->i = i;
@@ -68,6 +70,7 @@ DriverSDK::impClass::impClass(){
     digits = nullptr;
     operatingMode = 8;
     processor = sysconf(_SC_NPROCESSORS_ONLN) - 1;
+    ecatStalled.store(false);
     imu = nullptr;
     rs485s.reserve(4);
     ecats.reserve(4);
@@ -111,8 +114,8 @@ int DriverSDK::impClass::effectorCheck(std::vector<std::map<int, std::string>> a
 int DriverSDK::impClass::init(char const* xmlFile){
     configXML = new ConfigXML(xmlFile);
     std::vector<std::vector<int>> limbAlias = configXML->limbAlias();
-    if(limbAlias.size() < 1){
-        printf("there should be one limb at least\n");
+    if(limbAlias.size() != 6){
+        printf("there must be 6 limbs: left leg, right leg, left arm, right arm, waist and neck.\nwhereas the size of a limb can be 0.");
         return -1;
     }
     if(limbAlias[0].size() != limbAlias[1].size()){
@@ -587,12 +590,18 @@ int DriverSDK::getSensor(std::vector<sensorStruct>& data){
     }
     int i = 0;
     while(i < 2){
+        if(sensors[i].order < 0){
+            data[i].statusCode = 0xffff;
+            i++;
+            continue;
+        }
         data[i].F[0] = (float)sensors[i].tx->Fx / 10000.0;
         data[i].F[1] = (float)sensors[i].tx->Fy / 10000.0;
         data[i].F[2] = (float)sensors[i].tx->Fz / 10000.0;
         data[i].M[0] = (float)sensors[i].tx->Mx / 10000.0;
         data[i].M[1] = (float)sensors[i].tx->My / 10000.0;
         data[i].M[2] = (float)sensors[i].tx->Mz / 10000.0;
+        data[i].statusCode = sensors[i].tx->StatusCode;
         i++;
     }
     return 0;
@@ -604,8 +613,8 @@ int DriverSDK::setDigitTarget(std::vector<digitTargetStruct> const& data){
     }
     int i = 0;
     while(i < dofEffector){
-        if(data[i].pos > 9000){
-            digits[i].rx->TargetPosition = 9000;
+        if(data[i].pos > 90){
+            digits[i].rx->TargetPosition = 90;
         }else{
             digits[i].rx->TargetPosition = data[i].pos;
         }
@@ -666,13 +675,13 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
 }
 
 int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
-    if(data.size() != dofAll){
+    if(data.size() != dofAll || ecatStalled.load()){
         return -1;
     }
     int i = 0;
     while(i < dofAll){
         if(drivers[i].order < 0){
-            data[i].statusWord = -1;
+            data[i].statusWord = 0xffff;
             i++;
             continue;
         }
