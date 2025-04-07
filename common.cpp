@@ -66,6 +66,7 @@ SwapList::~SwapList(){
     while(current != nullptr){
         SwapNode* node = current;
         current = current->next;
+        node->previous->next = nullptr;
         delete node;
     }
 }
@@ -77,26 +78,26 @@ MotorParameters::MotorParameters(){
 }
 
 int MotorParameters::load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler){
-    polarity = configXML->readMotorParameter(alias, "Polarity");
-    countBias = configXML->readMotorParameter(alias, "CountBias");
+    polarity          = configXML->readMotorParameter(alias, "Polarity");
+    countBias         = configXML->readMotorParameter(alias, "CountBias");
     encoderResolution = configXML->readMotorParameter(alias, "EncoderResolution");
-    gearRatioTor = configXML->readMotorParameter(alias, "GearRatioTor");
-    gearRatioPosVel = configXML->readMotorParameter(alias, "GearRatioPosVel");
-    ratedCurrent = configXML->readMotorParameter(alias, "RatedCurrent");
-    torqueConstant = configXML->readMotorParameter(alias, "TorqueConstant");
-    maximumTorque = configXML->readMotorParameter(alias, "MaximumTorque");
-    minimumPosition = configXML->readMotorParameter(alias, "MinimumPosition");
-    maximumPosition = configXML->readMotorParameter(alias, "MaximumPosition");
-    if(polarity == std::numeric_limits<float>::min() ||
-        countBias == std::numeric_limits<float>::min() ||
+    gearRatioTor      = configXML->readMotorParameter(alias, "GearRatioTor");
+    gearRatioPosVel   = configXML->readMotorParameter(alias, "GearRatioPosVel");
+    ratedCurrent      = configXML->readMotorParameter(alias, "RatedCurrent");
+    torqueConstant    = configXML->readMotorParameter(alias, "TorqueConstant");
+    maximumTorque     = configXML->readMotorParameter(alias, "MaximumTorque");
+    minimumPosition   = configXML->readMotorParameter(alias, "MinimumPosition");
+    maximumPosition   = configXML->readMotorParameter(alias, "MaximumPosition");
+    if( polarity          == std::numeric_limits<float>::min() ||
+        countBias         == std::numeric_limits<float>::min() ||
         encoderResolution == std::numeric_limits<float>::min() ||
-        gearRatioTor == std::numeric_limits<float>::min() ||
-        gearRatioPosVel == std::numeric_limits<float>::min() ||
-        ratedCurrent == std::numeric_limits<float>::min() ||
-        torqueConstant == std::numeric_limits<float>::min() ||
-        maximumTorque == std::numeric_limits<float>::min() ||
-        minimumPosition == std::numeric_limits<float>::min() ||
-        maximumPosition == std::numeric_limits<float>::min()){
+        gearRatioTor      == std::numeric_limits<float>::min() ||
+        gearRatioPosVel   == std::numeric_limits<float>::min() ||
+        ratedCurrent      == std::numeric_limits<float>::min() ||
+        torqueConstant    == std::numeric_limits<float>::min() ||
+        maximumTorque     == std::numeric_limits<float>::min() ||
+        minimumPosition   == std::numeric_limits<float>::min() ||
+        maximumPosition   == std::numeric_limits<float>::min()){
         printf("a motor parameter is incorrectly set in xml\n");
         return -1;
     }
@@ -120,10 +121,10 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
             alias,
             0,
             (unsigned short)strtoul(entry[1].c_str(), nullptr, 16),
-            (unsigned char)strtoul(entry[2].c_str(), nullptr, 16),
-            (unsigned char)strtoul(entry[3].c_str(), nullptr, 10),
-            (unsigned char)strtoul(entry[4].c_str(), nullptr, 10),
-            (unsigned char)strtoul(entry[5].c_str(), nullptr, 10),
+            (unsigned char) strtoul(entry[2].c_str(), nullptr, 16),
+            (unsigned char) strtoul(entry[3].c_str(), nullptr, 10),
+            (unsigned char) strtoul(entry[4].c_str(), nullptr, 10),
+            (unsigned char) strtoul(entry[5].c_str(), nullptr, 10),
             0
         };
         entry = configXML->entry(configXML->busDevice("ECAT", type.c_str()), "ClearError");
@@ -133,10 +134,10 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
             alias,
             0,
             (unsigned short)strtoul(entry[1].c_str(), nullptr, 16),
-            (unsigned char)strtoul(entry[2].c_str(), nullptr, 16),
-            (unsigned char)strtoul(entry[3].c_str(), nullptr, 10),
-            (unsigned char)strtoul(entry[4].c_str(), nullptr, 10),
-            (unsigned char)strtoul(entry[5].c_str(), nullptr, 10),
+            (unsigned char) strtoul(entry[2].c_str(), nullptr, 16),
+            (unsigned char) strtoul(entry[3].c_str(), nullptr, 10),
+            (unsigned char) strtoul(entry[4].c_str(), nullptr, 10),
+            (unsigned char) strtoul(entry[5].c_str(), nullptr, 10),
             0
         };
     }else if(bus == "CAN"){

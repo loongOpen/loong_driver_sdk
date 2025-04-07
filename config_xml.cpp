@@ -62,6 +62,9 @@ std::vector<std::vector<int>> ConfigXML::limbAlias(){
         ret[limb][motor] = motorElement->IntAttribute("alias");
         motorElement = motorElement->NextSiblingElement("Motor");
     }
+    while(ret.size() < 6){
+        ret.emplace_back(std::vector<int>());
+    }
     return ret;
 }
 
