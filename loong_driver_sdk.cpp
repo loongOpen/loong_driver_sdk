@@ -471,12 +471,23 @@ void DriverSDK::setCPU(unsigned short const cpu){
     processor = cpu;
 }
 
-void DriverSDK::setMode(std::vector<char> const& mode){
-    operatingMode = mode;
-}
-
 void DriverSDK::setMaxCurr(std::vector<unsigned short> const& maxCurr){
     maxCurrent = maxCurr;
+}
+
+int DriverSDK::setMode(std::vector<char> const& mode){
+    if(operatingMode.size() == 0){
+        operatingMode = mode;
+        return 0;
+    }else if(operatingMode.size() != mode.size()){
+        return -1;
+    }
+    int i = 0;
+    while(i < dofAll){
+        operatingMode[i] = mode[i];
+        i++;
+    }
+    return 0;
 }
 
 void DriverSDK::init(char const* xmlFile){

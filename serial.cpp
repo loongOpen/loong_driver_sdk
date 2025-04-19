@@ -91,7 +91,7 @@ void* Serial::serialRead(void* arg){
     tcsetattr(fd, TCSANOW, &opt);
     tcflush(fd, TCIOFLUSH);
     printf("opened device %s baudrate %d\n", obj->device, obj->baudrate);
-    char buff[2 * obj->frameLength], * buffA = buff, * buffB = buff + obj->frameLength;
+    unsigned char buff[2 * obj->frameLength], * buffA = buff, * buffB = buff + obj->frameLength;
     ChainNode* node0 = new ChainNode(), * node = node0;
     i = 0;
     while(i < 2 * obj->frameLength - 1){
