@@ -22,7 +22,7 @@
 #include <termios.h>
 
 namespace DriverSDK{
-Serial::Serial(char const* device, int const baudrate, int const frameLength, char const header0, char const header1){
+Serial::Serial(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1){
     this->device = (char*)malloc(strlen(device) + 1);
     strcpy(this->device, device);
     this->baudrate = baudrate;
@@ -91,7 +91,7 @@ void* Serial::serialRead(void* arg){
     tcsetattr(fd, TCSANOW, &opt);
     tcflush(fd, TCIOFLUSH);
     printf("opened device %s baudrate %d\n", obj->device, obj->baudrate);
-    char buff[2 * obj->frameLength], * buffA = buff, * buffB = buff + obj->frameLength;
+    unsigned char buff[2 * obj->frameLength], * buffA = buff, * buffB = buff + obj->frameLength;
     ChainNode* node0 = new ChainNode(), * node = node0;
     i = 0;
     while(i < 2 * obj->frameLength - 1){
@@ -130,7 +130,7 @@ void* Serial::serialRead(void* arg){
             i++;
         }
         if(buff[node->previous->nr] == obj->header0 && buff[node->nr] == obj->header1){
-            if(obj->valid((unsigned char*)obj->txSwap->nodePtr.load()->next->memPtr)){
+            if(obj->valid(obj->txSwap->nodePtr.load()->next->memPtr)){
                 obj->txSwap->advanceNodePtr();
             }
             memset(obj->txSwap->nodePtr.load()->next->memPtr + 2, 0, obj->frameLength - 2);
@@ -163,12 +163,12 @@ Serial::~Serial(){
     free(device);
 }
 
-IMU::IMU(char const* device, int const baudrate, int const frameLength, char const header0, char const header1) : Serial(device, baudrate, frameLength, header0, header1){
+IMU::IMU(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1) : Serial(device, baudrate, frameLength, header0, header1){
 }
 
-float IMU::quadchar2float(char const* qc){
+float IMU::quadchar2float(unsigned char const* qc){
     float f = 0;
-    char* c = (char*)&f;
+    unsigned char* c = (unsigned char*)&f;
     *(c + 0) = *(qc + 3);
     *(c + 1) = *(qc + 2);
     *(c + 2) = *(qc + 1);

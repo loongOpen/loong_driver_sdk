@@ -18,12 +18,13 @@
 #include "config_xml.h"
 #include "common.h"
 #include <limits>
+#include <cmath>
 
 namespace DriverSDK{
 extern ConfigXML* configXML;
 
 SwapNode::SwapNode(int const size){
-    memPtr = (char*)calloc(size, 1);
+    memPtr = (unsigned char*)calloc(size, 1);
     previous = nullptr;
     next = nullptr;
 }
@@ -100,6 +101,9 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
         maximumPosition   == std::numeric_limits<float>::min()){
         printf("a motor parameter is incorrectly set in xml\n");
         return -1;
+    }
+    if(type == "Elmo"){
+        ratedCurrent *= std::sqrt(2.0);
     }
     if(bus == "ECAT"){
         sdoTemplate = SDOMsg{

@@ -29,14 +29,14 @@ extern WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
 void changingTekRX(modbus_t* const ctx, int const alias){
     int position = 0;
     if(alias == 200){
-        static unsigned int count = -1;
+        static unsigned int count = 0xffffffff;
         count++;
         if(count % 8 != 0){
             return;
         }
         position = digits[0].rx->TargetPosition;
     }else if(alias == 201){
-        static unsigned int count = -1;
+        static unsigned int count = 0xffffffff;
         count++;
         if(count % 8 != 0){
             return;
@@ -149,11 +149,11 @@ int RS485::config(){
     if(itr != alias2type.end()){
         int i = 0;
         while(i < dofLeftEffector){
-            if(digits[i].init("RS485", order, 200, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
+            if(digits[i].init("RS485", order, 0, 0, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
             }
-            if(digits[i].config("RS485", order, rxSwap, txSwap) != 0){
+            if(digits[i].config("RS485", order, 0, rxSwap, txSwap) != 0){
                 printf("digits[%d] config failed\n", i);
                 return -1;
             }
@@ -173,11 +173,11 @@ int RS485::config(){
     if(itr != alias2type.end()){
         int i = dofLeftEffector;
         while(i < dofEffector){
-            if(digits[i].init("RS485", order, 201, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
+            if(digits[i].init("RS485", order, 0, 1, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
             }
-            if(digits[i].config("RS485", order, rxSwap, txSwap) != 0){
+            if(digits[i].config("RS485", order, 0, rxSwap, txSwap) != 0){
                 printf("digits[%d] config failed\n", i);
                 return -1;
             }
@@ -205,7 +205,6 @@ void* RS485::rxtx(void* arg){
         step.tv_sec++;
     }
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
-    bool sleep = true;
     while(true){
         if(rs485->leftRX != nullptr){
             rs485->leftRX(rs485->ctx, 200);
@@ -220,7 +219,7 @@ void* RS485::rxtx(void* arg){
             wakeupTime.tv_nsec -= NSEC_PER_SEC;
             wakeupTime.tv_sec++;
         }
-        sleep = true;
+        bool sleep = true;
         do{
             if(sleep){
                 nanosleep(&step, nullptr);

@@ -26,8 +26,8 @@ serial_x86_64.o: serial.cpp serial.h loong_driver_sdk.h
 common_x86_64.o: common.cpp common.h config_xml.h
 	$(CXX_X86_64) -fPIC -o common_x86_64.o -Iethercat/include -Itinyxml2/include -c common.cpp
 
-rs485_x86_64.o: rs485.cpp rs485.h
-	$(CXX_X86_64) -fPIC -o rs485_x86_64.o -Iethercat/include -Imodbus/include -c rs485.cpp
+rs485_x86_64.o: rs485.cpp rs485.h config_xml.h
+	$(CXX_X86_64) -fPIC -o rs485_x86_64.o -Iethercat/include -Imodbus/include -Itinyxml2/include -c rs485.cpp
 
 ecat_x86_64.o: ecat.cpp ecat.h common.h ptr_que.h config_xml.h
 	$(CXX_X86_64) -fPIC -o ecat_x86_64.o -Iethercat/include -Itinyxml2/include -c ecat.cpp
@@ -58,8 +58,8 @@ serial_aarch64.o: serial.cpp serial.h loong_driver_sdk.h
 common_aarch64.o: common.cpp common.h config_xml.h
 	$(CXX_AARCH64) -fPIC -o common_aarch64.o -Iethercat/include -Itinyxml2/include -c common.cpp
 
-rs485_aarch64.o: rs485.cpp rs485.h
-	$(CXX_AARCH64) -fPIC -o rs485_aarch64.o -Iethercat/include -Imodbus/include -c rs485.cpp
+rs485_aarch64.o: rs485.cpp rs485.h config_xml.h
+	$(CXX_AARCH64) -fPIC -o rs485_aarch64.o -Iethercat/include -Imodbus/include -Itinyxml2/include -c rs485.cpp
 
 ecat_aarch64.o: ecat.cpp ecat.h common.h ptr_que.h config_xml.h
 	$(CXX_AARCH64) -fPIC -o ecat_aarch64.o -Iethercat/include -Itinyxml2/include -c ecat.cpp
