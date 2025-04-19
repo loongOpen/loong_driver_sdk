@@ -29,13 +29,15 @@
 namespace DriverSDK{
 ConfigXML* configXML;
 std::vector<std::map<int, std::string>> rs485Alias2type, ecatAlias2type;
+std::vector<std::map<int, int>> ecatAlias2domain;
+std::vector<std::vector<int>> ecatDomainDivision;
 int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector;
 WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
 WrapperPair<DriverRxData, DriverTxData, MotorParameters>** legs[2], ** arms[2], ** waist, ** neck;
 WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
 WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
-char operatingMode;
 unsigned short processor;
+std::vector<char> operatingMode;
 std::vector<unsigned short> maxCurrent;
 std::atomic<bool> ecatStalled;
 
@@ -68,7 +70,6 @@ DriverSDK::impClass::impClass(){
     drivers = nullptr;
     legs[0] = legs[1] = arms[0] = arms[1] = waist = neck = nullptr;
     digits = nullptr;
-    operatingMode = 8;
     processor = sysconf(_SC_NPROCESSORS_ONLN) - 1;
     ecatStalled.store(false);
     imu = nullptr;
@@ -113,23 +114,23 @@ int DriverSDK::impClass::effectorCheck(std::vector<std::map<int, std::string>> a
 
 int DriverSDK::impClass::init(char const* xmlFile){
     configXML = new ConfigXML(xmlFile);
-    std::vector<std::vector<int>> limbAlias = configXML->limbAlias();
-    if(limbAlias.size() != 6){
+    std::vector<std::vector<int>> motorAlias = configXML->motorAlias();
+    if(motorAlias.size() != 6){
         printf("there must be 6 limbs: left leg, right leg, left arm, right arm, waist and neck.\nwhereas the size of a limb can be 0.");
         return -1;
     }
-    if(limbAlias[0].size() != limbAlias[1].size()){
+    if(motorAlias[0].size() != motorAlias[1].size()){
         printf("the two legs does not mirror each other\n");
         return -1;
     }
-    if(limbAlias[2].size() != limbAlias[3].size()){
+    if(motorAlias[2].size() != motorAlias[3].size()){
         printf("the two arms does not mirror each other\n");
         return -1;
     }
-    dofLeg = limbAlias[0].size();
-    dofArm = limbAlias[2].size();
-    dofWaist = limbAlias[4].size();
-    dofNeck = limbAlias[5].size();
+    dofLeg = motorAlias[0].size();
+    dofArm = motorAlias[2].size();
+    dofWaist = motorAlias[4].size();
+    dofNeck = motorAlias[5].size();
     dofAll = 2 * dofLeg + 2 * dofArm + dofWaist + dofNeck;
     if(dofAll > 0){
         drivers = new WrapperPair<DriverRxData, DriverTxData, MotorParameters>[dofAll];
@@ -158,7 +159,19 @@ int DriverSDK::impClass::init(char const* xmlFile){
     if(dofEffector > 0){
         digits = new WrapperPair<DigitRxData, DigitTxData, EffectorParameters>[dofEffector];
     }
+    ecatAlias2domain = configXML->alias2domain("ECAT");
+    ecatDomainDivision = configXML->domainDivision("ECAT");
     int i = 0;
+    if(operatingMode.size() == 0){
+        while(i < dofAll){
+            operatingMode.push_back(8);
+            i++;
+        }
+    }else if(operatingMode.size() != dofAll){
+        printf("invalid operatingMode\n");
+        return -1;
+    };
+    i = 0;
     if(maxCurrent.size() == 0){
         while(i < dofAll){
             maxCurrent.push_back(1000);
@@ -218,11 +231,11 @@ int DriverSDK::impClass::init(char const* xmlFile){
         i++;
     }
     i = 0;
-    while(i < limbAlias.size()){
+    while(i < motorAlias.size()){
         printf("limb %d\n", i);
         int j = 0;
-        while(j < limbAlias[i].size()){
-            int alias = limbAlias[i][j];
+        while(j < motorAlias[i].size()){
+            int alias = motorAlias[i][j];
             printf("\tjoint %d, alias %d\n", j, alias);
             if(i == 0 || i == 1){
                 if(drivers[alias - 1].order == -1){
@@ -340,36 +353,37 @@ void DriverSDK::impClass::ecatUpdate(){
         case 1:
             switch(drivers[i].tx->StatusWord & 0x007f){
             case 0x0031:
-                drivers[i].rx->Mode = operatingMode;
+                drivers[i].rx->Mode = operatingMode[i];
                 drivers[i].rx->ControlWord = 0x07;
-                ecats[drivers[i].order].rxPDOSwap->advanceNodePtr();
-                drivers[i].rx->Mode = operatingMode;
+                ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                drivers[i].rx->Mode = operatingMode[i];
                 drivers[i].rx->ControlWord = 0x07;
-                ecats[drivers[i].order].rxPDOSwap->advanceNodePtr();
-                drivers[i].rx->Mode = operatingMode;
+                ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                drivers[i].rx->Mode = operatingMode[i];
                 drivers[i].rx->ControlWord = 0x07;
-                ecats[drivers[i].order].rxPDOSwap->advanceNodePtr();
+                ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
                 break;
             case 0x0033:
                 drivers[i].rx->ControlWord = 0x0f;
                 drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
-                ecats[drivers[i].order].rxPDOSwap->advanceNodePtr();
+                ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
                 drivers[i].rx->ControlWord = 0x0f;
                 drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
-                ecats[drivers[i].order].rxPDOSwap->advanceNodePtr();
+                ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
                 drivers[i].rx->ControlWord = 0x0f;
                 drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
-                ecats[drivers[i].order].rxPDOSwap->advanceNodePtr();
+                ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
                 break;
             case 0x0037:
+                drivers[i].rx->Mode = operatingMode[i];
                 break;
             default:
                 drivers[i].rx->ControlWord = 0x06;
-                ecats[drivers[i].order].rxPDOSwap->advanceNodePtr();
+                ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
                 drivers[i].rx->ControlWord = 0x06;
-                ecats[drivers[i].order].rxPDOSwap->advanceNodePtr();
+                ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
                 drivers[i].rx->ControlWord = 0x06;
-                ecats[drivers[i].order].rxPDOSwap->advanceNodePtr();
+                ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
             }
             break;
         case 0:
@@ -389,8 +403,12 @@ void DriverSDK::impClass::ecatUpdate(){
     }
     i = 0;
     while(i < ecats.size()){
-        if(ecats[i].rxPDOSwap != nullptr){
-            ecats[i].rxPDOSwap->advanceNodePtr();
+        int j = 0;
+        while(j < ecats[i].domainDivision.size()){
+            if(ecats[i].rxPDOSwaps[j] != nullptr){
+                ecats[i].rxPDOSwaps[j]->advanceNodePtr();
+            }
+            j++;
         }
         i++;
     }
@@ -453,7 +471,7 @@ void DriverSDK::setCPU(unsigned short const cpu){
     processor = cpu;
 }
 
-void DriverSDK::setMode(char const mode){
+void DriverSDK::setMode(std::vector<char> const& mode){
     operatingMode = mode;
 }
 
@@ -544,13 +562,13 @@ int DriverSDK::fillSDO(motorSDOClass& data, char const* object){
         return 1;
     }
     std::vector<std::string> entry = configXML->entry(configXML->busDevice("ECAT", itr->second.c_str()), object);
-    data.value = 0;
-    data.state = 0;
-    data.index = (unsigned short)strtoul(entry[1].c_str(), nullptr, 16);
-    data.subindex = (unsigned char)strtoul(entry[2].c_str(), nullptr, 16);
-    data.signed_ = (unsigned char)strtoul(entry[3].c_str(), nullptr, 10);
-    data.bitLength = (unsigned char)strtoul(entry[4].c_str(), nullptr, 10);
-    data.operation = (unsigned char)strtoul(entry[5].c_str(), nullptr, 10);
+    data.value     = 0;
+    data.state     = 0;
+    data.index     = (unsigned short)strtoul(entry[1].c_str(), nullptr, 16);
+    data.subindex  = (unsigned char) strtoul(entry[2].c_str(), nullptr, 16);
+    data.signed_   = (unsigned char) strtoul(entry[3].c_str(), nullptr, 10);
+    data.bitLength = (unsigned char) strtoul(entry[4].c_str(), nullptr, 10);
+    data.operation = (unsigned char) strtoul(entry[5].c_str(), nullptr, 10);
     return 0;
 }
 
@@ -664,7 +682,7 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
         }else if(torque < -drivers[i].parameters.maximumTorque){
             torque = -drivers[i].parameters.maximumTorque;
         }
-        torque = drivers[i].parameters.polarity * 1000.0 * torque / drivers[i].parameters.torqueConstant / drivers[i].parameters.gearRatioTor / std::sqrt(2.0) / drivers[i].parameters.ratedCurrent;
+        torque = drivers[i].parameters.polarity * 1000.0 * torque / drivers[i].parameters.torqueConstant / drivers[i].parameters.gearRatioTor / drivers[i].parameters.ratedCurrent;
         drivers[i].rx->TargetTorque = torque;
         drivers[i].rx->TorqueOffset = torque;
         drivers[i].enabled = data[i].enabled;
@@ -688,7 +706,7 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
         imp.putDriverSDORequest(drivers[i].parameters.temperatureSDO);
         data[i].pos = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
         data[i].vel = 2.0 * Pi * drivers[i].parameters.polarity * drivers[i].tx->ActualVelocity / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
-        data[i].tor = drivers[i].parameters.polarity * drivers[i].tx->ActualTorque / 1000.0 * std::sqrt(2.0) * drivers[i].parameters.ratedCurrent * drivers[i].parameters.torqueConstant * drivers[i].parameters.gearRatioTor;
+        data[i].tor = drivers[i].parameters.polarity * drivers[i].tx->ActualTorque / 1000.0 * drivers[i].parameters.ratedCurrent * drivers[i].parameters.torqueConstant * drivers[i].parameters.gearRatioTor;
         if(imp.getDriverSDOResponse(drivers[i].parameters.temperatureSDO) == 0){
             if(drivers[i].parameters.temperatureSDO.state < 0){
                 printf("requesting drivers[%d] temperature failed\n", i);

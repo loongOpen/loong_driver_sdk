@@ -29,11 +29,11 @@ class Serial{
 public:
     char* device;
     int baudrate, frameLength;
-    char header0, header1;
+    unsigned char header0, header1;
     std::atomic<ChainNode*> ptr;
     SwapList* txSwap;
     pthread_t pth;
-    Serial(char const* device, int const baudrate, int const frameLength, char const header0, char const header1);
+    Serial(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1);
     virtual bool valid(unsigned char const* buff) = 0;
     static void cleanup(void* arg);
     static void* serialRead(void* arg);
@@ -43,8 +43,8 @@ public:
 
 class IMU : public Serial{
 public:
-    IMU(char const* device, int const baudrate, int const frameLength, char const header0, char const header1);
-    float quadchar2float(char const* qc);
+    IMU(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1);
+    float quadchar2float(unsigned char const* qc);
     bool valid(unsigned char const* buff) override;
     ~IMU();
 };

@@ -71,7 +71,7 @@ class DriverSDK{
 public:
     static DriverSDK& instance();
     void setCPU(unsigned short const cpu);
-    void setMode(char const mode);
+    void setMode(std::vector<char> const& mode);
     void setMaxCurr(std::vector<unsigned short> const& maxCurr);
     void init(char const* xmlFile);
     int getLeftDigitNr();

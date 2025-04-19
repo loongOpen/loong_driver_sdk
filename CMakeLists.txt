@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.10)
-project(driver_test VERSION 3.4.0 LANGUAGES CXX)
+project(driver_test VERSION 3.5.0 LANGUAGES CXX)
 option(ARM64 "aarch64" OFF)
 if(ARM64)
     set(march aarch64)

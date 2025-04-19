@@ -48,7 +48,7 @@ float ConfigXML::readMotorParameter(int const alias, char const* parameter){
     return std::numeric_limits<float>::min();
 }
 
-std::vector<std::vector<int>> ConfigXML::limbAlias(){
+std::vector<std::vector<int>> ConfigXML::motorAlias(){
     std::vector<std::vector<int>> ret;
     tinyxml2::XMLElement* motorElement = xmlDoc.FirstChildElement("Config")->FirstChildElement("Motors")->FirstChildElement("Motor");
     while(motorElement != nullptr){
@@ -64,6 +64,23 @@ std::vector<std::vector<int>> ConfigXML::limbAlias(){
     }
     while(ret.size() < 6){
         ret.emplace_back(std::vector<int>());
+    }
+    return ret;
+}
+
+std::vector<std::vector<int>> ConfigXML::domainDivision(char const* bus){
+    std::vector<std::vector<int>> ret;
+    tinyxml2::XMLElement* domainElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Domains")->FirstChildElement("Domain");
+    while(domainElement != nullptr){
+        int master = domainElement->IntAttribute("master"), order = domainElement->IntAttribute("order");
+        while(ret.size() <= master){
+            ret.emplace_back(std::vector<int>());
+        }
+        while(ret[master].size() <= order){
+            ret[master].push_back(1);
+        }
+        ret[master][order] = domainElement->IntAttribute("division");
+        domainElement = domainElement->NextSiblingElement("Domain");
     }
     return ret;
 }
@@ -232,10 +249,29 @@ std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus){
             slaveElement = slaveElement->NextSiblingElement("Slave");
             continue;
         }
-        while(ret.size() <= slaveElement->IntAttribute("master")){
+        int master = slaveElement->IntAttribute("master");
+        while(ret.size() <= master){
             ret.emplace_back(std::map<int, std::string>());
         }
-        ret[slaveElement->IntAttribute("master")].insert(std::make_pair(slaveElement->IntAttribute("alias"), slaveElement->Attribute("type")));
+        ret[master].insert(std::make_pair(slaveElement->IntAttribute("alias"), slaveElement->Attribute("type")));
+        slaveElement = slaveElement->NextSiblingElement("Slave");
+    }
+    return ret;
+}
+
+std::vector<std::map<int, int>> ConfigXML::alias2domain(char const* bus){
+    std::vector<std::map<int, int>> ret;
+    tinyxml2::XMLElement* slaveElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Slaves")->FirstChildElement("Slave");
+    while(slaveElement != nullptr){
+        if(slaveElement->IntText() != 1){
+            slaveElement = slaveElement->NextSiblingElement("Slave");
+            continue;
+        }
+        int master = slaveElement->IntAttribute("master");
+        while(ret.size() <= master){
+            ret.emplace_back(std::map<int, int>());
+        }
+        ret[master].insert(std::make_pair(slaveElement->IntAttribute("alias"), slaveElement->IntAttribute("domain")));
         slaveElement = slaveElement->NextSiblingElement("Slave");
     }
     return ret;

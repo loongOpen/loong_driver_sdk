@@ -23,7 +23,15 @@ int main(int argc, char** argv){
     DriverSDK::DriverSDK& driverSDK = DriverSDK::DriverSDK::instance();
     printf("loong_driver_sdk version: %s\n", driverSDK.version().c_str());
     driverSDK.setCPU(2);
-    driverSDK.setMode(8);
+    std::vector<char> mode = {
+        8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8,
+        8, 8
+    };
+    driverSDK.setMode(mode);
     std::vector<unsigned short> maxCurr = {
         1000, 1000, 1000, 1000, 1000, 1000,
         1000, 1000, 1000, 1000, 1000, 1000,
@@ -199,6 +207,7 @@ int main(int argc, char** argv){
         usleep(400000);
         if(i % 8 == 0){
             driverSDK.setDigitTarget(digitTargetData);
+            driverSDK.setMotorTarget(motorTargetData);
         }
         usleep(400000);
         i++;
