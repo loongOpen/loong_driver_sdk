@@ -88,10 +88,6 @@ std::vector<std::vector<int>> ConfigXML::domainDivision(char const* bus){
 int ConfigXML::dof(char const* bus, char const* type){
     tinyxml2::XMLElement* categoryElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Categories")->FirstChildElement("Category");
     while(categoryElement != nullptr){
-        if(strcmp(categoryElement->Attribute("name"), "effector") != 0){
-            categoryElement = categoryElement->NextSiblingElement("Category");
-            continue;
-        }
         tinyxml2::XMLElement* typeElement = categoryElement->FirstChildElement("Type");
         while(typeElement != nullptr){
             if(strcmp(typeElement->GetText(), type) == 0){
@@ -112,11 +108,11 @@ int ConfigXML::imuBaudrate(){
     return xmlDoc.FirstChildElement("Config")->FirstChildElement("IMU")->IntAttribute("baudrate");
 }
 
-std::string ConfigXML::device(char const* bus, int const order){
+std::string ConfigXML::device(char const* bus, int const order, char const* name){
     tinyxml2::XMLElement* masterElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Masters")->FirstChildElement("Master");
     while(masterElement != nullptr){
         if(masterElement->IntAttribute("order") == order){
-            return masterElement->Attribute("device");
+            return masterElement->Attribute(name);
         }
         masterElement = masterElement->NextSiblingElement("Master");
     }
@@ -253,7 +249,12 @@ std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus){
         while(ret.size() <= master){
             ret.emplace_back(std::map<int, std::string>());
         }
-        ret[master].insert(std::make_pair(slaveElement->IntAttribute("alias"), slaveElement->Attribute("type")));
+        int alias = slaveElement->IntAttribute("alias");
+        if(ret[master].find(alias) != ret[master].end()){
+            printf("duplicate alias on bus %s\n", bus);
+            exit(-1);
+        }
+        ret[master].insert(std::make_pair(alias, slaveElement->Attribute("type")));
         slaveElement = slaveElement->NextSiblingElement("Slave");
     }
     return ret;
@@ -271,7 +272,12 @@ std::vector<std::map<int, int>> ConfigXML::alias2domain(char const* bus){
         while(ret.size() <= master){
             ret.emplace_back(std::map<int, int>());
         }
-        ret[master].insert(std::make_pair(slaveElement->IntAttribute("alias"), slaveElement->IntAttribute("domain")));
+        int alias = slaveElement->IntAttribute("alias");
+        if(ret[master].find(alias) != ret[master].end()){
+            printf("duplicate alias on bus %s\n", bus);
+            exit(-1);
+        }
+        ret[master].insert(std::make_pair(alias, slaveElement->IntAttribute("domain")));
         slaveElement = slaveElement->NextSiblingElement("Slave");
     }
     return ret;

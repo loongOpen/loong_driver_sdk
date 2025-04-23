@@ -24,14 +24,13 @@ namespace DriverSDK{
 class ECAT{
 public:
     bool dc, sdoRequestable;
-    int order, fd, effectorAlias, sensorAlias;
+    int order, fd, effectorAlias, sensorAlias, * domainSizes;
     std::map<int, std::string> alias2type;
     long period;
     std::map<int, int> alias2slave, alias2domain;
     std::vector<int> domainDivision;
     ec_domain_t** domains;
     unsigned char** domainPtrs;
-    int* domainSizes;
     SwapList** rxPDOSwaps, ** txPDOSwaps;
     PtrQue<SDOMsg> sdoRequestQueue, sdoResponseQueue;
     ec_master_t* master;

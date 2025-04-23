@@ -15,14 +15,14 @@
  * Designed and built with love @zhihu by @cjrcl.
  */
 
-#include "serial.h"
+#include "rs232.h"
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
 #include <termios.h>
 
 namespace DriverSDK{
-Serial::Serial(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1){
+RS232::RS232(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1){
     this->device = (char*)malloc(strlen(device) + 1);
     strcpy(this->device, device);
     this->baudrate = baudrate;
@@ -40,7 +40,7 @@ Serial::Serial(char const* device, int const baudrate, int const frameLength, un
     pth = 0;
 }
 
-void Serial::cleanup(void* arg){
+void RS232::cleanup(void* arg){
     ChainNode* current = (ChainNode*)arg;
     while(current != nullptr){
         ChainNode* node = current;
@@ -50,8 +50,8 @@ void Serial::cleanup(void* arg){
     }
 }
 
-void* Serial::serialRead(void* arg){
-    Serial* obj = (Serial*)arg;
+void* RS232::recv(void* arg){
+    RS232* obj = (RS232*)arg;
     int    speedArray[] = {B921600, B576000, B460800, B230400, B115200, B57600, B38400, B19200, B9600, B4800, B2400, B1200, B300};
     int baudrateArray[] = { 921600,  576000,  460800,  230400,  115200,  57600,  38400,  19200,  9600,  4800,  2400,  1200,  300};
     int i = 0, j;
@@ -105,7 +105,7 @@ void* Serial::serialRead(void* arg){
     node->next = node0;
     node0->previous = node;
     node = node0;
-    pthread_cleanup_push(Serial::cleanup, node0);
+    pthread_cleanup_push(cleanup, node0);
     j = 0;
     do{
         j += read(fd, buffA + j, obj->frameLength - j);
@@ -142,18 +142,18 @@ void* Serial::serialRead(void* arg){
     return nullptr;
 }
 
-int Serial::run(){
+int RS232::run(){
     if(strlen(device) == 0){
         return 1;
     }
-    if(pthread_create(&pth, nullptr, &serialRead, this) != 0){
+    if(pthread_create(&pth, nullptr, &recv, this) != 0){
         printf("creating serialRead thread failed\n");
         return -1;
     }
     return 0;
 }
 
-Serial::~Serial(){
+RS232::~RS232(){
     if(pth > 0){
         pthread_cancel(pth);
     }
@@ -163,7 +163,7 @@ Serial::~Serial(){
     free(device);
 }
 
-IMU::IMU(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1) : Serial(device, baudrate, frameLength, header0, header1){
+IMU::IMU(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1) : RS232(device, baudrate, frameLength, header0, header1){
 }
 
 float IMU::quadchar2float(unsigned char const* qc){

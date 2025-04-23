@@ -35,7 +35,7 @@ public:
     int dof(char const* bus, char const* type);
     std::string imuDevice();
     int imuBaudrate();
-    std::string device(char const* bus, int const order);
+    std::string device(char const* bus, int const order, char const* name);
     int baudrate(char const* bus, int const order);
     long period(char const* bus, int const order);
     bool dc(char const* bus, int const order);

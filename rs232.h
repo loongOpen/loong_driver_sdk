@@ -25,7 +25,7 @@ struct ChainNode{
     ChainNode* previous, * next;
 };
 
-class Serial{
+class RS232{
 public:
     char* device;
     int baudrate, frameLength;
@@ -33,15 +33,15 @@ public:
     std::atomic<ChainNode*> ptr;
     SwapList* txSwap;
     pthread_t pth;
-    Serial(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1);
+    RS232(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1);
     virtual bool valid(unsigned char const* buff) = 0;
     static void cleanup(void* arg);
-    static void* serialRead(void* arg);
+    static void* recv(void* arg);
     int run();
-    ~Serial();
+    ~RS232();
 };
 
-class IMU : public Serial{
+class IMU : public RS232{
 public:
     IMU(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1);
     float quadchar2float(unsigned char const* qc);

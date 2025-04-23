@@ -89,6 +89,7 @@ public:
     int sendMotorSDORequest(motorSDOClass const& data);
     int recvMotorSDOResponse(motorSDOClass& data);
     int calibrate(int const i);
+    void advance();
     std::string version();
 private:
     class impClass;

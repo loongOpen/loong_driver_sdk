@@ -86,6 +86,10 @@ int main(int argc, char** argv){
     }
     i = 0;
     while(i < 1600){
+        driverSDK.advance();
+        usleep(4000);
+        driverSDK.advance();
+        usleep(4000);
         driverSDK.getIMU(imuData);
         printf("imu:\t%8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2]);
         driverSDK.getSensor(sensorData);
@@ -100,7 +104,10 @@ int main(int argc, char** argv){
             printf("motor%02d:\t%8.3f %8d %8d %8d\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
             j++;
         }
-        usleep(16000);
+        driverSDK.advance();
+        usleep(4000);
+        driverSDK.advance();
+        usleep(4000);
         i++;
     }
     float motorPositions[motorNr];
@@ -137,7 +144,7 @@ int main(int argc, char** argv){
         i++;
     }
     i = 0;
-    while(i < 800){
+    while(i < 1600){
         driverSDK.getIMU(imuData);
         printf("imu:\t%8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2]);
         driverSDK.getSensor(sensorData);
@@ -154,7 +161,7 @@ int main(int argc, char** argv){
             j++;
         }
         driverSDK.setMotorTarget(motorTargetData);
-        usleep(8000);
+        usleep(4000);
         i++;
     }
     i = 0;
@@ -182,8 +189,11 @@ int main(int argc, char** argv){
     }
     i = 0;
     while(i < motorNr){
+        driverSDK.advance();
+        usleep(4000);
         printf("motor%02d CountBias %d\n", i + 1, driverSDK.calibrate(i));
-        usleep(8000);
+        driverSDK.advance();
+        usleep(4000);
         i++;
     }
     i = 0;
@@ -204,12 +214,15 @@ int main(int argc, char** argv){
             j++;
         }
         printf("\n");
-        usleep(400000);
-        if(i % 8 == 0){
-            driverSDK.setDigitTarget(digitTargetData);
-            driverSDK.setMotorTarget(motorTargetData);
+        j = 0;
+        while(j < 192){
+            if(i % 8 == 0){
+                driverSDK.setDigitTarget(digitTargetData);
+            }
+            driverSDK.advance();
+            usleep(4000);
+            j++;
         }
-        usleep(400000);
         i++;
     }
     return 0;
