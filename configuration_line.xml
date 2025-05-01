@@ -781,6 +781,8 @@
     </Slaves>
 </ECAT>
 <CAN>
+    <Devices>
+    </Devices>
     <Categories>
         <Category name="driver">
         </Category>

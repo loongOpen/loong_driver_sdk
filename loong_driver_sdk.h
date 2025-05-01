@@ -43,13 +43,13 @@ struct digitActualStruct{
 
 struct motorTargetStruct{
     float pos, vel, tor;
-    int enabled;
+    int enabled;                // -1: clear error, 0: disable, 1: enable
 };
 
 struct motorActualStruct{
     float pos, vel, tor;
     short temp;
-    unsigned short statusWord;  // inactive: 65535; PREOP: 0
+    unsigned short statusWord;  // 0: PREOP; 65535: inactive
     unsigned short errorCode;
 };
 
@@ -57,7 +57,7 @@ class motorSDOClass{
 public:
     long value;
     int i;                      // drivers[i]
-    short state;                // -1: error; 0: pending; 1, 2: processing; 3: ready
+    short state;                // -1: error; 0: pending; 1, 2: processing; 3: completed
     unsigned short index;
     unsigned char subindex;
     unsigned char signed_;      // 0: unsigned; 1: signed

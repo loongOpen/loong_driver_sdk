@@ -720,8 +720,15 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
             torque = -drivers[i].parameters.maximumTorque;
         }
         torque = drivers[i].parameters.polarity * 1000.0 * torque / drivers[i].parameters.torqueConstant / drivers[i].parameters.gearRatioTor / drivers[i].parameters.ratedCurrent;
-        drivers[i].rx->TargetTorque = torque;
-        drivers[i].rx->TorqueOffset = torque;
+        if(operatingMode[i] == 8){
+            drivers[i].rx->TargetTorque = 0;
+            drivers[i].rx->TorqueOffset = torque;
+        }else if(operatingMode[i] == 10){
+            drivers[i].rx->TargetTorque = torque;
+            drivers[i].rx->TorqueOffset = 0;
+        }else{
+            ;
+        }
         drivers[i].enabled = data[i].enabled;
         i++;
     }

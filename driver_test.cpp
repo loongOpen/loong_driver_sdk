@@ -191,7 +191,7 @@ int main(int argc, char** argv){
     while(i < motorNr){
         driverSDK.advance();
         usleep(4000);
-        printf("motor%02d CountBias %d\n", i + 1, driverSDK.calibrate(i));
+        // printf("motor%02d CountBias %d\n", i + 1, driverSDK.calibrate(i));
         driverSDK.advance();
         usleep(4000);
         i++;

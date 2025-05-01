@@ -47,7 +47,7 @@ struct SDOMsg{
     ec_sdo_request_t* sdoHandler;
     long value;
     int alias;
-    short state;                // -1: error; 0: pending; 1, 2: processing; 3: ready
+    short state;                // -1: error; 0: pending; 1, 2: processing; 3: completed
     unsigned short index;
     unsigned char subindex;
     unsigned char signed_;      // 0: unsigned; 1: signed

@@ -669,7 +669,7 @@
                 <Object index="0x0000" subindex="0x00" signed="0" bit_length="32"  operation="1">TxData4</Object>
             </Dictionary>
         </Device>
-                <Device type="LinkTouch">
+        <Device type="LinkTouch">
             <VendorID>0x000000a1</VendorID>
             <ProductCode>0x00008081</ProductCode>
             <RxPDOs index="0x1600">
@@ -741,36 +741,36 @@
         <Domain master="1" order="1" division="1"/>
     </Domains>
     <Slaves>
-        <Slave master="0" domain="0" alias="1"   type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="2"   type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="3"   type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="4"   type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="5"   type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="6"   type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="7"   type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="8"   type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="9"   type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="10"  type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="11"  type="Elmo">0</Slave>
-        <Slave master="0" domain="0" alias="12"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="13"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="14"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="15"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="16"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="17"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="18"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="19"  type="Elmo">0</Slave>
+        <Slave master="0" domain="0" alias="1"   type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="2"   type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="3"   type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="4"   type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="5"   type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="6"   type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="7"   type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="8"   type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="9"   type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="10"  type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="11"  type="Elmo">1</Slave>
+        <Slave master="0" domain="0" alias="12"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="13"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="14"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="15"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="16"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="17"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="18"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="19"  type="Elmo">1</Slave>
         <Slave master="1" domain="0" alias="220" type="LinkTouch">0</Slave>
         <Slave master="1" domain="0" alias="200" type="Tsinghua">0</Slave>
         <Slave master="1" domain="1" alias="200" type="Ruiyan_1dof">0</Slave>
         <Slave master="1" domain="1" alias="200" type="Ruiyan_6dof">0</Slave>
-        <Slave master="1" domain="0" alias="20"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="21"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="22"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="23"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="24"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="25"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="26"  type="Elmo">0</Slave>
+        <Slave master="1" domain="0" alias="20"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="21"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="22"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="23"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="24"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="25"  type="Elmo">1</Slave>
+        <Slave master="1" domain="0" alias="26"  type="Elmo">1</Slave>
         <Slave master="1" domain="0" alias="221" type="LinkTouch">0</Slave>
         <Slave master="1" domain="0" alias="201" type="Tsinghua">0</Slave>
         <Slave master="1" domain="1" alias="201" type="Ruiyan_1dof">0</Slave>
@@ -783,6 +783,8 @@
     </Slaves>
 </ECAT>
 <CAN>
+    <Devices>
+    </Devices>
     <Categories>
         <Category name="driver">
         </Category>

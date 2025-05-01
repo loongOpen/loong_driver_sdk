@@ -102,9 +102,6 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
         printf("a motor parameter is incorrectly set in xml\n");
         return -1;
     }
-    if(type == "Elmo"){
-        ratedCurrent *= std::sqrt(2.0);
-    }
     if(bus == "ECAT"){
         sdoTemplate = SDOMsg{
             sdoHandler,
