@@ -30,11 +30,12 @@ public:
     ConfigXML(char const* file);
     int writeMotorParameter(int const alias, char const* parameter, float const value);
     float readMotorParameter(int const alias, char const* parameter);
-    std::vector<std::vector<int>> limbAlias();
+    std::vector<std::vector<int>> motorAlias();
+    std::vector<std::vector<int>> domainDivision(char const* bus);
     int dof(char const* bus, char const* type);
     std::string imuDevice();
     int imuBaudrate();
-    std::string device(char const* bus, int const order);
+    std::string device(char const* bus, int const order, char const* name);
     int baudrate(char const* bus, int const order);
     long period(char const* bus, int const order);
     bool dc(char const* bus, int const order);
@@ -47,6 +48,7 @@ public:
     std::vector<std::vector<std::string>> pdos(tinyxml2::XMLElement* const deviceElement, char const* rxtx);
     std::vector<std::string> entry(tinyxml2::XMLElement* const deviceElement, char const* object);
     std::vector<std::map<int, std::string>> alias2type(char const* bus);
+    std::vector<std::map<int, int>> alias2domain(char const* bus);
     tinyxml2::XMLError save();
     ~ConfigXML();
 };

@@ -27,7 +27,7 @@
 namespace DriverSDK{
 class SwapNode{
 public:
-    char* memPtr;
+    unsigned char* memPtr;
     SwapNode* previous, * next;
     SwapNode(int const size);
     ~SwapNode();
@@ -47,7 +47,7 @@ struct SDOMsg{
     ec_sdo_request_t* sdoHandler;
     long value;
     int alias;
-    short state;                // -1: error; 0: pending; 1, 2: processing; 3: ready
+    short state;                // -1: error; 0: pending; 1, 2: processing; 3: completed
     unsigned short index;
     unsigned char subindex;
     unsigned char signed_;      // 0: unsigned; 1: signed
@@ -137,6 +137,21 @@ struct DigitTxData{
     unsigned short ActualPosition;
 };
 
+struct ConverterDatum{
+    unsigned short Index;
+    unsigned short ID;
+    unsigned short Length;
+    unsigned char Data[64];
+};
+
+struct ConverterRxData{
+    ConverterDatum channels[8];
+};
+
+struct ConverterTxData{
+    ConverterDatum channels[8];
+};
+
 class EffectorParameters{
 public:
     EffectorParameters();
@@ -207,7 +222,7 @@ public:
 template<typename RxData, typename TxData, typename Parameters>
 class WrapperPair{
 public:
-    int order, slave, alias, enabled;
+    int order, domain, slave, alias, enabled;
     std::string bus, type;
     DataWrapper<RxData> rx;
     DataWrapper<TxData> tx;
@@ -215,6 +230,7 @@ public:
     Parameters parameters;
     WrapperPair(){
         order = -1;
+        domain = -1;
         slave = -1;
         alias = 0;
         enabled = 0;
@@ -222,12 +238,13 @@ public:
         type = "";
         sdoHandler = nullptr;
     }
-    int init(std::string const& bus, int const order, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler){
+    int init(std::string const& bus, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler){
         if(this->order != -1){
             printf("trying to re-init %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
             return -1;
         }
         this->order = order;
+        this->domain = domain;
         this->slave = slave;
         this->alias = alias;
         this->bus = bus;
@@ -237,11 +254,11 @@ public:
         this->sdoHandler = sdoHandler;
         return 0;
     }
-    int config(std::string const& bus, int const order, SwapList* const rxSwap, SwapList* const txSwap){
+    int config(std::string const& bus, int const order, int const domain, SwapList* const rxSwap, SwapList* const txSwap){
         if(this->order == -1){
             return 2;
         }
-        if(this->order != order || this->bus != bus){
+        if(this->order != order || this->domain != domain || this->bus != bus){
             return 1;
         }
         rx.config(rxSwap);

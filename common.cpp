@@ -18,12 +18,13 @@
 #include "config_xml.h"
 #include "common.h"
 #include <limits>
+#include <cmath>
 
 namespace DriverSDK{
 extern ConfigXML* configXML;
 
 SwapNode::SwapNode(int const size){
-    memPtr = (char*)calloc(size, 1);
+    memPtr = (unsigned char*)calloc(size, 1);
     previous = nullptr;
     next = nullptr;
 }

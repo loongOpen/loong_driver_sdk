@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.10)
-project(driver_test VERSION 3.4.0 LANGUAGES CXX)
+project(driver_test VERSION 3.6.0 LANGUAGES CXX)
 option(ARM64 "aarch64" OFF)
 if(ARM64)
     set(march aarch64)
@@ -16,7 +16,7 @@ add_library(modbus STATIC IMPORTED)
 set_target_properties(modbus PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/modbus/lib/libmodbus_${march}.a)
 add_library(tinyxml2 STATIC IMPORTED)
 set_target_properties(tinyxml2 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/tinyxml2/lib/libtinyxml2_${march}.a)
-add_library(loong_driver_sdk_${march} SHARED common.cpp config_xml.cpp ecat.cpp serial.cpp loong_driver_sdk.cpp rs485.cpp)
+add_library(loong_driver_sdk_${march} SHARED common.cpp config_xml.cpp rs232.cpp rs485.cpp ecat.cpp loong_driver_sdk.cpp)
 set_target_properties(loong_driver_sdk_${march} PROPERTIES NO_SONAME ON)
 target_include_directories(loong_driver_sdk_${march} PUBLIC
     ${PROJECT_BINARY_DIR}

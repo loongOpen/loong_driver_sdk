@@ -25,14 +25,15 @@ using effectorFunction = void (*)(modbus_t* const, int const);
 
 class RS485{
 public:
-    int order, baudrate;
-    char* device;
+    int order, baudrate, fdR, fdS;
     std::map<int, std::string> alias2type;
+    char* device, * deviceR, * deviceS;
     long period;
-    modbus_t* ctx;
     SwapList* rxSwap, * txSwap;
+    modbus_t* ctx;
     pthread_t pth;
     effectorFunction leftRX, rightRX, leftTX, rightTX;
+    RS485(int const order, char const* deviceR, char const* deviceS, long const period);
     RS485(int const order, char const* device);
     int config();
     static void* rxtx(void* arg);

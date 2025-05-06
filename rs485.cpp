@@ -17,26 +17,31 @@
 
 #include "config_xml.h"
 #include "rs485.h"
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <limits>
 
 namespace DriverSDK{
 extern ConfigXML* configXML;
-extern std::vector<std::map<int, std::string>> rs485Alias2type;
+extern std::vector<std::map<int, std::string>> rs485alias2type;
 extern int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector;
 extern WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
 extern WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
 extern WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
 
 void changingTekRX(modbus_t* const ctx, int const alias){
+    unsigned short data[4] = {0, 0, 100, 100};
     int position = 0;
     if(alias == 200){
-        static unsigned int count = -1;
+        static unsigned int count = 0xffffffff;
         count++;
         if(count % 8 != 0){
             return;
         }
         position = digits[0].rx->TargetPosition;
     }else if(alias == 201){
-        static unsigned int count = -1;
+        static unsigned int count = 0xffffffff;
         count++;
         if(count % 8 != 0){
             return;
@@ -44,24 +49,31 @@ void changingTekRX(modbus_t* const ctx, int const alias){
         position = digits[dofLeftEffector].rx->TargetPosition;
     }
     position *= 100;
+    data[0] = position >> 16 & 0xffff;
+    data[1] = position & 0xffff;
     modbus_set_slave(ctx, alias);
-    modbus_write_register(ctx, 0x0100, 1);
-    modbus_write_register(ctx, 0x0102, position >> 16 & 0xffff);
-    modbus_write_register(ctx, 0x0103, position & 0xffff);
-    modbus_write_register(ctx, 0x0104, 100);
-    modbus_write_register(ctx, 0x0105, 100);
-    modbus_write_register(ctx, 0x0108, 1);
+    if(modbus_write_register(ctx, 0x0100, 1) != 1){
+        return;
+    }
+    usleep(4000);
+    if(modbus_write_registers(ctx, 0x0102, 4, data) != 4){
+        return;
+    }
+    usleep(4000);
+    if(modbus_write_register(ctx, 0x0108, 1) != 1){
+        return;
+    }
 }
 
 void changingTekTX(modbus_t* const ctx, int const alias){
-    int position = 0;
+    unsigned short data[2] = {0, 0};
     modbus_set_slave(ctx, alias);
-    if(modbus_read_registers(ctx, 0x0609, 1, (unsigned short*)&position + 1) != 1){
+    if(modbus_read_registers(ctx, 0x0609, 2, data) != 2){
         return;
     }
-    if(modbus_read_registers(ctx, 0x060a, 1, (unsigned short*)&position) != 1){
-        return;
-    }
+    int position = 0;
+    *((unsigned short*)&position + 1) = data[0];
+    *(unsigned short*)&position = data[1];
     position = (position - 100) * 90 / (1150 - 100);
     if(alias == 200){
         digits[0].tx->ActualPosition = position;
@@ -117,14 +129,57 @@ void InspireTX(modbus_t* const ctx, int const alias){
     }
 }
 
+RS485::RS485(int const order, char const* deviceR, char const* deviceS, long const period){
+    this->order = order;
+    alias2type = rs485alias2type[order];
+    if(alias2type.size() == 0){
+        return;
+    }
+    printf("rs485s[%d]\n", order);
+    auto itr = alias2type.begin();
+    while(itr != alias2type.end()){
+        printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
+        itr++;
+    }
+    device = nullptr;
+    this->deviceR = (char*)malloc(strlen(deviceR) + 1);
+    this->deviceS = (char*)malloc(strlen(deviceS) + 1);
+    strcpy(this->deviceR, deviceR);
+    strcpy(this->deviceS, deviceS);
+    baudrate = std::numeric_limits<int>::max();
+    this->period = period;
+    rxSwap = nullptr;
+    txSwap = nullptr;
+    ctx = nullptr;
+    fdR = -1;
+    fdS = -1;
+    pth = 0;
+    leftRX = rightRX = leftTX = rightTX = nullptr;
+}
+
 RS485::RS485(int const order, char const* device){
     this->order = order;
+    alias2type = rs485alias2type[order];
+    if(alias2type.size() == 0){
+        return;
+    }
+    printf("rs485s[%d]\n", order);
+    auto itr = alias2type.begin();
+    while(itr != alias2type.end()){
+        printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
+        itr++;
+    }
     this->device = (char*)malloc(strlen(device) + 1);
+    deviceR = nullptr;
+    deviceS = nullptr;
     strcpy(this->device, device);
     baudrate = configXML->baudrate("RS485", order);
-    alias2type = rs485Alias2type[order];
     period = configXML->period("RS485", order);
+    rxSwap = nullptr;
+    txSwap = nullptr;
     ctx = nullptr;
+    fdR = -1;
+    fdS = -1;
     pth = 0;
     leftRX = rightRX = leftTX = rightTX = nullptr;
 }
@@ -133,27 +188,62 @@ int RS485::config(){
     if(alias2type.size() == 0){
         return 0;
     }
-    ctx = modbus_new_rtu(device, baudrate, 'N', 8, 1);
+    if(device == nullptr){
+        if(access(deviceR, F_OK) == 0 && remove(deviceR) != 0){
+            printf("removing %s failed\n", deviceR);
+            return -1;
+        }
+        if(access(deviceS, F_OK) == 0 && remove(deviceS) != 0){
+            printf("removing %s failed\n", deviceS);
+            return -1;
+        }
+        if(mkfifo(deviceR, 0666) != 0){
+            printf("creating %s failed\n", deviceR);
+            return -1;
+        }
+        if(mkfifo(deviceS, 0666) != 0){
+            printf("creating %s failed\n", deviceS);
+            return -1;
+        }
+        ctx = modbus_new_ipc(deviceR, deviceS);
+    }else{
+        ctx = modbus_new_rtu(device, baudrate, 'N', 8, 1);
+    }
     if(ctx == nullptr){
         return -1;
     }
-    modbus_set_response_timeout(ctx, 1, 500000);
+    modbus_set_response_timeout(ctx, 0, 24000);
+    if(device == nullptr){
+        fdS = open(deviceS, O_RDONLY | O_NDELAY | O_CLOEXEC);
+        if(fdS < 0){
+            printf("opening %s failed\n", deviceS);
+            return -1;
+        }
+    }
     if(modbus_connect(ctx) != 0){
         modbus_free(ctx);
         ctx = nullptr;
         return -1;
     }
+    if(device == nullptr){
+        fdR = open(deviceR, O_WRONLY | O_CLOEXEC);
+        if(fdR < 0){
+            printf("opening %s failed\n", deviceR);
+            return -1;
+        }
+    }
     rxSwap = new SwapList(dofEffector * sizeof(DigitRxData));
     txSwap = new SwapList(dofEffector * sizeof(DigitTxData));
+    int slave = 0;
     auto itr = alias2type.find(200);
     if(itr != alias2type.end()){
         int i = 0;
         while(i < dofLeftEffector){
-            if(digits[i].init("RS485", order, 200, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
+            if(digits[i].init("RS485", order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
             }
-            if(digits[i].config("RS485", order, rxSwap, txSwap) != 0){
+            if(digits[i].config("RS485", order, 0, rxSwap, txSwap) != 0){
                 printf("digits[%d] config failed\n", i);
                 return -1;
             }
@@ -168,16 +258,17 @@ int RS485::config(){
         }else{
             ;
         }
+        slave++;
     }
     itr = alias2type.find(201);
     if(itr != alias2type.end()){
         int i = dofLeftEffector;
         while(i < dofEffector){
-            if(digits[i].init("RS485", order, 201, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
+            if(digits[i].init("RS485", order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
             }
-            if(digits[i].config("RS485", order, rxSwap, txSwap) != 0){
+            if(digits[i].config("RS485", order, 0, rxSwap, txSwap) != 0){
                 printf("digits[%d] config failed\n", i);
                 return -1;
             }
@@ -192,20 +283,24 @@ int RS485::config(){
         }else{
             ;
         }
+        slave++;
     }
     return 0;
 }
 
 void* RS485::rxtx(void* arg){
     RS485* rs485 = (RS485*)arg;
-    printf("rs485s[%d] device %s baudrate %d, period %ld\n", rs485->order, rs485->device, rs485->baudrate, rs485->period);
+    if(rs485->baudrate == std::numeric_limits<int>::max()){
+        printf("rs485s[%d], deviceR %s, deviceS %s, period %ld\n", rs485->order, rs485->deviceR, rs485->deviceS, rs485->period);
+    }else{
+        printf("rs485s[%d], device %s, baudrate %d, period %ld\n", rs485->order, rs485->device, rs485->baudrate, rs485->period);
+    }
     struct timespec currentTime, wakeupTime, step{0, 6 * rs485->period / 100};
     while(step.tv_nsec >= NSEC_PER_SEC){
         step.tv_nsec -= NSEC_PER_SEC;
         step.tv_sec++;
     }
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
-    bool sleep = true;
     while(true){
         if(rs485->leftRX != nullptr){
             rs485->leftRX(rs485->ctx, 200);
@@ -220,7 +315,7 @@ void* RS485::rxtx(void* arg){
             wakeupTime.tv_nsec -= NSEC_PER_SEC;
             wakeupTime.tv_sec++;
         }
-        sleep = true;
+        bool sleep = true;
         do{
             if(sleep){
                 nanosleep(&step, nullptr);
@@ -251,6 +346,7 @@ int RS485::run(){
         printf("creating rs485s[%d] rxtx thread failed\n", order);
         return -1;
     }
+    printf("rs485s[%d] rxtx\n", order);
     return 0;
 }
 
@@ -258,16 +354,30 @@ RS485::~RS485(){
     if(pth > 0){
         pthread_cancel(pth);
     }
+    if(fdR > -1){
+        close(fdR);
+    }
+    if(fdS > -1){
+        close(fdS);
+    }
+    if(ctx != nullptr){
+        modbus_close(ctx);
+        modbus_free(ctx);
+    }
     if(rxSwap != nullptr){
         delete rxSwap;
     }
     if(txSwap != nullptr){
         delete txSwap;
     }
-    if(ctx != nullptr){
-        modbus_close(ctx);
-        modbus_free(ctx);
+    if(device != nullptr){
+        free(device);
     }
-    free(device);
+    if(deviceR != nullptr){
+        free(deviceR);
+    }
+    if(deviceS != nullptr){
+        free(deviceS);
+    }
 }
 }
