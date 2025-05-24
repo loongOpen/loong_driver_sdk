@@ -1,36 +1,29 @@
 cmake_minimum_required(VERSION 3.10)
-project(driver_test VERSION 3.6.0 LANGUAGES C CXX)
+project(driver_test VERSION 3.6.0 LANGUAGES CXX)
 option(ARM64 "aarch64" OFF)
 if(ARM64)
     set(march aarch64)
 else(ARM64)
     set(march x86_64)
 endif(ARM64)
-set(CMAKE_C_COMPILER ${march}-linux-gnu-gcc)
 set(CMAKE_CXX_COMPILER ${march}-linux-gnu-g++)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 configure_file(version.h.in version.h)
-add_library(ethercat_${march} SHARED ethercat/lib/common.c ethercat/lib/domain.c ethercat/lib/master.c ethercat/lib/reg_request.c ethercat/lib/sdo_request.c ethercat/lib/slave_config.c ethercat/lib/soe_request.c ethercat/lib/voe_handler.c)
-set_target_properties(ethercat_${march} PROPERTIES NO_SONAME ON)
-set_target_properties(ethercat_${march} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}")
-target_include_directories(ethercat_${march} PUBLIC ${PROJECT_SOURCE_DIR}/ethercat)
-add_library(modbus_${march} SHARED modbus/src/modbus.c modbus/src/modbus-data.c modbus/src/modbus-ipc.c modbus/src/modbus-rtu.c)
-set_target_properties(modbus_${march} PROPERTIES NO_SONAME ON)
-set_target_properties(modbus_${march} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}")
-target_include_directories(modbus_${march} PUBLIC ${PROJECT_SOURCE_DIR}/modbus ${PROJECT_SOURCE_DIR}/modbus/include)
-add_library(tinyxml2_${march} SHARED tinyxml2/src/tinyxml2.cpp)
-set_target_properties(tinyxml2_${march} PROPERTIES NO_SONAME ON)
-set_target_properties(tinyxml2_${march} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}")
-target_include_directories(tinyxml2_${march} PUBLIC ${PROJECT_SOURCE_DIR}/tinyxml2/include)
+add_library(ethercat SHARED IMPORTED)
+set_target_properties(ethercat PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat/lib/libethercat_${march}.so)
+add_library(modbus SHARED IMPORTED)
+set_target_properties(modbus PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/lib/libmodbus_${march}.so)
+add_library(tinyxml2 SHARED IMPORTED)
+set_target_properties(tinyxml2 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/lib/libtinyxml2_${march}.so)
 add_library(loong_driver_sdk_${march} SHARED common.cpp config_xml.cpp rs232.cpp rs485.cpp ecat.cpp loong_driver_sdk.cpp)
 set_target_properties(loong_driver_sdk_${march} PROPERTIES NO_SONAME ON)
 target_include_directories(loong_driver_sdk_${march} PUBLIC
     ${PROJECT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}/ethercat/include
-    ${PROJECT_SOURCE_DIR}/modbus/include
-    ${PROJECT_SOURCE_DIR}/tinyxml2/include
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat/include
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/include
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/include
 )
-target_link_libraries(loong_driver_sdk_${march} PUBLIC ethercat_${march} modbus_${march} tinyxml2_${march} pthread)
+target_link_libraries(loong_driver_sdk_${march} PUBLIC ethercat modbus tinyxml2 pthread)
 add_executable(driver_test_${march} driver_test.cpp)
 target_link_libraries(driver_test_${march} PUBLIC loong_driver_sdk_${march})
