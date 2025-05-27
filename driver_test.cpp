@@ -1,4 +1,4 @@
-﻿/* Copyright 2025 国家地方共建人形机器人创新中心/人形机器人（上海）有限公司
+﻿/* Copyright 2025 人形机器人（上海）有限公司
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

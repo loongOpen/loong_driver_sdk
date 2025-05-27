@@ -1,4 +1,4 @@
-﻿/* Copyright 2025 国家地方共建人形机器人创新中心/人形机器人（上海）有限公司
+﻿/* Copyright 2025 人形机器人（上海）有限公司
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,9 +83,9 @@ void changingTekTX(modbus_t* const ctx, int const alias){
 }
 
 unsigned int const TargetPosRegs[] = {0x05d8, 0x05d6, 0x05d4, 0x05d2, 0x05d0, 0x05ce};
-unsigned short targetPositions[] = {0, 0, 0, 0, 0, 0};
 
 void InspireRX(modbus_t* const ctx, int const alias){
+    unsigned short targetPositions[] = {0, 0, 0, 0, 0, 0};
     int i = 0, j = 0;
     if(alias == 200){
         i = 0;
@@ -100,19 +100,21 @@ void InspireRX(modbus_t* const ctx, int const alias){
     j = 0;
     while(j < 6){
         modbus_write_register(ctx, TargetPosRegs[j], targetPositions[j]);
+        usleep(2000);
         j++;
     }
 }
 
 unsigned int const ActualPosRegs[] = {0x0614, 0x0612, 0x0610, 0x060e, 0x060c, 0x060a};
-unsigned short actualPositions[] = {0, 0, 0, 0, 0, 0};
-int readResults[] = {0, 0, 0, 0, 0, 0};
 
 void InspireTX(modbus_t* const ctx, int const alias){
+    unsigned short actualPositions[] = {0, 0, 0, 0, 0, 0};
+    int readResults[] = {0, 0, 0, 0, 0, 0};
     modbus_set_slave(ctx, alias);
     int i = 0, j = 0;
     while(j < 6){
         readResults[j] = modbus_read_registers(ctx, ActualPosRegs[j], 1, actualPositions + j);
+        usleep(2000);
         j++;
     }
     if(alias == 200){
