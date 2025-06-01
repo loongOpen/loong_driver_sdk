@@ -850,6 +850,7 @@
         <RatedCurrent>31.5</RatedCurrent>
         <TorqueConstant>0.160588517</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>60</RatedTorque>
         <MaximumTorque>320</MaximumTorque>
         <MinimumPosition>-0.174532925</MinimumPosition>
         <MaximumPosition>0.436332325</MaximumPosition>
@@ -863,6 +864,7 @@
         <RatedCurrent>21</RatedCurrent>
         <TorqueConstant>0.14611213</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>40</RatedTorque>
         <MaximumTorque>192</MaximumTorque>
         <MinimumPosition>-0.69813172</MinimumPosition>
         <MaximumPosition>0.69813172</MaximumPosition>
@@ -876,6 +878,7 @@
         <RatedCurrent>35</RatedCurrent>
         <TorqueConstant>0.0296</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>12000</MaximumTorque>
         <MinimumPosition>-0.019</MinimumPosition>
         <MaximumPosition>0.057</MaximumPosition>
@@ -889,6 +892,7 @@
         <RatedCurrent>35</RatedCurrent>
         <TorqueConstant>0.0296</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>12000</MaximumTorque>
         <MinimumPosition>-0.015</MinimumPosition>
         <MaximumPosition>0.061</MaximumPosition>
@@ -902,6 +906,7 @@
         <RatedCurrent>20</RatedCurrent>
         <TorqueConstant>0.02032</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>5000</MaximumTorque>
         <MinimumPosition>-0.024</MinimumPosition>
         <MaximumPosition>0.047</MaximumPosition>
@@ -915,6 +920,7 @@
         <RatedCurrent>20</RatedCurrent>
         <TorqueConstant>0.02032</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>5000</MaximumTorque>
         <MinimumPosition>-0.024</MinimumPosition>
         <MaximumPosition>0.047</MaximumPosition>
@@ -928,6 +934,7 @@
         <RatedCurrent>31.5</RatedCurrent>
         <TorqueConstant>0.160588517</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>60</RatedTorque>
         <MaximumTorque>320</MaximumTorque>
         <MinimumPosition>-0.436332325</MinimumPosition>
         <MaximumPosition>0.174532925</MaximumPosition>
@@ -941,6 +948,7 @@
         <RatedCurrent>21</RatedCurrent>
         <TorqueConstant>0.14611213</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>40</RatedTorque>
         <MaximumTorque>192</MaximumTorque>
         <MinimumPosition>-0.69813172</MinimumPosition>
         <MaximumPosition>0.69813172</MaximumPosition>
@@ -954,6 +962,7 @@
         <RatedCurrent>35</RatedCurrent>
         <TorqueConstant>0.0296</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>12000</MaximumTorque>
         <MinimumPosition>-0.019</MinimumPosition>
         <MaximumPosition>0.057</MaximumPosition>
@@ -967,6 +976,7 @@
         <RatedCurrent>35</RatedCurrent>
         <TorqueConstant>0.0296</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>12000</MaximumTorque>
         <MinimumPosition>-0.015</MinimumPosition>
         <MaximumPosition>0.061</MaximumPosition>
@@ -980,6 +990,7 @@
         <RatedCurrent>20</RatedCurrent>
         <TorqueConstant>0.02032</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>5000</MaximumTorque>
         <MinimumPosition>-0.024</MinimumPosition>
         <MaximumPosition>0.047</MaximumPosition>
@@ -993,6 +1004,7 @@
         <RatedCurrent>20</RatedCurrent>
         <TorqueConstant>0.02032</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>5000</MaximumTorque>
         <MinimumPosition>-0.024</MinimumPosition>
         <MaximumPosition>0.047</MaximumPosition>
@@ -1006,6 +1018,7 @@
         <RatedCurrent>8</RatedCurrent>
         <TorqueConstant>0.096</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>182</MaximumTorque>
         <MinimumPosition>-2.96705981</MinimumPosition>
         <MaximumPosition>2.96705981</MaximumPosition>
@@ -1019,6 +1032,7 @@
         <RatedCurrent>8</RatedCurrent>
         <TorqueConstant>0.096</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>182</MaximumTorque>
         <MinimumPosition>-1.832595765</MinimumPosition>
         <MaximumPosition>1.832595765</MaximumPosition>
@@ -1032,6 +1046,7 @@
         <RatedCurrent>8</RatedCurrent>
         <TorqueConstant>0.096</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>182</MaximumTorque>
         <MinimumPosition>-2.96705981</MinimumPosition>
         <MaximumPosition>2.96705981</MaximumPosition>
@@ -1045,6 +1060,7 @@
         <RatedCurrent>13</RatedCurrent>
         <TorqueConstant>0.082</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>4000</MaximumTorque>
         <MinimumPosition>0</MinimumPosition>
         <MaximumPosition>0.045</MaximumPosition>
@@ -1058,6 +1074,7 @@
         <RatedCurrent>5</RatedCurrent>
         <TorqueConstant>0.088</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>66</MaximumTorque>
         <MinimumPosition>-2.96705981</MinimumPosition>
         <MaximumPosition>2.96705981</MaximumPosition>
@@ -1071,6 +1088,7 @@
         <RatedCurrent>5</RatedCurrent>
         <TorqueConstant>0.074</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>600</MaximumTorque>
         <MinimumPosition>-0.019</MinimumPosition>
         <MaximumPosition>0.019</MaximumPosition>
@@ -1084,9 +1102,10 @@
         <RatedCurrent>5</RatedCurrent>
         <TorqueConstant>0.074</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>600</MaximumTorque>
         <MinimumPosition>-0.019</MinimumPosition>
-	<MaximumPosition>0.019</MaximumPosition>
+        <MaximumPosition>0.019</MaximumPosition>
     </Motor>
     <Motor limb="3" motor="0" alias="20">
         <Polarity>-1</Polarity>
@@ -1097,6 +1116,7 @@
         <RatedCurrent>8</RatedCurrent>
         <TorqueConstant>0.096</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>182</MaximumTorque>
         <MinimumPosition>-2.96705981</MinimumPosition>
         <MaximumPosition>2.96705981</MaximumPosition>
@@ -1110,6 +1130,7 @@
         <RatedCurrent>8</RatedCurrent>
         <TorqueConstant>0.096</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>182</MaximumTorque>
         <MinimumPosition>-1.832595765</MinimumPosition>
         <MaximumPosition>1.832595765</MaximumPosition>
@@ -1123,6 +1144,7 @@
         <RatedCurrent>8</RatedCurrent>
         <TorqueConstant>0.096</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>182</MaximumTorque>
         <MinimumPosition>-2.96705981</MinimumPosition>
         <MaximumPosition>2.96705981</MaximumPosition>
@@ -1136,6 +1158,7 @@
         <RatedCurrent>13</RatedCurrent>
         <TorqueConstant>0.082</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>4000</MaximumTorque>
         <MinimumPosition>0</MinimumPosition>
         <MaximumPosition>0.045</MaximumPosition>
@@ -1149,6 +1172,7 @@
         <RatedCurrent>5</RatedCurrent>
         <TorqueConstant>0.088</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>66</MaximumTorque>
         <MinimumPosition>-2.96705981</MinimumPosition>
         <MaximumPosition>2.96705981</MaximumPosition>
@@ -1162,6 +1186,7 @@
         <RatedCurrent>5</RatedCurrent>
         <TorqueConstant>0.074</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>600</MaximumTorque>
         <MinimumPosition>-0.019</MinimumPosition>
         <MaximumPosition>0.019</MaximumPosition>
@@ -1175,6 +1200,7 @@
         <RatedCurrent>5</RatedCurrent>
         <TorqueConstant>0.074</TorqueConstant>
         <GearEfficiency>0.8</GearEfficiency>
+        <RatedTorque>0</RatedTorque>
         <MaximumTorque>600</MaximumTorque>
         <MinimumPosition>-0.019</MinimumPosition>
         <MaximumPosition>0.019</MaximumPosition>
@@ -1188,6 +1214,7 @@
         <RatedCurrent>5</RatedCurrent>
         <TorqueConstant>0.194899742</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>42</RatedTorque>
         <MaximumTorque>121</MaximumTorque>
         <MinimumPosition>-0.69813172</MinimumPosition>
         <MaximumPosition>0.69813172</MaximumPosition>
@@ -1201,6 +1228,7 @@
         <RatedCurrent>9</RatedCurrent>
         <TorqueConstant>0.123673975</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>5</RatedTorque>
         <MaximumTorque>26</MaximumTorque>
         <MinimumPosition>-0.69813172</MinimumPosition>
         <MaximumPosition>0.69813172</MaximumPosition>
@@ -1214,6 +1242,7 @@
         <RatedCurrent>9</RatedCurrent>
         <TorqueConstant>0.123673975</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>5</RatedTorque>
         <MaximumTorque>26</MaximumTorque>
         <MinimumPosition>-0.69813172</MinimumPosition>
         <MaximumPosition>0.69813172</MaximumPosition>

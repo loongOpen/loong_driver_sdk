@@ -1,4 +1,4 @@
-﻿/* Copyright 2025 人形机器人（上海）有限公司
+/* Copyright 2025 人形机器人（上海）有限公司
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ struct DriverTxData{
 
 class MotorParameters{
 public:
-    float polarity, countBias, encoderResolution, gearRatioTor, gearRatioPosVel, ratedCurrent, torqueConstant, maximumTorque, minimumPosition, maximumPosition;
+    float polarity, countBias, encoderResolution, gearRatioTor, gearRatioPosVel, ratedCurrent, torqueConstant, ratedTorque, maximumTorque, minimumPosition, maximumPosition;
     SDOMsg sdoTemplate, temperatureSDO, clearErrorSDO;
     MotorParameters();
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);

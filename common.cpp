@@ -1,4 +1,4 @@
-﻿/* Copyright 2025 人形机器人（上海）有限公司
+/* Copyright 2025 人形机器人（上海）有限公司
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ SwapList::~SwapList(){
 
 MotorParameters::MotorParameters(){
     countBias = 0.0;
-    polarity = encoderResolution = gearRatioTor = gearRatioPosVel = ratedCurrent = torqueConstant = maximumTorque = maximumPosition = 1.0;
+    polarity = encoderResolution = gearRatioTor = gearRatioPosVel = ratedCurrent = torqueConstant = ratedTorque = maximumTorque = maximumPosition = 1.0;
     minimumPosition = -1.0;
 }
 
@@ -86,6 +86,7 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
     gearRatioPosVel   = configXML->readMotorParameter(alias, "GearRatioPosVel");
     ratedCurrent      = configXML->readMotorParameter(alias, "RatedCurrent");
     torqueConstant    = configXML->readMotorParameter(alias, "TorqueConstant");
+    ratedTorque       = configXML->readMotorParameter(alias, "RatedTorque");
     maximumTorque     = configXML->readMotorParameter(alias, "MaximumTorque");
     minimumPosition   = configXML->readMotorParameter(alias, "MinimumPosition");
     maximumPosition   = configXML->readMotorParameter(alias, "MaximumPosition");
@@ -96,6 +97,7 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
         gearRatioPosVel   == std::numeric_limits<float>::min() ||
         ratedCurrent      == std::numeric_limits<float>::min() ||
         torqueConstant    == std::numeric_limits<float>::min() ||
+        ratedTorque       == std::numeric_limits<float>::min() ||
         maximumTorque     == std::numeric_limits<float>::min() ||
         minimumPosition   == std::numeric_limits<float>::min() ||
         maximumPosition   == std::numeric_limits<float>::min()){
