@@ -44,15 +44,22 @@ extern WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
 extern WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
 extern WrapperPair<ConverterRxData, ConverterTxData, EffectorParameters> converters[2];
 extern WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
-extern unsigned short processor;
+extern unsigned short processorECAT;
 extern std::vector<unsigned short> maxCurrent;
-extern std::atomic<bool> ecatStalled;
-
+extern std::atomic<int> ecatStalled;
 extern std::vector<RS485>* rs485sPtr;
-
 WrapperPair<HandRxData, HandTxData, EffectorParameters> hands[2];
 
 ECAT::ECAT(int const order){
+    domains = nullptr;
+    domainPtrs = nullptr;
+    domainSizes = nullptr;
+    rxPDOSwaps = nullptr;
+    txPDOSwaps = nullptr;
+    sdoRequestable = false;
+    master = nullptr;
+    fd = -1;
+    pth = 0;
     this->order = order;
     alias2type = ecatAlias2type[order];
     if(alias2type.size() == 0){
@@ -64,19 +71,10 @@ ECAT::ECAT(int const order){
         printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
         itr++;
     }
-    period = configXML->period("ECAT", order);
-    dc = configXML->dc("ECAT", order);
+    dc = configXML->feature("ECAT", order, "dc");
+    period = configXML->attribute("ECAT", order, "period");
     alias2domain = ecatAlias2domain[order];
     domainDivision = ecatDomainDivision[order];
-    domains = nullptr;
-    domainPtrs = nullptr;
-    domainSizes = nullptr;
-    rxPDOSwaps = nullptr;
-    txPDOSwaps = nullptr;
-    sdoRequestable = false;
-    master = nullptr;
-    fd = -1;
-    pth = 0;
     while(init() < 0){
         clean();
     }
@@ -273,6 +271,7 @@ int ECAT::config(){
         }
         i++;
     }
+    ec_slave_config_t* refClockSlaveConfig = nullptr;
     auto itr = alias2slave.begin();
     while(itr != alias2slave.end()){
         int alias = itr->first, slave = itr->second, domain = alias2domain.find(alias)->second;
@@ -280,8 +279,7 @@ int ECAT::config(){
         printf("master %d, domain %d, slave %d, alias %d, category %s, type %s\n", order, domain, slave, alias, category.c_str(), type.c_str());
         while(requestState(slave, "PREOP") < 0);
         tinyxml2::XMLElement* deviceXML = configXML->busDevice("ECAT", type.c_str());
-        std::vector<std::vector<std::string>> rxPDOs = configXML->pdos(deviceXML, "RxPDOs");
-        std::vector<std::vector<std::string>> txPDOs = configXML->pdos(deviceXML, "TxPDOs");
+        std::vector<std::vector<std::string>> rxPDOs = configXML->pdos(deviceXML, "RxPDOs"), txPDOs = configXML->pdos(deviceXML, "TxPDOs");
         int rxPDOCount = 0, txPDOCount = 0;
         i = 0;
         while(i < rxPDOs.size()){
@@ -302,8 +300,8 @@ int ECAT::config(){
                 std::vector<std::string> entry = configXML->entry(deviceXML, rxPDOs[i][j].c_str());
                 pdoEntries[k] = ec_pdo_entry_info_t{
                     (unsigned short)strtoul(entry[1].c_str(), nullptr, 16),
-                    (unsigned char) strtoul(entry[2].c_str(), nullptr, 16),
-                    (unsigned char) strtoul(entry[4].c_str(), nullptr, 10)
+                    (unsigned  char)strtoul(entry[2].c_str(), nullptr, 16),
+                    (unsigned  char)strtoul(entry[4].c_str(), nullptr, 10)
                 };
                 j++;
                 k++;
@@ -317,8 +315,8 @@ int ECAT::config(){
                 std::vector<std::string> entry = configXML->entry(deviceXML, txPDOs[i][j].c_str());
                 pdoEntries[k] = ec_pdo_entry_info_t{
                     (unsigned short)strtoul(entry[1].c_str(), nullptr, 16),
-                    (unsigned char) strtoul(entry[2].c_str(), nullptr, 16),
-                    (unsigned char) strtoul(entry[4].c_str(), nullptr, 10)
+                    (unsigned  char)strtoul(entry[2].c_str(), nullptr, 16),
+                    (unsigned  char)strtoul(entry[4].c_str(), nullptr, 10)
                 };
                 j++;
                 k++;
@@ -368,7 +366,7 @@ int ECAT::config(){
             index[1] = 0x1c13;
             k = 0;
             while(k < rxPDOs.size() + txPDOs.size()){
-                printf("\t%x, %u, %lu\n", pdoInfos[k].index, pdoInfos[k].n_entries, (unsigned long)pdoInfos[k].entries);
+                // printf("\t%x, %u, %lu\n", pdoInfos[k].index, pdoInfos[k].n_entries, (unsigned long)pdoInfos[k].entries);
                 index[2 + k] = pdoInfos[k].index;
                 k++;
             }
@@ -417,18 +415,18 @@ int ECAT::config(){
             printf("\tobtaining slave config failed\n");
             return -1;
         }
-        k = 0;
+        /* k = 0;
         while(k < 5){
             printf("\t%x, %d, %u, %lu, %d\n", syncInfos[k].index, syncInfos[k].dir, syncInfos[k].n_pdos, (unsigned long)syncInfos[k].pdos, syncInfos[k].watchdog_mode);
             k++;
-        }
+        } */
         if(ecrt_slave_config_pdos(slaveConfig, EC_END, syncInfos) < 0){
             printf("\tconfiguring PDOs failed\n");
             return -1;
         }
         unsigned int bitPosition = 0;
         k = 0;
-        printf("\t%x, %x, %u\n", pdoEntries[k].index, pdoEntries[k].subindex, pdoEntries[k].bit_length);
+        // printf("\t%x, %x, %u\n", pdoEntries[k].index, pdoEntries[k].subindex, pdoEntries[k].bit_length);
         int rxPDOOffset = ecrt_slave_config_reg_pdo_entry(slaveConfig, pdoEntries[k].index, pdoEntries[k].subindex, domains[domain], &bitPosition);
         if(rxPDOOffset < 0){
             printf("\tregistering RxPDO entry failed\n");
@@ -436,14 +434,14 @@ int ECAT::config(){
         }
         k++;
         while(k < rxPDOCount){
-            printf("\t%x, %x, %u\n", pdoEntries[k].index, pdoEntries[k].subindex, pdoEntries[k].bit_length);
+            // printf("\t%x, %x, %u\n", pdoEntries[k].index, pdoEntries[k].subindex, pdoEntries[k].bit_length);
             if(ecrt_slave_config_reg_pdo_entry(slaveConfig, pdoEntries[k].index, pdoEntries[k].subindex, domains[domain], &bitPosition) < 0){
                 printf("\tregistering RxPDO entry failed\n");
                 return -1;
             }
             k++;
         }
-        printf("\t%x, %x, %u\n", pdoEntries[k].index, pdoEntries[k].subindex, pdoEntries[k].bit_length);
+        // printf("\t%x, %x, %u\n", pdoEntries[k].index, pdoEntries[k].subindex, pdoEntries[k].bit_length);
         int txPDOOffset = ecrt_slave_config_reg_pdo_entry(slaveConfig, pdoEntries[k].index, pdoEntries[k].subindex, domains[domain], &bitPosition);
         if(txPDOOffset < 0){
             printf("\tregistering TxPDO entry failed\n");
@@ -451,7 +449,7 @@ int ECAT::config(){
         }
         k++;
         while(k < rxPDOCount + txPDOCount){
-            printf("\t%x, %x, %u\n", pdoEntries[k].index, pdoEntries[k].subindex, pdoEntries[k].bit_length);
+            // printf("\t%x, %x, %u\n", pdoEntries[k].index, pdoEntries[k].subindex, pdoEntries[k].bit_length);
             if(ecrt_slave_config_reg_pdo_entry(slaveConfig, pdoEntries[k].index, pdoEntries[k].subindex, domains[domain], &bitPosition) < 0){
                 printf("\tregistering TxPDO entry failed\n");
                 return -1;
@@ -466,7 +464,7 @@ int ECAT::config(){
         }
         ecrt_sdo_request_timeout(sdoHandler, 500);
         if(category == "driver"){
-            if(drivers[alias - 1].init("ECAT", order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
+            if(drivers[alias - 1].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
                 printf("\tdrivers[%d] init failed\n", alias - 1);
                 return -1;
             }
@@ -477,11 +475,14 @@ int ECAT::config(){
             }else if(alias == 201){
                 i = dofLeftEffector;
                 j = dofEffector;
+            }else{
+                printf("\tinvalid effector alias %d\n", alias);
+                return -1;
             }
             k = 0;
             if(type == "Tsinghua"){
                 while(i < j){
-                    if(digits[i].init("ECAT", order, domain, slave, alias, type,
+                    if(digits[i].init("ECAT", 0, order, domain, slave, alias, type,
                         rxPDOOffset +     7 * sizeof(unsigned short) + k * sizeof(DigitRxData),
                         txPDOOffset + 5 * 4 * sizeof(unsigned short) + k * sizeof(DigitTxData), sdoHandler) != 0){
                         printf("\tdigits[%d] init failed\n", i);
@@ -490,30 +491,31 @@ int ECAT::config(){
                     i++;
                     k++;
                 }
-                if(hands[alias - 200].init("ECAT", order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
+                if(hands[alias - 200].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
                     printf("\thands[%d] init failed\n", alias - 200);
                     return -1;
                 }
             }else if(type == "Ruiyan_1dof" || type == "Ruiyan_6dof"){
-                if(converters[alias - 200].init("ECAT", order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
+                if(converters[alias - 200].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
                     printf("\tconverters[%d] init failed\n", alias - 200);
                     return -1;
                 }
-            }else{
-                ;
             }
         }else if(category == "sensor"){
             if(type == "LinkTouch"){
-                if(sensors[alias - 220].init("ECAT", order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
+                if(sensors[alias - 220].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
                     printf("\tsensors[%d] init failed\n", alias - 220);
                     return -1;
                 }
-            }else{
-                ;
             }
         }
         if(dc){
             ecrt_slave_config_dc(slaveConfig, 0x0300, domainDivision[domain] * period, domainDivision[domain] * period / 2, 0, 0);
+            if(refClockSlaveConfig == nullptr){
+                refClockSlaveConfig = slaveConfig;
+                ecrt_master_select_reference_clock(master, refClockSlaveConfig);
+                printf("\tslave %d:%d was selected to provide the reference clock\n", order, slave);
+            }
         }
         itr++;
     }
@@ -551,7 +553,7 @@ int ECAT::config(){
             case 0:
                 break;
             case -1:
-                printf("drivers[%d] config failed\n", j);
+                printf("\tdrivers[%d] config failed\n", j);
                 return -1;
                 break;
             }
@@ -560,7 +562,7 @@ int ECAT::config(){
         j = 0;
         while(j < dofEffector){
             if(digits[j].config("ECAT", order, i, rxPDOSwaps[i], txPDOSwaps[i]) == -1){
-                printf("digits[%d] config failed\n", j);
+                printf("\tdigits[%d] config failed\n", j);
                 return -1;
             }
             j++;
@@ -573,48 +575,45 @@ int ECAT::config(){
             case 1:
                 break;
             case 0:
-                hands[j].rx->CurrentLimitThumb      = 1000;
-                hands[j].rx->CurrentLimitThumbBend  = 1000;
-                hands[j].rx->CurrentLimitForefinger = 1000;
-                hands[j].rx->CurrentLimitMiddle     = 1000;
-                hands[j].rx->CurrentLimitRing       = 1000;
-                hands[j].rx->CurrentLimitLittle     = 1000;
-                hands[j].rx->TargetSpeedThumb       = 100;
-                hands[j].rx->TargetSpeedThumbBend   = 100;
-                hands[j].rx->TargetSpeedForefinger  = 100;
-                hands[j].rx->TargetSpeedMiddle      = 100;
-                hands[j].rx->TargetSpeedRing        = 100;
-                hands[j].rx->TargetSpeedLittle      = 100;
-                rxPDOSwaps[i]->advanceNodePtr();
-                hands[j].rx->CurrentLimitThumb      = 1000;
-                hands[j].rx->CurrentLimitThumbBend  = 1000;
-                hands[j].rx->CurrentLimitForefinger = 1000;
-                hands[j].rx->CurrentLimitMiddle     = 1000;
-                hands[j].rx->CurrentLimitRing       = 1000;
-                hands[j].rx->CurrentLimitLittle     = 1000;
-                hands[j].rx->TargetSpeedThumb       = 100;
-                hands[j].rx->TargetSpeedThumbBend   = 100;
-                hands[j].rx->TargetSpeedForefinger  = 100;
-                hands[j].rx->TargetSpeedMiddle      = 100;
-                hands[j].rx->TargetSpeedRing        = 100;
-                hands[j].rx->TargetSpeedLittle      = 100;
-                rxPDOSwaps[i]->advanceNodePtr();
-                hands[j].rx->CurrentLimitThumb      = 1000;
-                hands[j].rx->CurrentLimitThumbBend  = 1000;
-                hands[j].rx->CurrentLimitForefinger = 1000;
-                hands[j].rx->CurrentLimitMiddle     = 1000;
-                hands[j].rx->CurrentLimitRing       = 1000;
-                hands[j].rx->CurrentLimitLittle     = 1000;
-                hands[j].rx->TargetSpeedThumb       = 100;
-                hands[j].rx->TargetSpeedThumbBend   = 100;
-                hands[j].rx->TargetSpeedForefinger  = 100;
-                hands[j].rx->TargetSpeedMiddle      = 100;
-                hands[j].rx->TargetSpeedRing        = 100;
-                hands[j].rx->TargetSpeedLittle      = 100;
-                rxPDOSwaps[i]->advanceNodePtr();
+                hands[j].rx.previous()->CurrentLimitThumb      = 1000;
+                hands[j].rx.previous()->CurrentLimitThumbBend  = 1000;
+                hands[j].rx.previous()->CurrentLimitForefinger = 1000;
+                hands[j].rx.previous()->CurrentLimitMiddle     = 1000;
+                hands[j].rx.previous()->CurrentLimitRing       = 1000;
+                hands[j].rx.previous()->CurrentLimitLittle     = 1000;
+                hands[j].rx.previous()->TargetSpeedThumb       = 100;
+                hands[j].rx.previous()->TargetSpeedThumbBend   = 100;
+                hands[j].rx.previous()->TargetSpeedForefinger  = 100;
+                hands[j].rx.previous()->TargetSpeedMiddle      = 100;
+                hands[j].rx.previous()->TargetSpeedRing        = 100;
+                hands[j].rx.previous()->TargetSpeedLittle      = 100;
+                hands[j].rx           ->CurrentLimitThumb      = 1000;
+                hands[j].rx           ->CurrentLimitThumbBend  = 1000;
+                hands[j].rx           ->CurrentLimitForefinger = 1000;
+                hands[j].rx           ->CurrentLimitMiddle     = 1000;
+                hands[j].rx           ->CurrentLimitRing       = 1000;
+                hands[j].rx           ->CurrentLimitLittle     = 1000;
+                hands[j].rx           ->TargetSpeedThumb       = 100;
+                hands[j].rx           ->TargetSpeedThumbBend   = 100;
+                hands[j].rx           ->TargetSpeedForefinger  = 100;
+                hands[j].rx           ->TargetSpeedMiddle      = 100;
+                hands[j].rx           ->TargetSpeedRing        = 100;
+                hands[j].rx           ->TargetSpeedLittle      = 100;
+                hands[j].rx.    next()->CurrentLimitThumb      = 1000;
+                hands[j].rx.    next()->CurrentLimitThumbBend  = 1000;
+                hands[j].rx.    next()->CurrentLimitForefinger = 1000;
+                hands[j].rx.    next()->CurrentLimitMiddle     = 1000;
+                hands[j].rx.    next()->CurrentLimitRing       = 1000;
+                hands[j].rx.    next()->CurrentLimitLittle     = 1000;
+                hands[j].rx.    next()->TargetSpeedThumb       = 100;
+                hands[j].rx.    next()->TargetSpeedThumbBend   = 100;
+                hands[j].rx.    next()->TargetSpeedForefinger  = 100;
+                hands[j].rx.    next()->TargetSpeedMiddle      = 100;
+                hands[j].rx.    next()->TargetSpeedRing        = 100;
+                hands[j].rx.    next()->TargetSpeedLittle      = 100;
                 break;
             case -1:
-                printf("hands[%d] config failed\n", j);
+                printf("\thands[%d] config failed\n", j);
                 return -1;
                 break;
             }
@@ -630,7 +629,7 @@ int ECAT::config(){
             case 0:
                 break;
             case -1:
-                printf("converters[%d] config failed\n", j);
+                printf("\tconverters[%d] config failed\n", j);
                 return -1;
                 break;
             }
@@ -647,7 +646,7 @@ int ECAT::config(){
             case 0:
                 break;
             case -1:
-                printf("sensors[%d] config failed\n", j);
+                printf("\tsensors[%d] config failed\n", j);
                 return -1;
                 break;
             }
@@ -661,8 +660,8 @@ int ECAT::config(){
 void* ECAT::rxtx(void* arg){
     ECAT* ecat = (ECAT*)arg;
     int domainCount = ecat->domainDivision.size(), tryCount = 0, slavesResponding = 0, alStates = 0, workingCounters[domainCount] = {0}, wcStates[domainCount] = {0};
-    printf("ecats[%d], period %ld, dc %d, domainCount %d, domainDivisions: ", ecat->order, ecat->period, ecat->dc, domainCount);
-    int i = 0;
+    printf("ecats[%d], period %ld, dc %d, domainCount %d, domainDivisions ", ecat->order, ecat->period, ecat->dc, domainCount);
+    int i = 0, previousIncompleteness = 0;
     while(i < domainCount){
         printf("%d ", ecat->domainDivision[i]);
         i++;
@@ -784,8 +783,10 @@ void* ECAT::rxtx(void* arg){
             }
         }
         if(ecat->dc){
-            clock_gettime(CLOCK_MONOTONIC, &currentTime);
-            ecrt_master_sync_reference_clock_to(ecat->master, TIMESPEC2NS(currentTime));
+            /* clock_gettime(CLOCK_MONOTONIC, &currentTime);
+            ecrt_master_sync_reference_clock_to(ecat->master, TIMESPEC2NS(currentTime)); */
+            unsigned int time = 0;
+            ecrt_master_reference_clock_time(ecat->master, &time);
             ecrt_master_sync_slave_clocks(ecat->master);
         }
         count++;
@@ -809,7 +810,7 @@ void* ECAT::rxtx(void* arg){
                 nanosleep(&step, nullptr);
             }
             clock_gettime(CLOCK_MONOTONIC, &currentTime);
-            if(sleep && (TIMESPEC2NS(wakeupTime) - TIMESPEC2NS(currentTime) < 12 * ecat->period / 100)){
+            if(sleep && (TIMESPEC2NS(wakeupTime) - TIMESPEC2NS(currentTime) < 9 * ecat->period / 100)){
                 sleep = false;
             }
         }while(TIMESPEC2NS(currentTime) < TIMESPEC2NS(wakeupTime));
@@ -827,6 +828,7 @@ void* ECAT::rxtx(void* arg){
             alStates = masterState.al_states;
             printf("master %d al_states changed to 0x%02x\n", ecat->order, alStates);
         }
+        int incompleteness = 0;
         i = 0;
         while(i < domainCount){
             if(ecat->txPDOSwaps[i] == nullptr || count % ecat->domainDivision[i] != 0){
@@ -836,15 +838,12 @@ void* ECAT::rxtx(void* arg){
             ecrt_domain_process(ecat->domains[i]);
             ecrt_domain_state(ecat->domains[i], &domainStates[i]);
             if(domainStates[i].working_counter != workingCounters[i]){
-                if(ecat->order == 0 && i == 0 && domainStates[i].working_counter < workingCounters[i]){
-                    ecatStalled.store(true);
-                }
                 workingCounters[i] = domainStates[i].working_counter;
                 printf("master %d domain %d working_counter changed to %d\n", ecat->order, i, workingCounters[i]);
             }
             if(domainStates[i].wc_state != wcStates[i]){
-                if(ecat->order == 0 && i == 0 && domainStates[i].wc_state == EC_WC_COMPLETE){
-                    ecatStalled.store(false);
+                if(ecat->order == 0 && domainStates[i].wc_state != EC_WC_COMPLETE){
+                    incompleteness++;
                 }
                 wcStates[i] = domainStates[i].wc_state;
                 printf("master %d domain %d wc_state changed to %d\n", ecat->order, i, wcStates[i]);
@@ -893,6 +892,10 @@ void* ECAT::rxtx(void* arg){
             }
             i++;
         }
+        if(incompleteness != previousIncompleteness){
+            ecatStalled.store(incompleteness);
+            previousIncompleteness = incompleteness;
+        }
     }
     return nullptr;
 }
@@ -902,18 +905,22 @@ int ECAT::run(){
         return 0;
     }
     int cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
-    if(cpu > processor){
-        cpu = processor;
-    }
-    if(pthread_create(&pth, nullptr, &rxtx, this) != 0){
-        printf("creating ecats[%d] rxtx thread failed\n", order);
-        return -1;
+    if(cpu > processorECAT){
+        cpu = processorECAT;
     }
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(cpu, &cpuset);
+    if(pthread_create(&pth, nullptr, &rxtx, this) != 0){
+        printf("creating ecats[%d] rxtx thread failed\n", order);
+        return -1;
+    }
     if(pthread_setaffinity_np(pth, sizeof(cpu_set_t), &cpuset) != 0){
         printf("setting ecats[%d] rxtx thread cpu affinity failed\n", order);
+        return -1;
+    }
+    if(pthread_detach(pth) != 0){
+        printf("detaching ecats[%d] rxtx thread failed\n", order);
         return -1;
     }
     printf("ecats[%d] rxtx on cpu %d\n", order, cpu);
@@ -929,37 +936,47 @@ int ECAT::run(){
 void ECAT::clean(){
     if(pth > 0){
         pthread_cancel(pth);
+        pth = 0;
     }
     if(fd > -1){
         close(fd);
+        fd = -1;
     }
     if(master != nullptr){
         ecrt_release_master(master);
+        master = nullptr;
     }
     int i = 0;
     while(i < domainDivision.size()){
         if(rxPDOSwaps[i] != nullptr){
             delete rxPDOSwaps[i];
+            rxPDOSwaps[i] = nullptr;
         }
         if(txPDOSwaps[i] != nullptr){
             delete txPDOSwaps[i];
+            txPDOSwaps[i] = nullptr;
         }
         i++;
     }
     if(rxPDOSwaps != nullptr){
         delete[] rxPDOSwaps;
+        rxPDOSwaps = nullptr;
     }
     if(txPDOSwaps != nullptr){
         delete[] txPDOSwaps;
+        txPDOSwaps = nullptr;
     }
     if(domainSizes != nullptr){
         delete[] domainSizes;
+        domainSizes = nullptr;
     }
     if(domainPtrs != nullptr){
         delete[] domainPtrs;
+        domainPtrs = nullptr;
     }
     if(domains != nullptr){
         delete[] domains;
+        domains = nullptr;
     }
     sleep(1);
 }

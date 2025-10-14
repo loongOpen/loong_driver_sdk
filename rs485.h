@@ -33,7 +33,7 @@ public:
     modbus_t* ctx;
     pthread_t pth;
     effectorFunction leftRX, rightRX, leftTX, rightTX;
-    RS485(int const order, char const* deviceR, char const* deviceS, long const period);
+    RS485(int const order, char const* deviceR, char const* deviceS);
     RS485(int const order, char const* device);
     int config();
     static void* rxtx(void* arg);

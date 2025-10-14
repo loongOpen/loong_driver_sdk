@@ -22,7 +22,8 @@
 int main(int argc, char** argv){
     DriverSDK::DriverSDK& driverSDK = DriverSDK::DriverSDK::instance();
     printf("loong_driver_sdk version: %s\n", driverSDK.version().c_str());
-    driverSDK.setCPU(2);
+    driverSDK.setCPU(2, "ECAT");
+    driverSDK.setCPU(2, "CAN");
     std::vector<unsigned short> maxCurr = {
         1000, 1000, 1000, 1000, 1000, 1000,
         1000, 1000, 1000, 1000, 1000, 1000,
@@ -44,7 +45,7 @@ int main(int argc, char** argv){
     driverSDK.init("configuration.xml");
     std::vector<int> activeMotors = driverSDK.getActiveMotors();
     int i = 0, j = 0, motorNr = driverSDK.getTotalMotorNr(), digitNr = driverSDK.getLeftDigitNr() + driverSDK.getRightDigitNr();;
-    printf("%d | %d: ", digitNr, motorNr);
+    printf("digitNr %d\nmotorNr %d:\t", digitNr, motorNr);
     while(i < activeMotors.size()){
         printf("%d ", activeMotors[i]);
         i++;
@@ -131,6 +132,8 @@ int main(int argc, char** argv){
         j = 0;
         while(j < motorNr){
             motorTargetData[j].pos = motorPositions[j] * std::cos(DriverSDK::Pi / 2.0 * (float)i / 3200.0);
+            motorTargetData[j].kp = 100.0;
+            motorTargetData[j].kd = 1.0;
             printf("motor%02d:\t%8.3f %8d %8d %8d\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
             j++;
         }
@@ -202,27 +205,19 @@ int main(int argc, char** argv){
         i++;
     }
     i = 0;
-    while(i < 128){
+    while(i < 6400){
         driverSDK.getDigitActual(digitActualData);
         printf("digits:\t");
         j = 0;
         while(j < digitNr){
-            if(i % 8 == 0){
-                digitTargetData[j].pos = std::abs(digitTargetData[j].pos - 90);
-            }
+            digitTargetData[j].pos = std::abs(90.0 * std::sin(2.0 * DriverSDK::Pi * (float)i / 6400.0));
             printf("%8d\t", digitActualData[j].pos);
             j++;
         }
         printf("\n");
-        j = 0;
-        while(j < 192){
-            if(i % 8 == 0){
-                driverSDK.setDigitTarget(digitTargetData);
-            }
-            driverSDK.advance();
-            usleep(4000);
-            j++;
-        }
+        driverSDK.setDigitTarget(digitTargetData);
+        driverSDK.advance();
+        usleep(4000);
         i++;
     }
     return 0;

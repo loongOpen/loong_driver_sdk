@@ -2,12 +2,6 @@
 *.so
 *.a
 *.bak
-!libtinyxml2_x86_64.a
-!libtinyxml2_aarch64.a
-!libmodbus_x86_64.a
-!libmodbus_aarch64.a
-!libethercat_x86_64.a
-!libethercat_aarch64.a
 driver_test*
 !driver_test.cpp
 !driver_test.sh

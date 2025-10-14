@@ -34,35 +34,38 @@ struct sensorStruct{
 };
 
 struct digitTargetStruct{
-    unsigned short pos;         // 0 ~ 90: relaxed ~ tense
+    unsigned short pos = 0;             // 0 ~ 90: relaxed ~ tense
 };
 
 struct digitActualStruct{
-    unsigned short pos;         // 0 ~ 90: relaxed ~ tense
+    unsigned short pos = 0;             // 0 ~ 90: relaxed ~ tense
 };
 
 struct motorTargetStruct{
-    float pos, vel, tor;
-    int enabled;                // -1: clear error, 0: disable, 1: enable
+    float pos = 0.0, vel = 0.0, tor = 0.0, kp = 0.0, kd = 0.0;
+    int enabled = 0;                    // -1: clear error; 0: disable; 1: enable; 2: damp
 };
 
 struct motorActualStruct{
-    float pos, vel, tor;
-    short temp;
-    unsigned short statusWord;  // 0: PREOP; 65535: inactive
-    unsigned short errorCode;
+    float pos = 0.0, vel = 0.0, tor = 0.0;
+    short temp = 0;
+    unsigned short statusWord = 65535;  // 0: PREOP; 65535: inactive
+    unsigned short errorCode = 0;
 };
+
+unsigned short single2half(float f);
+float half2single(unsigned short u);
 
 class motorSDOClass{
 public:
     long value;
-    int i;                      // drivers[i]
-    short state;                // -1: error; 0: pending; 1, 2: processing; 3: completed
+    int i;                              // drivers[i]
+    short state;                        // -1: error; 0: pending; 1, 2: processing; 3: completed
     unsigned short index;
     unsigned char subindex;
-    unsigned char signed_;      // 0: unsigned; 1: signed
-    unsigned char bitLength;    // 8, 16 or 32
-    unsigned char operation;    // 0: write; 1: read
+    unsigned char signed_;              // 0: unsigned; 1: signed
+    unsigned char bitLength;            // 8, 16 or 32
+    unsigned char operation;            // 0: write; 1: read
     motorSDOClass(int i);
     ~motorSDOClass();
 };
@@ -71,6 +74,7 @@ class DriverSDK{
 public:
     static DriverSDK& instance();
     void setCPU(unsigned short const cpu);
+    void setCPU(unsigned short const cpu, std::string const& bus);
     void setMaxCurr(std::vector<unsigned short> const& maxCurr);
     int setMode(std::vector<char> const& mode);
     void init(char const* xmlFile);
@@ -86,6 +90,7 @@ public:
     int getDigitActual(std::vector<digitActualStruct>& data);
     int setMotorTarget(std::vector<motorTargetStruct> const& data);
     int getMotorActual(std::vector<motorActualStruct>& data);
+    int getEncoderCount(std::vector<int>& data);
     int sendMotorSDORequest(motorSDOClass const& data);
     int recvMotorSDOResponse(motorSDOClass& data);
     int calibrate(int const i);

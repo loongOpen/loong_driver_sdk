@@ -21,10 +21,13 @@
 #include <string>
 #include <atomic>
 
+namespace DriverSDK{
 #define NSEC_PER_SEC 1000000000L
 #define TIMESPEC2NS(T) T.tv_sec * NSEC_PER_SEC + T.tv_nsec
 
-namespace DriverSDK{
+unsigned short single2half(float f);
+float half2single(unsigned short u);
+
 class SwapNode{
 public:
     unsigned char* memPtr;
@@ -59,10 +62,10 @@ struct SDOMsg{
 struct DriverRxData{
     int TargetPosition;
     int TargetVelocity;
-    short TargetTorque;
-    unsigned short ControlWord;
+    short TargetTorque;         // kd (can)
+    unsigned short ControlWord; // kp (can)
     char Mode;
-    char Undefined;
+    signed char Undefined;      // enabled (can)
     short TorqueOffset;
     int VelocityOffset;
 };
@@ -73,7 +76,7 @@ struct DriverTxData{
     short ActualTorque;
     unsigned short StatusWord;
     char ModeDisplay;
-    char Undefined;
+    signed char Undefined;      // temp (can)
     unsigned short ErrorCode;
 };
 
@@ -208,9 +211,21 @@ public:
     void config(SwapList* const swap){
         this->swap = swap;
     }
+    Data* previous(){
+        if(swap != nullptr){
+            return (Data*)(swap->nodePtr.load()->previous->memPtr + offset);
+        }
+        return data;
+    }
     Data* operator->(){
         if(swap != nullptr){
             return (Data*)(swap->nodePtr.load()->memPtr + offset);
+        }
+        return data;
+    }
+    Data* next(){
+        if(swap != nullptr){
+            return (Data*)(swap->nodePtr.load()->next->memPtr + offset);
         }
         return data;
     }
@@ -222,13 +237,14 @@ public:
 template<typename RxData, typename TxData, typename Parameters>
 class WrapperPair{
 public:
-    int order, domain, slave, alias, enabled;
+    int busCode, order, domain, slave, alias, enabled;
     std::string bus, type;
     DataWrapper<RxData> rx;
     DataWrapper<TxData> tx;
     ec_sdo_request_t* sdoHandler;
     Parameters parameters;
     WrapperPair(){
+        busCode = -1;
         order = -1;
         domain = -1;
         slave = -1;
@@ -238,11 +254,12 @@ public:
         type = "";
         sdoHandler = nullptr;
     }
-    int init(std::string const& bus, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler){
+    int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler){
         if(this->order != -1){
             printf("trying to re-init %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
             return -1;
         }
+        this->busCode = busCode;
         this->order = order;
         this->domain = domain;
         this->slave = slave;
@@ -258,7 +275,7 @@ public:
         if(this->order == -1){
             return 2;
         }
-        if(this->order != order || this->domain != domain || this->bus != bus){
+        if(this->bus != bus || this->order != order || this->domain != domain){
             return 1;
         }
         rx.config(rxSwap);

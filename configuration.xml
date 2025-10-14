@@ -717,9 +717,9 @@
     </Devices>
     <Categories>
         <Category name="driver">
-            <Type dof="1">TsinoDynatron</Type>
-            <Type dof="1">JohnsonElectric</Type>
-            <Type dof="1">Elmo</Type>
+            <Type>TsinoDynatron</Type>
+            <Type>JohnsonElectric</Type>
+            <Type>Elmo</Type>
         </Category>
         <Category name="effector">
             <Type dof="6">Tsinghua</Type>
@@ -727,75 +727,167 @@
             <Type dof="6">Ruiyan_6dof</Type>
         </Category>
         <Category name="sensor">
-            <Type dof="0">LinkTouch</Type>
+            <Type>LinkTouch</Type>
         </Category>
     </Categories>
     <Masters>
-        <Master order="0" period="1000000" dc="true"/>
-        <Master order="1" period="4000000" dc="false"/>
+        <Master order="0" dc="true" period="1000000"/>
+        <Master order="1" dc="true" period="4000000"/>
     </Masters>
     <Domains>
-        <Domain master="0" order="0" division="1"/>
-        <Domain master="0" order="1" division="4"/>
-        <Domain master="1" order="0" division="1"/>
-        <Domain master="1" order="1" division="1"/>
+        <Domain master="0" order="0"  division="1"/>
+        <Domain master="0" order="1"  division="1"/>
+        <Domain master="0" order="2"  division="1"/>
+        <Domain master="0" order="3"  division="1"/>
+        <Domain master="0" order="4"  division="1"/>
+        <Domain master="0" order="5"  division="1"/>
+        <Domain master="0" order="6"  division="1"/>
+        <Domain master="0" order="7"  division="1"/>
+        <Domain master="0" order="8"  division="1"/>
+        <Domain master="0" order="9"  division="1"/>
+        <Domain master="0" order="10" division="1"/>
+        <Domain master="0" order="11" division="1"/>
+        <Domain master="0" order="12" division="1"/>
+        <Domain master="1" order="0"  division="1"/>
+        <Domain master="1" order="1"  division="1"/>
+        <Domain master="1" order="2"  division="1"/>
+        <Domain master="1" order="3"  division="1"/>
+        <Domain master="1" order="4"  division="1"/>
     </Domains>
     <Slaves>
-        <Slave master="0" domain="0" alias="1"   type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="2"   type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="3"   type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="4"   type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="5"   type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="6"   type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="7"   type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="8"   type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="9"   type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="10"  type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="11"  type="Elmo">1</Slave>
-        <Slave master="0" domain="0" alias="12"  type="Elmo">1</Slave>
-        <Slave master="1" domain="0" alias="13"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="14"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="15"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="16"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="17"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="18"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="19"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="220" type="LinkTouch">0</Slave>
-        <Slave master="1" domain="0" alias="200" type="Tsinghua">0</Slave>
-        <Slave master="1" domain="1" alias="200" type="Ruiyan_1dof">0</Slave>
-        <Slave master="1" domain="1" alias="200" type="Ruiyan_6dof">0</Slave>
-        <Slave master="1" domain="0" alias="20"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="21"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="22"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="23"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="24"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="25"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="26"  type="Elmo">0</Slave>
-        <Slave master="1" domain="0" alias="221" type="LinkTouch">0</Slave>
-        <Slave master="1" domain="0" alias="201" type="Tsinghua">0</Slave>
-        <Slave master="1" domain="1" alias="201" type="Ruiyan_1dof">0</Slave>
-        <Slave master="1" domain="1" alias="201" type="Ruiyan_6dof">0</Slave>
-        <Slave master="0" domain="1" alias="27"  type="Elmo">0</Slave>
-        <Slave master="0" domain="1" alias="28"  type="Elmo">0</Slave>
-        <Slave master="0" domain="1" alias="29"  type="Elmo">0</Slave>
-        <Slave master="0" domain="1" alias="30"  type="Elmo">0</Slave>
-        <Slave master="0" domain="1" alias="31"  type="Elmo">0</Slave>
+        <Slave master="0" domain="0"  alias="1"   type="Elmo"       >0</Slave>
+        <Slave master="0" domain="1"  alias="2"   type="Elmo"       >0</Slave>
+        <Slave master="0" domain="2"  alias="3"   type="Elmo"       >0</Slave>
+        <Slave master="0" domain="3"  alias="4"   type="Elmo"       >0</Slave>
+        <Slave master="0" domain="4"  alias="5"   type="Elmo"       >0</Slave>
+        <Slave master="0" domain="5"  alias="6"   type="Elmo"       >0</Slave>
+        <Slave master="0" domain="6"  alias="7"   type="Elmo"       >0</Slave>
+        <Slave master="0" domain="7"  alias="8"   type="Elmo"       >0</Slave>
+        <Slave master="0" domain="8"  alias="9"   type="Elmo"       >0</Slave>
+        <Slave master="0" domain="9"  alias="10"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="10" alias="11"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="11" alias="12"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias="13"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias="14"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias="15"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias="16"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias="17"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias="18"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias="19"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="2"  alias="220" type="LinkTouch"  >0</Slave>
+        <Slave master="1" domain="3"  alias="200" type="Tsinghua"   >0</Slave>
+        <Slave master="1" domain="4"  alias="200" type="Ruiyan_1dof">0</Slave>
+        <Slave master="1" domain="4"  alias="200" type="Ruiyan_6dof">0</Slave>
+        <Slave master="1" domain="1"  alias="20"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias="21"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias="22"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias="23"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias="24"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias="25"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias="26"  type="Elmo"       >0</Slave>
+        <Slave master="1" domain="2"  alias="221" type="LinkTouch"  >0</Slave>
+        <Slave master="1" domain="3"  alias="201" type="Tsinghua"   >0</Slave>
+        <Slave master="1" domain="4"  alias="201" type="Ruiyan_1dof">0</Slave>
+        <Slave master="1" domain="4"  alias="201" type="Ruiyan_6dof">0</Slave>
+        <Slave master="0" domain="12" alias="27"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="12" alias="28"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="12" alias="29"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="12" alias="30"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="12" alias="31"  type="Elmo"       >0</Slave>
     </Slaves>
 </ECAT>
 <CAN>
     <Devices>
+        <Device type="Encos">
+            <MinP>-12.5</MinP>
+            <MaxP>12.5</MaxP>
+            <MinV>-18.0</MinV>
+            <MaxV>18.0</MaxV>
+            <MinKp>0.0</MinKp>
+            <MaxKp>500.0</MaxKp>
+            <MinKd>0.0</MinKd>
+            <MaxKd>50.0</MaxKd>
+            <MinT>-150.0</MinT>
+            <MaxT>150.0</MaxT>
+        </Device>
+        <Device type="Damiao">
+            <MinP>-12.5</MinP>
+            <MaxP>12.5</MaxP>
+            <MinV>-30.0</MinV>
+            <MaxV>30.0</MaxV>
+            <MinKp>0.0</MinKp>
+            <MaxKp>500.0</MaxKp>
+            <MinKd>0.0</MinKd>
+            <MaxKd>5.0</MaxKd>
+            <MinT>-10.0</MinT>
+            <MaxT>10.0</MaxT>
+        </Device>
     </Devices>
     <Categories>
         <Category name="driver">
+            <Type master_id="1"  masters="0 1">Encos</Type>
+            <Type master_id="2"  masters="0 1">Encos</Type>
+            <Type master_id="3"  masters="0 1">Encos</Type>
+            <Type master_id="4"  masters="0 1">Encos</Type>
+            <Type master_id="5"  masters="0 1">Encos</Type>
+            <Type master_id="6"  masters="0 1">Encos</Type>
+            <Type master_id="17" masters="2 3">Damiao</Type>
+            <Type master_id="18" masters="2 3">Damiao</Type>
+            <Type master_id="19" masters="2 3">Damiao</Type>
+            <Type master_id="20" masters="2 3">Damiao</Type>
+            <Type master_id="21" masters="2 3">Damiao</Type>
+            <Type master_id="22" masters="2 3">Damiao</Type>
+            <Type master_id="23" masters="2 3">Damiao</Type>
+            <Type master_id="17" masters="4"  >Damiao</Type>
+            <Type master_id="18" masters="4"  >Damiao</Type>
+            <Type master_id="19" masters="4"  >Damiao</Type>
+            <Type master_id="20" masters="4"  >Damiao</Type>
+            <Type master_id="21" masters="4"  >Damiao</Type>
         </Category>
         <Category name="effector">
         </Category>
         <Category name="sensor">
         </Category>
     </Categories>
-    <Masters>
+    <Masters period="1000000">
+        <Master order="0" device="can0" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+        <Master order="1" device="can1" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+        <Master order="2" device="can2" baudrate="1000000" canfd="false" dbaudrate="4000000" division="4"/>
+        <Master order="3" device="can3" baudrate="1000000" canfd="false" dbaudrate="4000000" division="4"/>
+        <Master order="4" device="can0" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
     </Masters>
     <Slaves>
+        <Slave master="0" master_id="1"  slave_id="1" alias="1"  type="Encos" >0</Slave>
+        <Slave master="0" master_id="2"  slave_id="2" alias="2"  type="Encos" >0</Slave>
+        <Slave master="0" master_id="3"  slave_id="3" alias="3"  type="Encos" >0</Slave>
+        <Slave master="0" master_id="4"  slave_id="4" alias="4"  type="Encos" >0</Slave>
+        <Slave master="0" master_id="5"  slave_id="5" alias="5"  type="Encos" >0</Slave>
+        <Slave master="0" master_id="6"  slave_id="6" alias="6"  type="Encos" >0</Slave>
+        <Slave master="1" master_id="1"  slave_id="1" alias="7"  type="Encos" >0</Slave>
+        <Slave master="1" master_id="2"  slave_id="2" alias="8"  type="Encos" >0</Slave>
+        <Slave master="1" master_id="3"  slave_id="3" alias="9"  type="Encos" >0</Slave>
+        <Slave master="1" master_id="4"  slave_id="4" alias="10" type="Encos" >0</Slave>
+        <Slave master="1" master_id="5"  slave_id="5" alias="11" type="Encos" >0</Slave>
+        <Slave master="1" master_id="6"  slave_id="6" alias="12" type="Encos" >0</Slave>
+        <Slave master="2" master_id="17" slave_id="1" alias="13" type="Damiao">0</Slave>
+        <Slave master="2" master_id="18" slave_id="2" alias="14" type="Damiao">0</Slave>
+        <Slave master="2" master_id="19" slave_id="3" alias="15" type="Damiao">0</Slave>
+        <Slave master="2" master_id="20" slave_id="4" alias="16" type="Damiao">0</Slave>
+        <Slave master="2" master_id="21" slave_id="5" alias="17" type="Damiao">0</Slave>
+        <Slave master="2" master_id="22" slave_id="6" alias="18" type="Damiao">0</Slave>
+        <Slave master="2" master_id="23" slave_id="7" alias="19" type="Damiao">0</Slave>
+        <Slave master="3" master_id="17" slave_id="1" alias="20" type="Damiao">0</Slave>
+        <Slave master="3" master_id="18" slave_id="2" alias="21" type="Damiao">0</Slave>
+        <Slave master="3" master_id="19" slave_id="3" alias="22" type="Damiao">0</Slave>
+        <Slave master="3" master_id="20" slave_id="4" alias="23" type="Damiao">0</Slave>
+        <Slave master="3" master_id="21" slave_id="5" alias="24" type="Damiao">0</Slave>
+        <Slave master="3" master_id="22" slave_id="6" alias="25" type="Damiao">0</Slave>
+        <Slave master="3" master_id="23" slave_id="7" alias="26" type="Damiao">0</Slave>
+        <Slave master="4" master_id="17" slave_id="1" alias="27" type="Damiao">0</Slave>
+        <Slave master="4" master_id="18" slave_id="2" alias="28" type="Damiao">0</Slave>
+        <Slave master="4" master_id="19" slave_id="3" alias="29" type="Damiao">0</Slave>
+        <Slave master="4" master_id="20" slave_id="4" alias="30" type="Damiao">0</Slave>
+        <Slave master="4" master_id="21" slave_id="5" alias="31" type="Damiao">0</Slave>
     </Slaves>
 </CAN>
 <RS485Emu>
@@ -805,6 +897,8 @@
         <Category name="effector">
             <Type dof="1">ChangingTek</Type>
             <Type dof="6">Inspire</Type>
+            <Type dof="6">BrainCo</Type>
+            <Type dof="6">HumanoidShanghai</Type>
         </Category>
         <Category name="sensor">
         </Category>
@@ -815,9 +909,9 @@
     </Masters>
     <Slaves>
         <Slave master="0" alias="200" type="ChangingTek">0</Slave>
-        <Slave master="0" alias="200" type="Inspire">0</Slave>
+        <Slave master="0" alias="200" type="Inspire"    >0</Slave>
         <Slave master="1" alias="201" type="ChangingTek">0</Slave>
-        <Slave master="1" alias="201" type="Inspire">0</Slave>
+        <Slave master="1" alias="201" type="Inspire"    >0</Slave>
     </Slaves>
 </RS485Emu>
 <RS485>
@@ -827,6 +921,8 @@
         <Category name="effector">
             <Type dof="1">ChangingTek</Type>
             <Type dof="6">Inspire</Type>
+            <Type dof="6">BrainCo</Type>
+            <Type dof="6">HumanoidShanghai</Type>
         </Category>
         <Category name="sensor">
         </Category>
@@ -837,15 +933,15 @@
     </Masters>
     <Slaves>
         <Slave master="0" alias="200" type="ChangingTek">0</Slave>
-        <Slave master="0" alias="200" type="Inspire">0</Slave>
+        <Slave master="0" alias="200" type="Inspire"    >0</Slave>
         <Slave master="0" alias="201" type="ChangingTek">0</Slave>
-        <Slave master="0" alias="201" type="Inspire">0</Slave>
+        <Slave master="1" alias="201" type="Inspire"    >0</Slave>
     </Slaves>
 </RS485>
 <Motors>
     <Motor limb="0" motor="0" alias="1">
         <Polarity>-1</Polarity>
-        <CountBias>728098</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>16.227</GearRatioTor>
         <GearRatioPosVel>16.227</GearRatioPosVel>
@@ -859,7 +955,7 @@
     </Motor>
     <Motor limb="0" motor="1" alias="2">
         <Polarity>1</Polarity>
-        <CountBias>-129779</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>16.221</GearRatioTor>
         <GearRatioPosVel>16.221</GearRatioPosVel>
@@ -873,7 +969,7 @@
     </Motor>
     <Motor limb="0" motor="2" alias="3">
         <Polarity>-1</Polarity>
-        <CountBias>119648</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>18.2</GearRatioTor>
         <GearRatioPosVel>18.2</GearRatioPosVel>
@@ -887,7 +983,7 @@
     </Motor>
     <Motor limb="0" motor="3" alias="4">
         <Polarity>-1</Polarity>
-        <CountBias>-345596</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>18.2</GearRatioTor>
         <GearRatioPosVel>18.2</GearRatioPosVel>
@@ -901,7 +997,7 @@
     </Motor>
     <Motor limb="0" motor="4" alias="5">
         <Polarity>1</Polarity>
-        <CountBias>-26178</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>15.916</GearRatioTor>
         <GearRatioPosVel>15.916</GearRatioPosVel>
@@ -915,7 +1011,7 @@
     </Motor>
     <Motor limb="0" motor="5" alias="6">
         <Polarity>-1</Polarity>
-        <CountBias>-197573</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>15.916</GearRatioTor>
         <GearRatioPosVel>15.916</GearRatioPosVel>
@@ -929,7 +1025,7 @@
     </Motor>
     <Motor limb="1" motor="0" alias="7">
         <Polarity>-1</Polarity>
-        <CountBias>-8633</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>16.227</GearRatioTor>
         <GearRatioPosVel>16.227</GearRatioPosVel>
@@ -943,7 +1039,7 @@
     </Motor>
     <Motor limb="1" motor="1" alias="8">
         <Polarity>1</Polarity>
-        <CountBias>-68599</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>16.221</GearRatioTor>
         <GearRatioPosVel>16.221</GearRatioPosVel>
@@ -957,7 +1053,7 @@
     </Motor>
     <Motor limb="1" motor="2" alias="9">
         <Polarity>1</Polarity>
-        <CountBias>59973</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>18.2</GearRatioTor>
         <GearRatioPosVel>18.2</GearRatioPosVel>
@@ -971,7 +1067,7 @@
     </Motor>
     <Motor limb="1" motor="3" alias="10">
         <Polarity>1</Polarity>
-        <CountBias>-58977</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>18.2</GearRatioTor>
         <GearRatioPosVel>18.2</GearRatioPosVel>
@@ -985,7 +1081,7 @@
     </Motor>
     <Motor limb="1" motor="4" alias="11">
         <Polarity>-1</Polarity>
-        <CountBias>-174753</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>15.916</GearRatioTor>
         <GearRatioPosVel>15.916</GearRatioPosVel>
@@ -999,7 +1095,7 @@
     </Motor>
     <Motor limb="1" motor="5" alias="12">
         <Polarity>1</Polarity>
-        <CountBias>-150583</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>15.916</GearRatioTor>
         <GearRatioPosVel>15.916</GearRatioPosVel>
@@ -1274,8 +1370,8 @@
         <GearEfficiency>0.91</GearEfficiency>
         <RatedTorque>0</RatedTorque>
         <MaximumTorque>11.5</MaximumTorque>
-        <MinimumPosition>-1.04719758</MinimumPosition>
-        <MaximumPosition>1.04719758</MaximumPosition>
+        <MinimumPosition>-1.569</MinimumPosition>
+        <MaximumPosition>1.569</MaximumPosition>
     </Motor>
     <Motor limb="3" motor="0" alias="20">
         <Polarity>-1</Polarity>
@@ -1372,8 +1468,8 @@
         <GearEfficiency>0.91</GearEfficiency>
         <RatedTorque>0</RatedTorque>
         <MaximumTorque>11.5</MaximumTorque>
-        <MinimumPosition>-1.04719758</MinimumPosition>
-        <MaximumPosition>1.04719758</MaximumPosition>
+        <MinimumPosition>-1.569</MinimumPosition>
+        <MaximumPosition>1.569</MaximumPosition>
     </Motor>
     <Motor limb="4" motor="0" alias="27">
         <Polarity>1</Polarity>
@@ -1428,8 +1524,8 @@
         <GearEfficiency>0.91</GearEfficiency>
         <RatedTorque>5</RatedTorque>
         <MaximumTorque>26</MaximumTorque>
-        <MinimumPosition>-0.69813172</MinimumPosition>
-        <MaximumPosition>0.69813172</MaximumPosition>
+        <MinimumPosition>-1.569</MinimumPosition>
+        <MaximumPosition>1.569</MaximumPosition>
     </Motor>
     <Motor limb="5" motor="1" alias="31">
         <Polarity>-1</Polarity>
@@ -1446,5 +1542,5 @@
         <MaximumPosition>0.69813172</MaximumPosition>
     </Motor>
 </Motors>
-<IMU device="/dev/ttyTHS3" baudrate="460800"/>
+<IMU device="" baudrate="460800"/>
 </Config>

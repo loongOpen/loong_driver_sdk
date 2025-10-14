@@ -156,11 +156,16 @@ int RS232::run(){
 RS232::~RS232(){
     if(pth > 0){
         pthread_cancel(pth);
+        pth = 0;
     }
     if(txSwap != nullptr){
         delete txSwap;
+        txSwap = nullptr;
     }
-    free(device);
+    if(device != nullptr){
+        free(device);
+        device = nullptr;
+    }
 }
 
 IMU::IMU(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1) : RS232(device, baudrate, frameLength, header0, header1){
@@ -177,9 +182,10 @@ float IMU::quadchar2float(unsigned char const* qc){
 }
 
 bool IMU::valid(unsigned char const* buff){
-    if( buff[ 4] != 0x20 || buff[ 5] != 0x30 || buff[ 6] != 0x0c ||
-        buff[19] != 0x40 || buff[20] != 0x20 || buff[21] != 0x0c ||
-        buff[34] != 0x80 || buff[35] != 0x20 || buff[36] != 0x0c){
+    if(!((buff[ 4] == 0x20 && buff[ 5] == 0x10 && buff[ 6] == 0x10) ||
+         (buff[ 4] == 0x20 && buff[ 5] == 0x30 && buff[ 6] == 0x0c))||
+        !(buff[19] == 0x40 && buff[20] == 0x20 && buff[21] == 0x0c) ||
+        !(buff[34] == 0x80 && buff[35] == 0x20 && buff[36] == 0x0c)){
         return false;
     }
     int i = 1, sum = 0;
