@@ -842,9 +842,6 @@ void* ECAT::rxtx(void* arg){
                 printf("master %d domain %d working_counter changed to %d\n", ecat->order, i, workingCounters[i]);
             }
             if(domainStates[i].wc_state != wcStates[i]){
-                if(ecat->order == 0 && domainStates[i].wc_state != EC_WC_COMPLETE){
-                    incompleteness++;
-                }
                 wcStates[i] = domainStates[i].wc_state;
                 printf("master %d domain %d wc_state changed to %d\n", ecat->order, i, wcStates[i]);
             }
@@ -889,6 +886,8 @@ void* ECAT::rxtx(void* arg){
                     }
                     j++;
                 }
+            }else if(ecat->order == 0){
+                incompleteness++;
             }
             i++;
         }

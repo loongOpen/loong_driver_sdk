@@ -208,7 +208,7 @@ void damiaoTX(int const order, int id, unsigned char* const data, int const leng
     *reinterpret_cast<float*>(&drivers[alias - 1].tx.next()->ActualVelocity) =             para2float(v, parameters->minV, parameters->maxV, 12);
                                drivers[alias - 1].tx.next()->ActualTorque    = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
                                drivers[alias - 1].tx.next()->Undefined       = data[6];
-                               drivers[alias - 1].tx.next()->StatusWord      = err > 0 ? 0x0018 : CAN::alias2status[alias];
+                               drivers[alias - 1].tx.next()->StatusWord      = err > 1 ? 0x0018 : CAN::alias2status[alias];
                                drivers[alias - 1].tx.next()->ErrorCode       = err > 1 ? err : 0x0000;
     can->mask |= 1 << id;
     if(can->mask == can->MASK){

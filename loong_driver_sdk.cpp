@@ -752,7 +752,7 @@ void DriverSDK::getIMU(imuStruct& data){
 
 int DriverSDK::getSensor(std::vector<sensorStruct>& data){
     if(data.size() != 2){
-        return -1;
+        return std::numeric_limits<int>::min();
     }
     int i = 0;
     while(i < 2){
@@ -775,7 +775,7 @@ int DriverSDK::getSensor(std::vector<sensorStruct>& data){
 
 int DriverSDK::setDigitTarget(std::vector<digitTargetStruct> const& data){
     if(data.size() != dofEffector){
-        return std::numeric_limits<int>::min();;
+        return std::numeric_limits<int>::min();
     }
     int i = 0;
     while(i < dofEffector){
@@ -792,7 +792,7 @@ int DriverSDK::setDigitTarget(std::vector<digitTargetStruct> const& data){
 
 int DriverSDK::getDigitActual(std::vector<digitActualStruct>& data){
     if(data.size() != dofEffector){
-        return -1;
+        return std::numeric_limits<int>::min();
     }
     int i = 0;
     while(i < dofEffector){
@@ -804,7 +804,7 @@ int DriverSDK::getDigitActual(std::vector<digitActualStruct>& data){
 
 int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
     if(data.size() != dofAll){
-        return -1;
+        return std::numeric_limits<int>::min();
     }
     int i = 0;
     while(i < dofAll){
@@ -973,7 +973,7 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
 
 int DriverSDK::getEncoderCount(std::vector<int>& data){
     if(data.size() != dofAll){
-        return -1;
+        return std::numeric_limits<int>::min();
     }
     int i = 0;
     while(i < dofAll){
