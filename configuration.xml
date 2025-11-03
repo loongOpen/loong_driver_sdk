@@ -748,6 +748,10 @@
         <Domain master="0" order="10" division="1"/>
         <Domain master="0" order="11" division="1"/>
         <Domain master="0" order="12" division="1"/>
+        <Domain master="0" order="13" division="1"/>
+        <Domain master="0" order="14" division="1"/>
+        <Domain master="0" order="15" division="1"/>
+        <Domain master="0" order="16" division="1"/>
         <Domain master="1" order="0"  division="1"/>
         <Domain master="1" order="1"  division="1"/>
         <Domain master="1" order="2"  division="1"/>
@@ -790,10 +794,10 @@
         <Slave master="1" domain="4"  alias="201" type="Ruiyan_1dof">0</Slave>
         <Slave master="1" domain="4"  alias="201" type="Ruiyan_6dof">0</Slave>
         <Slave master="0" domain="12" alias="27"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="12" alias="28"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="12" alias="29"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="12" alias="30"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="12" alias="31"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="13" alias="28"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="14" alias="29"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="15" alias="30"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="16" alias="31"  type="Elmo"       >0</Slave>
     </Slaves>
 </ECAT>
 <CAN>
@@ -825,24 +829,24 @@
     </Devices>
     <Categories>
         <Category name="driver">
-            <Type master_id="1"  masters="0 1">Encos</Type>
-            <Type master_id="2"  masters="0 1">Encos</Type>
-            <Type master_id="3"  masters="0 1">Encos</Type>
-            <Type master_id="4"  masters="0 1">Encos</Type>
-            <Type master_id="5"  masters="0 1">Encos</Type>
-            <Type master_id="6"  masters="0 1">Encos</Type>
-            <Type master_id="17" masters="2 3">Damiao</Type>
-            <Type master_id="18" masters="2 3">Damiao</Type>
-            <Type master_id="19" masters="2 3">Damiao</Type>
-            <Type master_id="20" masters="2 3">Damiao</Type>
-            <Type master_id="21" masters="2 3">Damiao</Type>
-            <Type master_id="22" masters="2 3">Damiao</Type>
-            <Type master_id="23" masters="2 3">Damiao</Type>
-            <Type master_id="17" masters="4"  >Damiao</Type>
-            <Type master_id="18" masters="4"  >Damiao</Type>
-            <Type master_id="19" masters="4"  >Damiao</Type>
-            <Type master_id="20" masters="4"  >Damiao</Type>
-            <Type master_id="21" masters="4"  >Damiao</Type>
+            <Type master_id="1" masters="0 1">Encos</Type>
+            <Type master_id="2" masters="0 1">Encos</Type>
+            <Type master_id="3" masters="0 1">Encos</Type>
+            <Type master_id="4" masters="0 1">Encos</Type>
+            <Type master_id="5" masters="0 1">Encos</Type>
+            <Type master_id="6" masters="0 1">Encos</Type>
+            <Type master_id="1" masters="2 3">Damiao</Type>
+            <Type master_id="2" masters="2 3">Damiao</Type>
+            <Type master_id="3" masters="2 3">Damiao</Type>
+            <Type master_id="4" masters="2 3">Damiao</Type>
+            <Type master_id="5" masters="2 3">Damiao</Type>
+            <Type master_id="6" masters="2 3">Damiao</Type>
+            <Type master_id="7" masters="2 3">Damiao</Type>
+            <Type master_id="1" masters="4"  >Damiao</Type>
+            <Type master_id="2" masters="4"  >Damiao</Type>
+            <Type master_id="3" masters="4"  >Damiao</Type>
+            <Type master_id="4" masters="4"  >Damiao</Type>
+            <Type master_id="5" masters="4"  >Damiao</Type>
         </Category>
         <Category name="effector">
         </Category>
@@ -857,37 +861,37 @@
         <Master order="4" device="can0" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
     </Masters>
     <Slaves>
-        <Slave master="0" master_id="1"  slave_id="1" alias="1"  type="Encos" >0</Slave>
-        <Slave master="0" master_id="2"  slave_id="2" alias="2"  type="Encos" >0</Slave>
-        <Slave master="0" master_id="3"  slave_id="3" alias="3"  type="Encos" >0</Slave>
-        <Slave master="0" master_id="4"  slave_id="4" alias="4"  type="Encos" >0</Slave>
-        <Slave master="0" master_id="5"  slave_id="5" alias="5"  type="Encos" >0</Slave>
-        <Slave master="0" master_id="6"  slave_id="6" alias="6"  type="Encos" >0</Slave>
-        <Slave master="1" master_id="1"  slave_id="1" alias="7"  type="Encos" >0</Slave>
-        <Slave master="1" master_id="2"  slave_id="2" alias="8"  type="Encos" >0</Slave>
-        <Slave master="1" master_id="3"  slave_id="3" alias="9"  type="Encos" >0</Slave>
-        <Slave master="1" master_id="4"  slave_id="4" alias="10" type="Encos" >0</Slave>
-        <Slave master="1" master_id="5"  slave_id="5" alias="11" type="Encos" >0</Slave>
-        <Slave master="1" master_id="6"  slave_id="6" alias="12" type="Encos" >0</Slave>
-        <Slave master="2" master_id="17" slave_id="1" alias="13" type="Damiao">0</Slave>
-        <Slave master="2" master_id="18" slave_id="2" alias="14" type="Damiao">0</Slave>
-        <Slave master="2" master_id="19" slave_id="3" alias="15" type="Damiao">0</Slave>
-        <Slave master="2" master_id="20" slave_id="4" alias="16" type="Damiao">0</Slave>
-        <Slave master="2" master_id="21" slave_id="5" alias="17" type="Damiao">0</Slave>
-        <Slave master="2" master_id="22" slave_id="6" alias="18" type="Damiao">0</Slave>
-        <Slave master="2" master_id="23" slave_id="7" alias="19" type="Damiao">0</Slave>
-        <Slave master="3" master_id="17" slave_id="1" alias="20" type="Damiao">0</Slave>
-        <Slave master="3" master_id="18" slave_id="2" alias="21" type="Damiao">0</Slave>
-        <Slave master="3" master_id="19" slave_id="3" alias="22" type="Damiao">0</Slave>
-        <Slave master="3" master_id="20" slave_id="4" alias="23" type="Damiao">0</Slave>
-        <Slave master="3" master_id="21" slave_id="5" alias="24" type="Damiao">0</Slave>
-        <Slave master="3" master_id="22" slave_id="6" alias="25" type="Damiao">0</Slave>
-        <Slave master="3" master_id="23" slave_id="7" alias="26" type="Damiao">0</Slave>
-        <Slave master="4" master_id="17" slave_id="1" alias="27" type="Damiao">0</Slave>
-        <Slave master="4" master_id="18" slave_id="2" alias="28" type="Damiao">0</Slave>
-        <Slave master="4" master_id="19" slave_id="3" alias="29" type="Damiao">0</Slave>
-        <Slave master="4" master_id="20" slave_id="4" alias="30" type="Damiao">0</Slave>
-        <Slave master="4" master_id="21" slave_id="5" alias="31" type="Damiao">0</Slave>
+        <Slave master="0" master_id="1" slave_id="1" alias="1"  type="Encos" >0</Slave>
+        <Slave master="0" master_id="2" slave_id="2" alias="2"  type="Encos" >0</Slave>
+        <Slave master="0" master_id="3" slave_id="3" alias="3"  type="Encos" >0</Slave>
+        <Slave master="0" master_id="4" slave_id="4" alias="4"  type="Encos" >0</Slave>
+        <Slave master="0" master_id="5" slave_id="5" alias="5"  type="Encos" >0</Slave>
+        <Slave master="0" master_id="6" slave_id="6" alias="6"  type="Encos" >0</Slave>
+        <Slave master="1" master_id="1" slave_id="1" alias="7"  type="Encos" >0</Slave>
+        <Slave master="1" master_id="2" slave_id="2" alias="8"  type="Encos" >0</Slave>
+        <Slave master="1" master_id="3" slave_id="3" alias="9"  type="Encos" >0</Slave>
+        <Slave master="1" master_id="4" slave_id="4" alias="10" type="Encos" >0</Slave>
+        <Slave master="1" master_id="5" slave_id="5" alias="11" type="Encos" >0</Slave>
+        <Slave master="1" master_id="6" slave_id="6" alias="12" type="Encos" >0</Slave>
+        <Slave master="2" master_id="1" slave_id="1" alias="13" type="Damiao">0</Slave>
+        <Slave master="2" master_id="2" slave_id="2" alias="14" type="Damiao">0</Slave>
+        <Slave master="2" master_id="3" slave_id="3" alias="15" type="Damiao">0</Slave>
+        <Slave master="2" master_id="4" slave_id="4" alias="16" type="Damiao">0</Slave>
+        <Slave master="2" master_id="5" slave_id="5" alias="17" type="Damiao">0</Slave>
+        <Slave master="2" master_id="6" slave_id="6" alias="18" type="Damiao">0</Slave>
+        <Slave master="2" master_id="7" slave_id="7" alias="19" type="Damiao">0</Slave>
+        <Slave master="3" master_id="1" slave_id="1" alias="20" type="Damiao">0</Slave>
+        <Slave master="3" master_id="2" slave_id="2" alias="21" type="Damiao">0</Slave>
+        <Slave master="3" master_id="3" slave_id="3" alias="22" type="Damiao">0</Slave>
+        <Slave master="3" master_id="4" slave_id="4" alias="23" type="Damiao">0</Slave>
+        <Slave master="3" master_id="5" slave_id="5" alias="24" type="Damiao">0</Slave>
+        <Slave master="3" master_id="6" slave_id="6" alias="25" type="Damiao">0</Slave>
+        <Slave master="3" master_id="7" slave_id="7" alias="26" type="Damiao">0</Slave>
+        <Slave master="4" master_id="1" slave_id="1" alias="27" type="Damiao">0</Slave>
+        <Slave master="4" master_id="2" slave_id="2" alias="28" type="Damiao">0</Slave>
+        <Slave master="4" master_id="3" slave_id="3" alias="29" type="Damiao">0</Slave>
+        <Slave master="4" master_id="4" slave_id="4" alias="30" type="Damiao">0</Slave>
+        <Slave master="4" master_id="5" slave_id="5" alias="31" type="Damiao">0</Slave>
     </Slaves>
 </CAN>
 <RS485Emu>
@@ -1542,5 +1546,5 @@
         <MaximumPosition>0.69813172</MaximumPosition>
     </Motor>
 </Motors>
-<IMU device="" baudrate="460800"/>
+<IMU device="" baudrate="460800" type="Xsens"/>
 </Config>

@@ -18,7 +18,6 @@
 #pragma once
 
 #include "common.h"
-#include <set>
 
 namespace DriverSDK{
 class CAN;

@@ -15,8 +15,8 @@
  * Designed and built with love @zhihu by @cjrcl.
  */
 
-#include "config_xml.h"
 #include "common.h"
+#include "config_xml.h"
 #include <bit>
 #include <limits>
 

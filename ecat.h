@@ -23,7 +23,7 @@
 namespace DriverSDK{
 class ECAT{
 public:
-    bool dc, sdoRequestable;
+    bool dc, sdoRequestable, regRequestable;
     int order, fd, effectorAlias, sensorAlias, * domainSizes;
     std::map<int, std::string> alias2type;
     long period;
@@ -32,7 +32,7 @@ public:
     ec_domain_t** domains;
     unsigned char** domainPtrs;
     SwapList** rxPDOSwaps, ** txPDOSwaps;
-    PtrQue<SDOMsg> sdoRequestQueue, sdoResponseQueue;
+    PtrQue<SDOMsg> sdoRequestQueue, sdoResponseQueue, regRequestQueue, regResponseQueue;
     ec_master_t* master;
     pthread_t pth;
     ECAT(int const order);

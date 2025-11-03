@@ -112,8 +112,8 @@ std::string ConfigXML::typeAttribute(char const* bus, char const* type, char con
     return "";
 }
 
-std::string ConfigXML::imuDevice(){
-    return xmlDoc.FirstChildElement("Config")->FirstChildElement("IMU")->Attribute("device");
+std::string ConfigXML::imuAttribute(char const* name){
+    return xmlDoc.FirstChildElement("Config")->FirstChildElement("IMU")->Attribute(name);
 }
 
 int ConfigXML::imuBaudrate(){
@@ -179,7 +179,7 @@ int ConfigXML::attribute(char const* bus, int const order, char const* name){
         }
         masterElement = masterElement->NextSiblingElement("Master");
     }
-    return 115200;
+    return 0;
 }
 
 bool ConfigXML::feature(char const* bus, int const order, char const* name){

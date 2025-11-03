@@ -51,9 +51,16 @@ motorSDOClass::motorSDOClass(int i){
 motorSDOClass::~motorSDOClass(){
 }
 
+motorREGClass::motorREGClass(int i){
+    this->i = i;
+}
+
+motorREGClass::~motorREGClass(){
+}
+
 class DriverSDK::impClass{
 public:
-    IMU* imu;
+    RS232* imu;
     std::vector<RS485> rs485s;
     std::vector<CAN> cans;
     std::vector<ECAT> ecats;
@@ -63,6 +70,8 @@ public:
     int init(char const* xmlFile);
     int putDriverSDORequest(SDOMsg const& msg, int const priority = QUE_PRI_LOW);
     int getDriverSDOResponse(SDOMsg& msg);
+    int putDriverREGRequest(REGMsg const& msg, int const priority = QUE_PRI_LOW);
+    int getDriverREGResponse(REGMsg& msg);
     void rs485Update();
     void canUpdate();
     void ecatUpdate();
@@ -275,7 +284,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
         printf("invalid maxCurrent\n");
         return -1;
     }
-    imu = new IMU(configXML->imuDevice().c_str(), configXML->imuBaudrate(), 50, 0xfa, 0xff);
+    imu = new RS232(configXML->imuAttribute("device").c_str(), configXML->imuBaudrate(), configXML->imuAttribute("type").c_str());
     if(imu->run() < 0){
         printf("imu run failed\n");
         return -1;
@@ -300,9 +309,13 @@ int DriverSDK::impClass::init(char const* xmlFile){
     }
     i = 0;
     while(i < rs485s.size()){
-        if(rs485s[i].config() < 0){
+        int res = rs485s[i].config();
+        if(res == -1){
             printf("rs485s[%d] config failed\n", i);
             return -1;
+        }else if(res == 1){
+            sleep(1);
+            continue;
         }
         i++;
     }
@@ -433,6 +446,14 @@ int DriverSDK::impClass::getDriverSDOResponse(SDOMsg& msg){
             }
         }
     }
+    return -1;
+}
+
+int DriverSDK::impClass::putDriverREGRequest(REGMsg const& msg, int const priority){
+    return -1;
+}
+
+int DriverSDK::impClass::getDriverREGResponse(REGMsg& msg){
     return -1;
 }
 
@@ -721,33 +742,33 @@ int DriverSDK::fillSDO(motorSDOClass& data, char const* object){
 }
 
 void DriverSDK::getIMU(imuStruct& data){
-    float f = imp.imu->quadchar2float(imp.imu->txSwap->nodePtr.load()->memPtr + 7) * Pi / 180.0;
+    float f = imp.imu->rpy0(imp.imu->txSwap);
     if(f > -4.0 && f < 4.0){
         data.rpy[0] = f;
     }
-    f = imp.imu->quadchar2float(imp.imu->txSwap->nodePtr.load()->memPtr + 11) * Pi / 180.0;
+    f = imp.imu->rpy1(imp.imu->txSwap);
     if(f > -4.0 && f < 4.0){
         data.rpy[1] = f;
     }
-    f = imp.imu->quadchar2float(imp.imu->txSwap->nodePtr.load()->memPtr + 15) * Pi / 180.0;
+    f = imp.imu->rpy2(imp.imu->txSwap);
     if(f > -4.0 && f < 4.0){
         data.rpy[2] = f;
     }
-    f = imp.imu->quadchar2float(imp.imu->txSwap->nodePtr.load()->memPtr + 37);
+    f = imp.imu->gyr0(imp.imu->txSwap);
     if(f > -40.0 && f < 40.0){
         data.gyr[0] = f;
     }
-    f = imp.imu->quadchar2float(imp.imu->txSwap->nodePtr.load()->memPtr + 41);
+    f = imp.imu->gyr1(imp.imu->txSwap);
     if(f > -40.0 && f < 40.0){
         data.gyr[1] = f;
     }
-    f = imp.imu->quadchar2float(imp.imu->txSwap->nodePtr.load()->memPtr + 45);
+    f = imp.imu->gyr2(imp.imu->txSwap);
     if(f > -40.0 && f < 40.0){
         data.gyr[2] = f;
     }
-    data.acc[0] = imp.imu->quadchar2float(imp.imu->txSwap->nodePtr.load()->memPtr + 22);
-    data.acc[1] = imp.imu->quadchar2float(imp.imu->txSwap->nodePtr.load()->memPtr + 26);
-    data.acc[2] = imp.imu->quadchar2float(imp.imu->txSwap->nodePtr.load()->memPtr + 30);
+    data.acc[0] = imp.imu->acc0(imp.imu->txSwap);
+    data.acc[1] = imp.imu->acc1(imp.imu->txSwap);
+    data.acc[2] = imp.imu->acc2(imp.imu->txSwap);
 }
 
 int DriverSDK::getSensor(std::vector<sensorStruct>& data){
@@ -1012,6 +1033,14 @@ int DriverSDK::recvMotorSDOResponse(motorSDOClass& data){
         }
     }
     return ret;
+}
+
+int DriverSDK::sendMotorREGRequest(motorREGClass const& data){
+    return 0;
+}
+
+int DriverSDK::recvMotorREGResponse(motorREGClass& data){
+    return 0;
 }
 
 int DriverSDK::calibrate(int const i){

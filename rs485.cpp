@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <limits>
 #include <chrono>
+#include <pthread.h>
 
 namespace DriverSDK{
 extern ConfigXML* configXML;
@@ -293,20 +294,18 @@ int RS485::config(){
             printf("opening %s failed\n", deviceS);
             return -1;
         }
-    }
-    if(modbus_connect(ctx) != 0){
-        modbus_free(ctx);
-        ctx = nullptr;
-        return -1;
-    }
-    // modbus_rtu_set_serial_mode(ctx, MODBUS_RTU_RS485);
-    if(device == nullptr){
         fdR = open(deviceR, O_WRONLY | O_CLOEXEC);
         if(fdR < 0){
             printf("opening %s failed\n", deviceR);
             return -1;
         }
     }
+    if(modbus_connect(ctx) != 0){
+        modbus_free(ctx);
+        ctx = nullptr;
+        return 1;
+    }
+    // modbus_rtu_set_serial_mode(ctx, MODBUS_RTU_RS485);
     rxSwap = new SwapList(dofEffector * sizeof(DigitRxData));
     txSwap = new SwapList(dofEffector * sizeof(DigitTxData));
     int slave = 0;
@@ -314,7 +313,7 @@ int RS485::config(){
     if(itr != alias2type.end()){
         int i = 0;
         while(i < dofLeftEffector){
-            if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
+            if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
             }
@@ -346,7 +345,7 @@ int RS485::config(){
     if(itr != alias2type.end()){
         int i = dofLeftEffector;
         while(i < dofEffector){
-            if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
+            if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
             }
@@ -409,15 +408,21 @@ void* RS485::rxtx(void* arg){
             wakeupTime.tv_sec++;
         }
         bool sleep = true;
+        long diff = 0;
         do{
             if(sleep){
                 nanosleep(&step, nullptr);
             }
             clock_gettime(CLOCK_MONOTONIC, &currentTime);
-            if(sleep && (TIMESPEC2NS(wakeupTime) - TIMESPEC2NS(currentTime) < 9 * rs485->period / 100)){
-                sleep = false;
+            diff = TIMESPEC2NS(wakeupTime) - TIMESPEC2NS(currentTime);
+            if(sleep){
+                if(diff < - 3 * rs485->period / 4){
+                    wakeupTime = currentTime;
+                }else if(diff < 9 * rs485->period / 100){
+                    sleep = false;
+                }
             }
-        }while(TIMESPEC2NS(currentTime) < TIMESPEC2NS(wakeupTime));
+        }while(diff > 0);
         if(rs485->leftTX != nullptr){
             rs485->leftTX(rs485->ctx, 200);
             nanosleep(&step, nullptr);

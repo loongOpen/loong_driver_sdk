@@ -19,11 +19,8 @@
 
 #include <vector>
 #include <string>
-#include <cmath>
 
 namespace DriverSDK{
-float const Pi = std::acos(-1);
-
 struct imuStruct{
     float rpy[3], gyr[3], acc[3];
 };
@@ -70,6 +67,14 @@ public:
     ~motorSDOClass();
 };
 
+class motorREGClass{
+public:
+    long value;
+    int i;                              // drivers[i]
+    motorREGClass(int i);
+    ~motorREGClass();
+};
+
 class DriverSDK{
 public:
     static DriverSDK& instance();
@@ -93,6 +98,8 @@ public:
     int getEncoderCount(std::vector<int>& data);
     int sendMotorSDORequest(motorSDOClass const& data);
     int recvMotorSDOResponse(motorSDOClass& data);
+    int sendMotorREGRequest(motorREGClass const& data);
+    int recvMotorREGResponse(motorREGClass& data);
     int calibrate(int const i);
     void advance();
     std::string version();

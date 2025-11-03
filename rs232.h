@@ -20,6 +20,9 @@
 #include "common.h"
 
 namespace DriverSDK{
+using validationFunction = bool (*)(unsigned char const*);
+using parseFunction = float (*)(SwapList const*);
+
 struct ChainNode{
     int nr;
     ChainNode* previous, * next;
@@ -33,19 +36,12 @@ public:
     std::atomic<ChainNode*> ptr;
     SwapList* txSwap;
     pthread_t pth;
-    RS232(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1);
-    virtual bool valid(unsigned char const* buff) = 0;
+    validationFunction valid;
+    parseFunction rpy0, rpy1, rpy2, gyr0, gyr1, gyr2, acc0, acc1, acc2;
+    RS232(char const* device, int const baudrate, char const* type);
     static void cleanup(void* arg);
     static void* recv(void* arg);
     int run();
     ~RS232();
-};
-
-class IMU : public RS232{
-public:
-    IMU(char const* device, int const baudrate, int const frameLength, unsigned char const header0, unsigned char const header1);
-    float quadchar2float(unsigned char const* qc);
-    bool valid(unsigned char const* buff) override;
-    ~IMU();
 };
 }

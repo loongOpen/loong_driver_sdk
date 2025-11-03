@@ -18,6 +18,9 @@
 #include "loong_driver_sdk.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <cmath>
+
+float const Pi = std::acos(-1);
 
 int main(int argc, char** argv){
     DriverSDK::DriverSDK& driverSDK = DriverSDK::DriverSDK::instance();
@@ -42,7 +45,7 @@ int main(int argc, char** argv){
         8, 8
     };
     driverSDK.setMode(mode);
-    driverSDK.init("configuration.xml");
+    driverSDK.init("configuration_lite.xml");
     std::vector<int> activeMotors = driverSDK.getActiveMotors();
     int i = 0, j = 0, motorNr = driverSDK.getTotalMotorNr(), digitNr = driverSDK.getLeftDigitNr() + driverSDK.getRightDigitNr();;
     printf("digitNr %d\nmotorNr %d:\t", digitNr, motorNr);
@@ -92,7 +95,7 @@ int main(int argc, char** argv){
         driverSDK.advance();
         usleep(4000);
         driverSDK.getIMU(imuData);
-        printf("imu:\t%8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2]);
+        printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
         driverSDK.getSensor(sensorData);
         j = 0;
         while(j < 2){
@@ -121,7 +124,7 @@ int main(int argc, char** argv){
     i = 0;
     while(i < 3200){
         driverSDK.getIMU(imuData);
-        printf("imu:\t%8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2]);
+        printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
         driverSDK.getSensor(sensorData);
         j = 0;
         while(j < 2){
@@ -131,9 +134,9 @@ int main(int argc, char** argv){
         driverSDK.getMotorActual(motorActualData);
         j = 0;
         while(j < motorNr){
-            motorTargetData[j].pos = motorPositions[j] * std::cos(DriverSDK::Pi / 2.0 * (float)i / 3200.0);
-            motorTargetData[j].kp = 100.0;
-            motorTargetData[j].kd = 1.0;
+            motorTargetData[j].pos = motorPositions[j] * std::cos(Pi / 2.0 * (float)i / 3200.0);
+            motorTargetData[j].kp = 50.0;
+            motorTargetData[j].kd = 0.85;
             printf("motor%02d:\t%8.3f %8d %8d %8d\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
             j++;
         }
@@ -149,7 +152,7 @@ int main(int argc, char** argv){
     i = 0;
     while(i < 1600){
         driverSDK.getIMU(imuData);
-        printf("imu:\t%8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2]);
+        printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
         driverSDK.getSensor(sensorData);
         j = 0;
         while(j < 2){
@@ -170,7 +173,7 @@ int main(int argc, char** argv){
     i = 0;
     while(i < 3200){
         driverSDK.getIMU(imuData);
-        printf("imu:\t%8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2]);
+        printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
         driverSDK.getSensor(sensorData);
         j = 0;
         while(j < 2){
@@ -210,7 +213,7 @@ int main(int argc, char** argv){
         printf("digits:\t");
         j = 0;
         while(j < digitNr){
-            digitTargetData[j].pos = std::abs(90.0 * std::sin(2.0 * DriverSDK::Pi * (float)i / 6400.0));
+            digitTargetData[j].pos = std::abs(90.0 * std::sin(2.0 * Pi * (float)i / 6400.0));
             printf("%8d\t", digitActualData[j].pos);
             j++;
         }

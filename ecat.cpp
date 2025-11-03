@@ -57,6 +57,7 @@ ECAT::ECAT(int const order){
     rxPDOSwaps = nullptr;
     txPDOSwaps = nullptr;
     sdoRequestable = false;
+    regRequestable = false;
     master = nullptr;
     fd = -1;
     pth = 0;
@@ -458,13 +459,14 @@ int ECAT::config(){
         }
         printf("\trxPDOOffset %d, txPDOOffset %d\n", rxPDOOffset, txPDOOffset);
         ec_sdo_request_t* sdoHandler = ecrt_slave_config_create_sdo_request(slaveConfig, 0x0000, 0x00, 4);
+        ec_reg_request_t* regHandler = ecrt_slave_config_create_reg_request(slaveConfig, 4);
         if(sdoHandler == nullptr){
             printf("\tcreating SDO request failed\n");
             return -1;
         }
         ecrt_sdo_request_timeout(sdoHandler, 500);
         if(category == "driver"){
-            if(drivers[alias - 1].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
+            if(drivers[alias - 1].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler, regHandler) != 0){
                 printf("\tdrivers[%d] init failed\n", alias - 1);
                 return -1;
             }
@@ -484,26 +486,26 @@ int ECAT::config(){
                 while(i < j){
                     if(digits[i].init("ECAT", 0, order, domain, slave, alias, type,
                         rxPDOOffset +     7 * sizeof(unsigned short) + k * sizeof(DigitRxData),
-                        txPDOOffset + 5 * 4 * sizeof(unsigned short) + k * sizeof(DigitTxData), sdoHandler) != 0){
+                        txPDOOffset + 5 * 4 * sizeof(unsigned short) + k * sizeof(DigitTxData), sdoHandler, regHandler) != 0){
                         printf("\tdigits[%d] init failed\n", i);
                         return -1;
                     }
                     i++;
                     k++;
                 }
-                if(hands[alias - 200].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
+                if(hands[alias - 200].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler, regHandler) != 0){
                     printf("\thands[%d] init failed\n", alias - 200);
                     return -1;
                 }
             }else if(type == "Ruiyan_1dof" || type == "Ruiyan_6dof"){
-                if(converters[alias - 200].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
+                if(converters[alias - 200].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler, regHandler) != 0){
                     printf("\tconverters[%d] init failed\n", alias - 200);
                     return -1;
                 }
             }
         }else if(category == "sensor"){
             if(type == "LinkTouch"){
-                if(sensors[alias - 220].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler) != 0){
+                if(sensors[alias - 220].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler, regHandler) != 0){
                     printf("\tsensors[%d] init failed\n", alias - 220);
                     return -1;
                 }
@@ -511,11 +513,11 @@ int ECAT::config(){
         }
         if(dc){
             ecrt_slave_config_dc(slaveConfig, 0x0300, domainDivision[domain] * period, domainDivision[domain] * period / 2, 0, 0);
-            if(refClockSlaveConfig == nullptr){
+            /* if(refClockSlaveConfig == nullptr){
                 refClockSlaveConfig = slaveConfig;
                 ecrt_master_select_reference_clock(master, refClockSlaveConfig);
                 printf("\tslave %d:%d was selected to provide the reference clock\n", order, slave);
-            }
+            } */
         }
         itr++;
     }
@@ -703,8 +705,7 @@ void* ECAT::rxtx(void* arg){
                 case EC_REQUEST_SUCCESS:
                     if(sdoMsg->operation == 0){
                         ecrt_sdo_request_write(sdoMsg->sdoHandler);
-                    }
-                    else if(sdoMsg->operation == 1){
+                    }else if(sdoMsg->operation == 1){
                         ecrt_sdo_request_read(sdoMsg->sdoHandler);
                     }
                     sdoMsg->state = 2;
@@ -757,8 +758,7 @@ void* ECAT::rxtx(void* arg){
                         }else if(sdoMsg->signed_ == 1){
                             if(sdoMsg->operation == 0){
                                 EC_WRITE_S32(ecrt_sdo_request_data(sdoMsg->sdoHandler), sdoMsg->value);
-                            }
-                            else if(sdoMsg->operation == 1){
+                            }else if(sdoMsg->operation == 1){
                                 sdoMsg->value = EC_READ_S32(ecrt_sdo_request_data(sdoMsg->sdoHandler));
                             }
                         }
@@ -768,8 +768,7 @@ void* ECAT::rxtx(void* arg){
                 case EC_REQUEST_ERROR:
                     if(sdoMsg->operation == 0){
                         ecrt_sdo_request_write(sdoMsg->sdoHandler);
-                    }
-                    else if(sdoMsg->operation == 1){
+                    }else if(sdoMsg->operation == 1){
                         ecrt_sdo_request_read(sdoMsg->sdoHandler);
                     }
                 case EC_REQUEST_BUSY:
@@ -783,10 +782,10 @@ void* ECAT::rxtx(void* arg){
             }
         }
         if(ecat->dc){
-            /* clock_gettime(CLOCK_MONOTONIC, &currentTime);
-            ecrt_master_sync_reference_clock_to(ecat->master, TIMESPEC2NS(currentTime)); */
-            unsigned int time = 0;
-            ecrt_master_reference_clock_time(ecat->master, &time);
+            clock_gettime(CLOCK_MONOTONIC, &currentTime);
+            ecrt_master_sync_reference_clock_to(ecat->master, TIMESPEC2NS(currentTime));
+            /* unsigned int time = 0;
+            ecrt_master_reference_clock_time(ecat->master, &time); */
             ecrt_master_sync_slave_clocks(ecat->master);
         }
         count++;
@@ -805,15 +804,21 @@ void* ECAT::rxtx(void* arg){
             wakeupTime.tv_sec++;
         }
         bool sleep = true;
+        long diff = 0;
         do{
             if(sleep){
                 nanosleep(&step, nullptr);
             }
             clock_gettime(CLOCK_MONOTONIC, &currentTime);
-            if(sleep && (TIMESPEC2NS(wakeupTime) - TIMESPEC2NS(currentTime) < 9 * ecat->period / 100)){
-                sleep = false;
+            diff = TIMESPEC2NS(wakeupTime) - TIMESPEC2NS(currentTime);
+            if(sleep){
+                if(diff < - 3 * ecat->period / 4){
+                    wakeupTime = currentTime;
+                }else if(diff < 9 * ecat->period / 100){
+                    sleep = false;
+                }
             }
-        }while(TIMESPEC2NS(currentTime) < TIMESPEC2NS(wakeupTime));
+        }while(diff > 0);
         if(ecat->dc){
             clock_gettime(CLOCK_MONOTONIC, &currentTime);
             ecrt_master_application_time(ecat->master, TIMESPEC2NS(currentTime));

@@ -35,7 +35,7 @@ public:
     std::vector<std::vector<int>> motorAlias();
     std::vector<std::vector<int>> domainDivision(char const* bus);
     std::string typeAttribute(char const* bus, char const* type, char const* name);
-    std::string imuDevice();
+    std::string imuAttribute(char const* name);
     int imuBaudrate();
     long canPeriod();
     std::vector<std::tuple<int, std::vector<int>, std::string>> canBus();

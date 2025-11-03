@@ -21,11 +21,15 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <linux/can/raw.h>
+#include <sys/un.h>
 #include <sys/epoll.h>
 #include <limits>
 
 namespace DriverSDK{
 #define TXQUEUELEN 100
+#define CANFD_BRS 0x01
+#define CANFD_ESI 0x02
+#define CANFD_FDF 0x04
 
 extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> canAlias2type;
@@ -307,7 +311,9 @@ int CAN::config(){
     if(alias2type.size() == 0){
         return 0;
     }
-    ifaceUp();
+    if(ifaceUp() < 0){
+        return -1;
+    }
     sock = open(0);
     if(sock < 0){
         return -1;
@@ -319,7 +325,7 @@ int CAN::config(){
     while(itr != alias2slaveID.end()){
         int alias = itr->first, slave = itr->second;
         std::string type = alias2type.find(alias)->second;
-        if(drivers[alias - 1].init("CAN", 1, order, 0, slave, alias, type, i * sizeof(DriverRxData), i * sizeof(DriverTxData), nullptr) != 0){
+        if(drivers[alias - 1].init("CAN", 1, order, 0, slave, alias, type, i * sizeof(DriverRxData), i * sizeof(DriverTxData), nullptr, nullptr) != 0){
             printf("\tdrivers[%d] init failed\n", alias - 1);
             return -1;
         }
@@ -343,10 +349,17 @@ int CAN::config(){
 }
 
 int CAN::ifaceIsUp(){
+    if(device[0] == '/'){
+        if(access(device, F_OK) == 0){
+            return 1;
+        }else{
+            return 0;
+        }
+    }
     int ret;
     struct ifreq ifr;
     int sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
-    if(sock < 0){
+    if(sock == -1){
         printf("creating socket failed\n");
         return -1;
     }
@@ -362,15 +375,18 @@ int CAN::ifaceIsUp(){
 }
 
 int CAN::ifaceUp(){
-    char cmd[256];
-    int length = 0;
     if(ifaceIsUp() == 1){
         printf("iface %s is up\n", device);
         return 0;
+    }else if(device[0] == '/'){
+        printf("iface %s is down\n", device);
+        return -1;
     }
     printf("starting iface %s...\n", device);
+    char cmd[256];
+    int length = 0;
     length += snprintf(cmd + length, sizeof(cmd) - length, "sudo ip link set %s up type can bitrate %d", device, baudrate);
-    if(canfd > 0){
+    if(canfd == 1){
         length += snprintf(cmd + length, sizeof(cmd) - length, " fd on dbitrate %d", dbaudrate);
     }
     system(cmd);
@@ -383,6 +399,9 @@ int CAN::ifaceUp(){
 }
 
 int CAN::ifaceDown(){
+    if(device[0] == '/'){
+        return 0;
+    }
     char cmd[128];
     snprintf(cmd, sizeof(cmd), "sudo ifconfig %s down", device);
     system(cmd);
@@ -392,6 +411,25 @@ int CAN::ifaceDown(){
 
 int CAN::open(int const masterID){
     int sock;
+    if(device[0] == '/'){
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if(sock == -1){
+            printf("creating socket failed\n");
+            return -1;
+        }else if(sock >= 128){
+            printf("too many sockets\n");
+            return -1;
+        }
+        struct sockaddr_un addr;
+        addr.sun_family = AF_UNIX;
+        strncpy(addr.sun_path, device, sizeof(addr.sun_path) - 1);
+        if(connect(sock, (struct sockaddr const*)&addr, sizeof(addr)) == -1){
+            printf("connecting to %s failed\n", device);
+            close(sock);
+            return -1;
+        }
+        return sock;
+    }
     struct ifreq ifr;
     struct sockaddr_can addr;
     struct can_filter rfilter[1];
@@ -400,7 +438,7 @@ int CAN::open(int const masterID){
         return -1;
     }
     sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
-    if(sock < 0){
+    if(sock == -1){
         printf("creating socket failed\n");
         return -1;
     }else if(sock >= 128){
@@ -412,7 +450,7 @@ int CAN::open(int const masterID){
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
     if(bind(sock, (struct sockaddr*)&addr, sizeof(addr)) != 0){
-        printf("binding failed\n");
+        printf("binding to %s failed\n", device);
         close(sock);
         return -1;
     }
@@ -425,7 +463,7 @@ int CAN::open(int const masterID){
             return -1;
         }
     }
-    if(canfd > 0){
+    if(canfd == 1){
         if(setsockopt(sock, SOL_CAN_RAW, CAN_RAW_FD_FRAMES, &canfd, sizeof(canfd)) != 0){
             printf("setsockopt CAN_RAW_FD_FRAMES failed\n");
             close(sock);
@@ -501,7 +539,11 @@ int CAN::sendfd(int const slaveID, unsigned char const* data, int const length){
     }
     frame.can_id = slaveID;
     frame.len = length;
-    frame.flags = 0x0f;
+    if(device[0] == '/' && canfd == 0){
+        frame.flags &= ~CANFD_FDF;
+    }else{
+        frame.flags &= CANFD_FDF;
+    }
     memcpy(frame.data, data, length);
     ret = write(sock, &frame, sizeof(frame));
     if(ret != sizeof(frame)){
@@ -558,7 +600,7 @@ void* CAN::rx(void* arg){
                 auto itr = cans[i].alias2slaveID.begin();
                 while(itr != cans[i].alias2slaveID.end()){
                     int alias = itr->first, length = rxFuncs[alias2masterID_[alias]][i](alias, data);
-                    if(cans[i].canfd > 0){
+                    if(cans[i].device[0] == '/' || cans[i].canfd == 1){
                         cans[i].sendfd(itr->second, data, length);
                     }else{
                         cans[i].send(itr->second, data, length);
@@ -574,15 +616,21 @@ void* CAN::rx(void* arg){
             wakeupTime.tv_sec++;
         }
         bool sleep = true;
+        long diff = 0;
         do{
             if(sleep){
                 nanosleep(&step, nullptr);
             }
             clock_gettime(CLOCK_MONOTONIC, &currentTime);
-            if(sleep && (TIMESPEC2NS(wakeupTime) - TIMESPEC2NS(currentTime) < 9 * period / 100)){
-                sleep = false;
+            diff = TIMESPEC2NS(wakeupTime) - TIMESPEC2NS(currentTime);
+            if(sleep){
+                if(diff < - 3 * CAN::period / 4){
+                    wakeupTime = currentTime;
+                }else if(diff < 9 * CAN::period / 100){
+                    sleep = false;
+                }
             }
-        }while(TIMESPEC2NS(currentTime) < TIMESPEC2NS(wakeupTime));
+        }while(diff > 0);
     }
     return nullptr;
 }
@@ -627,7 +675,7 @@ void* CAN::tx(void* arg){
         while(i < count){
             int order = sock2order[events[i].data.fd], masterID = 0, length = 0;
             CAN& can = cans[order];
-            if(can.canfd > 0){
+            if(cans[i].device[0] == '/' || can.canfd == 1){
                 length = can.recvfd(data, 64, &masterID);
             }else{
                 length = can.recv(data, 64, &masterID);
@@ -663,7 +711,7 @@ int CAN::run(std::vector<CAN>& cans){
     }
     i = 0;
     while(i < 8){
-        printf("can%d:\t", i);
+        printf("cans[%d]:\t", i);
         j = 0;
         while(j < 16){
             if(orderSlaveID2alias[i][j] > 0){

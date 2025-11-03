@@ -20,10 +20,13 @@
 #include <ecrt.h>
 #include <string>
 #include <atomic>
+#include <cmath>
 
 namespace DriverSDK{
 #define NSEC_PER_SEC 1000000000L
-#define TIMESPEC2NS(T) T.tv_sec * NSEC_PER_SEC + T.tv_nsec
+#define TIMESPEC2NS(T) (T.tv_sec * NSEC_PER_SEC + T.tv_nsec)
+
+float const Pi = std::acos(-1);
 
 unsigned short single2half(float f);
 float half2single(unsigned short u);
@@ -56,6 +59,13 @@ struct SDOMsg{
     unsigned char signed_;      // 0: unsigned; 1: signed
     unsigned char bitLength;    // 8, 16 or 32
     unsigned char operation;    // 0: write; 1: read
+    int recycled;
+};
+
+struct REGMsg{
+    ec_reg_request_t* regHandler;
+    long value;
+    int alias;
     int recycled;
 };
 
@@ -242,6 +252,7 @@ public:
     DataWrapper<RxData> rx;
     DataWrapper<TxData> tx;
     ec_sdo_request_t* sdoHandler;
+    ec_reg_request_t* regHandler;
     Parameters parameters;
     WrapperPair(){
         busCode = -1;
@@ -253,8 +264,9 @@ public:
         bus = "";
         type = "";
         sdoHandler = nullptr;
+        regHandler = nullptr;
     }
-    int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler){
+    int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler, ec_reg_request_t* const regHandler){
         if(this->order != -1){
             printf("trying to re-init %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
             return -1;
@@ -269,6 +281,7 @@ public:
         rx.init(rxOffset);
         tx.init(txOffset);
         this->sdoHandler = sdoHandler;
+        this->regHandler = regHandler;
         return 0;
     }
     int config(std::string const& bus, int const order, int const domain, SwapList* const rxSwap, SwapList* const txSwap){

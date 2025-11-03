@@ -748,6 +748,10 @@
         <Domain master="0" order="10" division="1"/>
         <Domain master="0" order="11" division="1"/>
         <Domain master="0" order="12" division="1"/>
+        <Domain master="0" order="13" division="1"/>
+        <Domain master="0" order="14" division="1"/>
+        <Domain master="0" order="15" division="1"/>
+        <Domain master="0" order="16" division="1"/>
         <Domain master="1" order="0"  division="1"/>
         <Domain master="1" order="1"  division="1"/>
         <Domain master="1" order="2"  division="1"/>
@@ -790,14 +794,26 @@
         <Slave master="1" domain="4"  alias="201" type="Ruiyan_1dof">0</Slave>
         <Slave master="1" domain="4"  alias="201" type="Ruiyan_6dof">0</Slave>
         <Slave master="0" domain="12" alias="27"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="12" alias="28"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="12" alias="29"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="12" alias="30"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="12" alias="31"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="13" alias="28"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="14" alias="29"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="15" alias="30"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="16" alias="31"  type="Elmo"       >0</Slave>
     </Slaves>
 </ECAT>
 <CAN>
     <Devices>
+        <Device type="Encos EC-A10020-P2-24">
+            <MinP>-12.5</MinP>
+            <MaxP>12.5</MaxP>
+            <MinV>-18.0</MinV>
+            <MaxV>18.0</MaxV>
+            <MinKp>0.0</MinKp>
+            <MaxKp>500.0</MaxKp>
+            <MinKd>0.0</MinKd>
+            <MaxKd>50.0</MaxKd>
+            <MinT>-300.0</MinT>
+            <MaxT>300.0</MaxT>
+        </Device>
         <Device type="Encos EC-A10020-P1-12">
             <MinP>-12.5</MinP>
             <MaxP>12.5</MaxP>
@@ -809,6 +825,30 @@
             <MaxKd>50.0</MaxKd>
             <MinT>-150.0</MinT>
             <MaxT>150.0</MaxT>
+        </Device>
+        <Device type="Encos EC-A8116-P1-18">
+            <MinP>-12.5</MinP>
+            <MaxP>12.5</MaxP>
+            <MinV>-18.0</MinV>
+            <MaxV>18.0</MaxV>
+            <MinKp>0.0</MinKp>
+            <MaxKp>500.0</MaxKp>
+            <MinKd>0.0</MinKd>
+            <MaxKd>5.0</MaxKd>
+            <MinT>-150.0</MinT>
+            <MaxT>150.0</MaxT>
+        </Device>
+        <Device type="Encos EC-A8112-P1-18">
+            <MinP>-12.5</MinP>
+            <MaxP>12.5</MaxP>
+            <MinV>-18.0</MinV>
+            <MaxV>18.0</MaxV>
+            <MinKp>0.0</MinKp>
+            <MaxKp>500.0</MaxKp>
+            <MinKd>0.0</MinKd>
+            <MaxKd>5.0</MaxKd>
+            <MinT>-90.0</MinT>
+            <MaxT>90.0</MaxT>
         </Device>
         <Device type="Encos EC-A6408-P2-25">
             <MinP>-12.5</MinP>
@@ -822,7 +862,7 @@
             <MinT>-60.0</MinT>
             <MaxT>60.0</MaxT>
         </Device>
-        <Device type="Encos EC-A8116-P1-18">
+        <Device type="Encos EC-A4315-P2-36">
             <MinP>-12.5</MinP>
             <MaxP>12.5</MaxP>
             <MinV>-18.0</MinV>
@@ -831,8 +871,8 @@
             <MaxKp>500.0</MaxKp>
             <MinKd>0.0</MinKd>
             <MaxKd>5.0</MaxKd>
-            <MinT>-150.0</MinT>
-            <MaxT>150.0</MaxT>
+            <MinT>-70.0</MinT>
+            <MaxT>70.0</MaxT>
         </Device>
         <Device type="Encos EC-A4310-P2-36">
             <MinP>-12.5</MinP>
@@ -861,31 +901,31 @@
     </Devices>
     <Categories>
         <Category name="driver">
-            <Type master_id="1"  masters="0 1">Encos EC-A10020-P1-12</Type>
-            <Type master_id="2"  masters="0 1">Encos EC-A6408-P2-25</Type>
-            <Type master_id="3"  masters="0 1">Encos EC-A8116-P1-18</Type>
-            <Type master_id="4"  masters="0 1">Encos EC-A10020-P1-12</Type>
-            <Type master_id="5"  masters="0 1">Encos EC-A6408-P2-25</Type>
-            <Type master_id="6"  masters="0 1">Encos EC-A6408-P2-25</Type>
-            <Type master_id="17" masters="2 3">Damiao</Type>
-            <Type master_id="18" masters="2 3">Damiao</Type>
-            <Type master_id="19" masters="2 3">Damiao</Type>
-            <Type master_id="20" masters="2 3">Damiao</Type>
-            <Type master_id="21" masters="2 3">Damiao</Type>
-            <Type master_id="22" masters="2 3">Damiao</Type>
-            <Type master_id="23" masters="2 3">Damiao</Type>
-            <Type master_id="17" masters="4"  >Damiao</Type>
-            <Type master_id="18" masters="4"  >Damiao</Type>
-            <Type master_id="19" masters="4"  >Damiao</Type>
-            <Type master_id="7"  masters="0"  >Encos EC-A4310-P2-36</Type>
-            <Type master_id="21" masters="4"  >Damiao</Type>
+            <Type master_id="1" masters="0 1">Encos EC-A10020-P2-24</Type>
+            <Type master_id="2" masters="0 1">Encos EC-A8116-P1-18</Type>
+            <Type master_id="3" masters="0 1">Encos EC-A10020-P1-12</Type>
+            <Type master_id="4" masters="0 1">Encos EC-A10020-P1-12</Type>
+            <Type master_id="5" masters="0 1">Encos EC-A8112-P1-18</Type>
+            <Type master_id="6" masters="0 1">Encos EC-A8112-P1-18</Type>
+            <Type master_id="1" masters="2 3">Encos EC-A4315-P2-36</Type>
+            <Type master_id="2" masters="2 3">Damiao</Type>
+            <Type master_id="3" masters="2 3">Damiao</Type>
+            <Type master_id="4" masters="2 3">Damiao</Type>
+            <Type master_id="5" masters="2 3">Damiao</Type>
+            <Type master_id="6" masters="2 3">Damiao</Type>
+            <Type master_id="7" masters="2 3">Damiao</Type>
+            <Type master_id="1" masters="4"  >Damiao</Type>
+            <Type master_id="2" masters="4"  >Damiao</Type>
+            <Type master_id="3" masters="4"  >Damiao</Type>
+            <Type master_id="7" masters="0"  >Encos EC-A4310-P2-36</Type>
+            <Type master_id="5" masters="4"  >Damiao</Type>
         </Category>
         <Category name="effector">
         </Category>
         <Category name="sensor">
         </Category>
     </Categories>
-    <Masters period="1000000">
+    <Masters period="2000000">
         <Master order="0" device="can0" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
         <Master order="1" device="can1" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
         <Master order="2" device="can2" baudrate="1000000" canfd="false" dbaudrate="4000000" division="4"/>
@@ -893,37 +933,37 @@
         <Master order="4" device="can0" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
     </Masters>
     <Slaves>
-        <Slave master="0" master_id="1"  slave_id="1" alias="1"  type="Encos EC-A10020-P1-12">1</Slave>
-        <Slave master="0" master_id="2"  slave_id="2" alias="2"  type="Encos EC-A6408-P2-25" >1</Slave>
-        <Slave master="0" master_id="3"  slave_id="3" alias="3"  type="Encos EC-A8116-P1-18" >1</Slave>
-        <Slave master="0" master_id="4"  slave_id="4" alias="4"  type="Encos EC-A10020-P1-12">1</Slave>
-        <Slave master="0" master_id="5"  slave_id="5" alias="5"  type="Encos EC-A6408-P2-25" >1</Slave>
-        <Slave master="0" master_id="6"  slave_id="6" alias="6"  type="Encos EC-A6408-P2-25" >1</Slave>
-        <Slave master="1" master_id="1"  slave_id="1" alias="7"  type="Encos EC-A10020-P1-12">1</Slave>
-        <Slave master="1" master_id="2"  slave_id="2" alias="8"  type="Encos EC-A6408-P2-25" >1</Slave>
-        <Slave master="1" master_id="3"  slave_id="3" alias="9"  type="Encos EC-A8116-P1-18" >1</Slave>
-        <Slave master="1" master_id="4"  slave_id="4" alias="10" type="Encos EC-A10020-P1-12">1</Slave>
-        <Slave master="1" master_id="5"  slave_id="5" alias="11" type="Encos EC-A6408-P2-25" >1</Slave>
-        <Slave master="1" master_id="6"  slave_id="6" alias="12" type="Encos EC-A6408-P2-25" >1</Slave>
-        <Slave master="2" master_id="17" slave_id="1" alias="13" type="Damiao"               >0</Slave>
-        <Slave master="2" master_id="18" slave_id="2" alias="14" type="Damiao"               >0</Slave>
-        <Slave master="2" master_id="19" slave_id="3" alias="15" type="Damiao"               >0</Slave>
-        <Slave master="2" master_id="20" slave_id="4" alias="16" type="Damiao"               >0</Slave>
-        <Slave master="2" master_id="21" slave_id="5" alias="17" type="Damiao"               >0</Slave>
-        <Slave master="2" master_id="22" slave_id="6" alias="18" type="Damiao"               >0</Slave>
-        <Slave master="2" master_id="23" slave_id="7" alias="19" type="Damiao"               >0</Slave>
-        <Slave master="3" master_id="17" slave_id="1" alias="20" type="Damiao"               >0</Slave>
-        <Slave master="3" master_id="18" slave_id="2" alias="21" type="Damiao"               >0</Slave>
-        <Slave master="3" master_id="19" slave_id="3" alias="22" type="Damiao"               >0</Slave>
-        <Slave master="3" master_id="20" slave_id="4" alias="23" type="Damiao"               >0</Slave>
-        <Slave master="3" master_id="21" slave_id="5" alias="24" type="Damiao"               >0</Slave>
-        <Slave master="3" master_id="22" slave_id="6" alias="25" type="Damiao"               >0</Slave>
-        <Slave master="3" master_id="23" slave_id="7" alias="26" type="Damiao"               >0</Slave>
-        <Slave master="4" master_id="17" slave_id="1" alias="27" type="Damiao"               >0</Slave>
-        <Slave master="4" master_id="18" slave_id="2" alias="28" type="Damiao"               >0</Slave>
-        <Slave master="4" master_id="19" slave_id="3" alias="29" type="Damiao"               >0</Slave>
-        <Slave master="0" master_id="7"  slave_id="7" alias="30" type="Encos EC-A4310-P2-36" >1</Slave>
-        <Slave master="4" master_id="21" slave_id="5" alias="31" type="Damiao"               >0</Slave>
+        <Slave master="0" master_id="1" slave_id="1" alias="1"  type="Encos EC-A10020-P2-24">1</Slave>
+        <Slave master="0" master_id="2" slave_id="2" alias="2"  type="Encos EC-A8116-P1-18" >1</Slave>
+        <Slave master="0" master_id="3" slave_id="3" alias="3"  type="Encos EC-A10020-P1-12">1</Slave>
+        <Slave master="0" master_id="4" slave_id="4" alias="4"  type="Encos EC-A10020-P1-12">1</Slave>
+        <Slave master="0" master_id="5" slave_id="5" alias="5"  type="Encos EC-A8112-P1-18" >1</Slave>
+        <Slave master="0" master_id="6" slave_id="6" alias="6"  type="Encos EC-A8112-P1-18" >1</Slave>
+        <Slave master="1" master_id="1" slave_id="1" alias="7"  type="Encos EC-A10020-P2-24">1</Slave>
+        <Slave master="1" master_id="2" slave_id="2" alias="8"  type="Encos EC-A8116-P1-18" >1</Slave>
+        <Slave master="1" master_id="3" slave_id="3" alias="9"  type="Encos EC-A10020-P1-12">1</Slave>
+        <Slave master="1" master_id="4" slave_id="4" alias="10" type="Encos EC-A10020-P1-12">1</Slave>
+        <Slave master="1" master_id="5" slave_id="5" alias="11" type="Encos EC-A8112-P1-18" >1</Slave>
+        <Slave master="1" master_id="6" slave_id="6" alias="12" type="Encos EC-A8112-P1-18" >1</Slave>
+        <Slave master="2" master_id="1" slave_id="1" alias="13" type="Encos EC-A4315-P2-36" >0</Slave>
+        <Slave master="2" master_id="2" slave_id="2" alias="14" type="Damiao"               >0</Slave>
+        <Slave master="2" master_id="3" slave_id="3" alias="15" type="Damiao"               >0</Slave>
+        <Slave master="2" master_id="4" slave_id="4" alias="16" type="Damiao"               >0</Slave>
+        <Slave master="2" master_id="5" slave_id="5" alias="17" type="Damiao"               >0</Slave>
+        <Slave master="2" master_id="6" slave_id="6" alias="18" type="Damiao"               >0</Slave>
+        <Slave master="2" master_id="7" slave_id="7" alias="19" type="Damiao"               >0</Slave>
+        <Slave master="3" master_id="1" slave_id="1" alias="20" type="Encos EC-A4315-P2-36" >0</Slave>
+        <Slave master="3" master_id="2" slave_id="2" alias="21" type="Damiao"               >0</Slave>
+        <Slave master="3" master_id="3" slave_id="3" alias="22" type="Damiao"               >0</Slave>
+        <Slave master="3" master_id="4" slave_id="4" alias="23" type="Damiao"               >0</Slave>
+        <Slave master="3" master_id="5" slave_id="5" alias="24" type="Damiao"               >0</Slave>
+        <Slave master="3" master_id="6" slave_id="6" alias="25" type="Damiao"               >0</Slave>
+        <Slave master="3" master_id="7" slave_id="7" alias="26" type="Damiao"               >0</Slave>
+        <Slave master="4" master_id="1" slave_id="1" alias="27" type="Damiao"               >0</Slave>
+        <Slave master="4" master_id="2" slave_id="2" alias="28" type="Damiao"               >0</Slave>
+        <Slave master="4" master_id="3" slave_id="3" alias="29" type="Damiao"               >0</Slave>
+        <Slave master="0" master_id="7" slave_id="7" alias="30" type="Encos EC-A4310-P2-36" >0</Slave>
+        <Slave master="4" master_id="5" slave_id="5" alias="31" type="Damiao"               >0</Slave>
     </Slaves>
 </CAN>
 <RS485Emu>
@@ -976,7 +1016,7 @@
 </RS485>
 <Motors>
     <Motor limb="0" motor="0" alias="1">
-        <Polarity>-1</Polarity>
+        <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>16.227</GearRatioTor>
@@ -984,13 +1024,13 @@
         <RatedCurrent>31.5</RatedCurrent>
         <TorqueConstant>0.160588517</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>60</RatedTorque>
-        <MaximumTorque>150</MaximumTorque>
-        <MinimumPosition>-3.141</MinimumPosition>
-        <MaximumPosition>3.141</MaximumPosition>
+        <RatedTorque>100</RatedTorque>
+        <MaximumTorque>330</MaximumTorque>
+        <MinimumPosition>-0.785</MinimumPosition>
+        <MaximumPosition>1.571</MaximumPosition>
     </Motor>
     <Motor limb="0" motor="1" alias="2">
-        <Polarity>1</Polarity>
+        <Polarity>-1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>16.221</GearRatioTor>
@@ -999,12 +1039,12 @@
         <TorqueConstant>0.14611213</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
         <RatedTorque>40</RatedTorque>
-        <MaximumTorque>60</MaximumTorque>
-        <MinimumPosition>-1.396</MinimumPosition>
-        <MaximumPosition>1.396</MaximumPosition>
+        <MaximumTorque>130</MaximumTorque>
+        <MinimumPosition>-2.793</MinimumPosition>
+        <MaximumPosition>2.793</MaximumPosition>
     </Motor>
     <Motor limb="0" motor="2" alias="3">
-        <Polarity>-1</Polarity>
+        <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>18.2</GearRatioTor>
@@ -1012,9 +1052,9 @@
         <RatedCurrent>45</RatedCurrent>
         <TorqueConstant>0.160137246</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>90</RatedTorque>
-        <MaximumTorque>90</MaximumTorque>
-        <MinimumPosition>-0.489</MinimumPosition>
+        <RatedTorque>50</RatedTorque>
+        <MaximumTorque>150</MaximumTorque>
+        <MinimumPosition>-0.349</MinimumPosition>
         <MaximumPosition>0.785</MaximumPosition>
     </Motor>
     <Motor limb="0" motor="3" alias="4">
@@ -1026,26 +1066,12 @@
         <RatedCurrent>45</RatedCurrent>
         <TorqueConstant>0.160137246</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>90</RatedTorque>
+        <RatedTorque>50</RatedTorque>
         <MaximumTorque>150</MaximumTorque>
         <MinimumPosition>-0.175</MinimumPosition>
-        <MaximumPosition>1.885</MaximumPosition>
+        <MaximumPosition>1.902</MaximumPosition>
     </Motor>
     <Motor limb="0" motor="4" alias="5">
-        <Polarity>1</Polarity>
-        <CountBias>0</CountBias>
-        <EncoderResolution>131072</EncoderResolution>
-        <GearRatioTor>15.916</GearRatioTor>
-        <GearRatioPosVel>15.916</GearRatioPosVel>
-        <RatedCurrent>20</RatedCurrent>
-        <TorqueConstant>0.13234705</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>11.25</RatedTorque>
-        <MaximumTorque>60</MaximumTorque>
-        <MinimumPosition>-0.524</MinimumPosition>
-        <MaximumPosition>0.524</MaximumPosition>
-    </Motor>
-    <Motor limb="0" motor="5" alias="6">
         <Polarity>-1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
@@ -1054,10 +1080,24 @@
         <RatedCurrent>20</RatedCurrent>
         <TorqueConstant>0.13234705</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>11.25</RatedTorque>
-        <MaximumTorque>60</MaximumTorque>
-        <MinimumPosition>-0.349</MinimumPosition>
-        <MaximumPosition>0.349</MaximumPosition>
+        <RatedTorque>30</RatedTorque>
+        <MaximumTorque>90</MaximumTorque>
+        <MinimumPosition>-0.611</MinimumPosition>
+        <MaximumPosition>0.803</MaximumPosition>
+    </Motor>
+    <Motor limb="0" motor="5" alias="6">
+        <Polarity>1</Polarity>
+        <CountBias>0</CountBias>
+        <EncoderResolution>131072</EncoderResolution>
+        <GearRatioTor>15.916</GearRatioTor>
+        <GearRatioPosVel>15.916</GearRatioPosVel>
+        <RatedCurrent>20</RatedCurrent>
+        <TorqueConstant>0.13234705</TorqueConstant>
+        <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>30</RatedTorque>
+        <MaximumTorque>90</MaximumTorque>
+        <MinimumPosition>-0.611</MinimumPosition>
+        <MaximumPosition>0.803</MaximumPosition>
     </Motor>
     <Motor limb="1" motor="0" alias="7">
         <Polarity>-1</Polarity>
@@ -1068,13 +1108,13 @@
         <RatedCurrent>31.5</RatedCurrent>
         <TorqueConstant>0.160588517</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>60</RatedTorque>
-        <MaximumTorque>150</MaximumTorque>
-        <MinimumPosition>-3.141</MinimumPosition>
-        <MaximumPosition>3.141</MaximumPosition>
+        <RatedTorque>100</RatedTorque>
+        <MaximumTorque>330</MaximumTorque>
+        <MinimumPosition>-0.785</MinimumPosition>
+        <MaximumPosition>1.571</MaximumPosition>
     </Motor>
     <Motor limb="1" motor="1" alias="8">
-        <Polarity>1</Polarity>
+        <Polarity>-1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>16.221</GearRatioTor>
@@ -1083,9 +1123,9 @@
         <TorqueConstant>0.14611213</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
         <RatedTorque>40</RatedTorque>
-        <MaximumTorque>60</MaximumTorque>
-        <MinimumPosition>-1.396</MinimumPosition>
-        <MaximumPosition>1.396</MaximumPosition>
+        <MaximumTorque>130</MaximumTorque>
+        <MinimumPosition>-2.793</MinimumPosition>
+        <MaximumPosition>2.793</MaximumPosition>
     </Motor>
     <Motor limb="1" motor="2" alias="9">
         <Polarity>1</Polarity>
@@ -1096,9 +1136,9 @@
         <RatedCurrent>45</RatedCurrent>
         <TorqueConstant>0.160137246</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>90</RatedTorque>
-        <MaximumTorque>90</MaximumTorque>
-        <MinimumPosition>-0.489</MinimumPosition>
+        <RatedTorque>50</RatedTorque>
+        <MaximumTorque>150</MaximumTorque>
+        <MinimumPosition>-0.349</MinimumPosition>
         <MaximumPosition>0.785</MaximumPosition>
     </Motor>
     <Motor limb="1" motor="3" alias="10">
@@ -1110,26 +1150,12 @@
         <RatedCurrent>45</RatedCurrent>
         <TorqueConstant>0.160137246</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>90</RatedTorque>
+        <RatedTorque>50</RatedTorque>
         <MaximumTorque>150</MaximumTorque>
         <MinimumPosition>-0.175</MinimumPosition>
-        <MaximumPosition>1.885</MaximumPosition>
+        <MaximumPosition>1.902</MaximumPosition>
     </Motor>
     <Motor limb="1" motor="4" alias="11">
-        <Polarity>-1</Polarity>
-        <CountBias>0</CountBias>
-        <EncoderResolution>131072</EncoderResolution>
-        <GearRatioTor>15.916</GearRatioTor>
-        <GearRatioPosVel>15.916</GearRatioPosVel>
-        <RatedCurrent>20</RatedCurrent>
-        <TorqueConstant>0.13234705</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>11.25</RatedTorque>
-        <MaximumTorque>60</MaximumTorque>
-        <MinimumPosition>-0.524</MinimumPosition>
-        <MaximumPosition>0.524</MaximumPosition>
-    </Motor>
-    <Motor limb="1" motor="5" alias="12">
         <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
@@ -1138,181 +1164,27 @@
         <RatedCurrent>20</RatedCurrent>
         <TorqueConstant>0.13234705</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>11.25</RatedTorque>
-        <MaximumTorque>60</MaximumTorque>
-        <MinimumPosition>-0.349</MinimumPosition>
-        <MaximumPosition>0.349</MaximumPosition>
-    </Motor>
-    <!--<Motor limb="0" motor="0" alias="1">
-        <Polarity>-1</Polarity>
-        <CountBias>-17533</CountBias>
-        <EncoderResolution>131072</EncoderResolution>
-        <GearRatioTor>16.227</GearRatioTor>
-        <GearRatioPosVel>16.227</GearRatioPosVel>
-        <RatedCurrent>31.5</RatedCurrent>
-        <TorqueConstant>0.160588517</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>60</RatedTorque>
-        <MaximumTorque>320</MaximumTorque>
-        <MinimumPosition>-0.174532925</MinimumPosition>
-        <MaximumPosition>0.436332325</MaximumPosition>
-    </Motor>
-    <Motor limb="0" motor="1" alias="2">
-        <Polarity>1</Polarity>
-        <CountBias>3996454</CountBias>
-        <EncoderResolution>524288</EncoderResolution>
-        <GearRatioTor>15.4</GearRatioTor>
-        <GearRatioPosVel>1</GearRatioPosVel>
-        <RatedCurrent>20</RatedCurrent>
-        <TorqueConstant>0.21</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>40</RatedTorque>
-        <MaximumTorque>192</MaximumTorque>
-        <MinimumPosition>-0.69813172</MinimumPosition>
-        <MaximumPosition>0.69813172</MaximumPosition>
-    </Motor>
-    <Motor limb="0" motor="2" alias="3">
-        <Polarity>-1</Polarity>
-        <CountBias>136185</CountBias>
-        <EncoderResolution>131072</EncoderResolution>
-        <GearRatioTor>18.2</GearRatioTor>
-        <GearRatioPosVel>18.2</GearRatioPosVel>
-        <RatedCurrent>45</RatedCurrent>
-        <TorqueConstant>0.160137246</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>90</RatedTorque>
-        <MaximumTorque>396</MaximumTorque>
-        <MinimumPosition>-0.785398185</MinimumPosition>
-        <MaximumPosition>1.832595765</MaximumPosition>
-    </Motor>
-    <Motor limb="0" motor="3" alias="4">
-        <Polarity>-1</Polarity>
-        <CountBias>4636782</CountBias>
-        <EncoderResolution>524288</EncoderResolution>
-        <GearRatioTor>18.4</GearRatioTor>
-        <GearRatioPosVel>1</GearRatioPosVel>
-        <RatedCurrent>28</RatedCurrent>
-        <TorqueConstant>0.19</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>90</RatedTorque>
-        <MaximumTorque>396</MaximumTorque>
-        <MinimumPosition>-2.09439516</MinimumPosition>
-        <MaximumPosition>0.087266465</MaximumPosition>
-    </Motor>
-    <Motor limb="0" motor="4" alias="5">
-        <Polarity>1</Polarity>
-        <CountBias>262144</CountBias>
-        <EncoderResolution>524288</EncoderResolution>
-        <GearRatioTor>32</GearRatioTor>
-        <GearRatioPosVel>32.27</GearRatioPosVel>
-        <RatedCurrent>11.1</RatedCurrent>
-        <TorqueConstant>0.125</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>11.25</RatedTorque>
-        <MaximumTorque>58.5</MaximumTorque>
-        <MinimumPosition>-0.87266465</MinimumPosition>
-        <MaximumPosition>0.506145497</MaximumPosition>
-    </Motor>
-    <Motor limb="0" motor="5" alias="6">
-        <Polarity>-1</Polarity>
-        <CountBias>262147</CountBias>
-        <EncoderResolution>524288</EncoderResolution>
-        <GearRatioTor>32.27</GearRatioTor>
-        <GearRatioPosVel>32</GearRatioPosVel>
-        <RatedCurrent>11.1</RatedCurrent>
-        <TorqueConstant>0.125</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>11.25</RatedTorque>
-        <MaximumTorque>58.5</MaximumTorque>
-        <MinimumPosition>-0.942477822</MinimumPosition>
-        <MaximumPosition>0.471238911</MaximumPosition>
-    </Motor>
-    <Motor limb="1" motor="0" alias="7">
-        <Polarity>-1</Polarity>
-        <CountBias>-18370</CountBias>
-        <EncoderResolution>131072</EncoderResolution>
-        <GearRatioTor>16.227</GearRatioTor>
-        <GearRatioPosVel>16.227</GearRatioPosVel>
-        <RatedCurrent>31.5</RatedCurrent>
-        <TorqueConstant>0.160588517</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>60</RatedTorque>
-        <MaximumTorque>320</MaximumTorque>
-        <MinimumPosition>-0.436332325</MinimumPosition>
-        <MaximumPosition>0.174532925</MaximumPosition>
-    </Motor>
-    <Motor limb="1" motor="1" alias="8">
-        <Polarity>1</Polarity>
-        <CountBias>3978883</CountBias>
-        <EncoderResolution>524288</EncoderResolution>
-        <GearRatioTor>15.4</GearRatioTor>
-        <GearRatioPosVel>1</GearRatioPosVel>
-        <RatedCurrent>20</RatedCurrent>
-        <TorqueConstant>0.21</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>40</RatedTorque>
-        <MaximumTorque>192</MaximumTorque>
-        <MinimumPosition>-0.69813172</MinimumPosition>
-        <MaximumPosition>0.69813172</MaximumPosition>
-    </Motor>
-    <Motor limb="1" motor="2" alias="9">
-        <Polarity>1</Polarity>
-        <CountBias>-2798</CountBias>
-        <EncoderResolution>131072</EncoderResolution>
-        <GearRatioTor>18.2</GearRatioTor>
-        <GearRatioPosVel>18.2</GearRatioPosVel>
-        <RatedCurrent>45</RatedCurrent>
-        <TorqueConstant>0.160137246</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>90</RatedTorque>
-        <MaximumTorque>396</MaximumTorque>
-        <MinimumPosition>-0.785398185</MinimumPosition>
-        <MaximumPosition>1.832595765</MaximumPosition>
-    </Motor>
-    <Motor limb="1" motor="3" alias="10">
-        <Polarity>1</Polarity>
-        <CountBias>5053615</CountBias>
-        <EncoderResolution>524288</EncoderResolution>
-        <GearRatioTor>18.4</GearRatioTor>
-        <GearRatioPosVel>1</GearRatioPosVel>
-        <RatedCurrent>28</RatedCurrent>
-        <TorqueConstant>0.19</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>90</RatedTorque>
-        <MaximumTorque>396</MaximumTorque>
-        <MinimumPosition>-2.09439516</MinimumPosition>
-        <MaximumPosition>0.087266465</MaximumPosition>
-    </Motor>
-    <Motor limb="1" motor="4" alias="11">
-        <Polarity>-1</Polarity>
-        <CountBias>262142</CountBias>
-        <EncoderResolution>524288</EncoderResolution>
-        <GearRatioTor>32</GearRatioTor>
-        <GearRatioPosVel>32.27</GearRatioPosVel>
-        <RatedCurrent>11.1</RatedCurrent>
-        <TorqueConstant>0.125</TorqueConstant>
-        <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>11.25</RatedTorque>
-        <MaximumTorque>58.5</MaximumTorque>
-        <MinimumPosition>-0.942477822</MinimumPosition>
-        <MaximumPosition>0.471238911</MaximumPosition>
+        <RatedTorque>30</RatedTorque>
+        <MaximumTorque>90</MaximumTorque>
+        <MinimumPosition>-0.611</MinimumPosition>
+        <MaximumPosition>0.803</MaximumPosition>
     </Motor>
     <Motor limb="1" motor="5" alias="12">
-        <Polarity>1</Polarity>
-        <CountBias>262144</CountBias>
-        <EncoderResolution>524288</EncoderResolution>
-        <GearRatioTor>32</GearRatioTor>
-        <GearRatioPosVel>32.27</GearRatioPosVel>
-        <RatedCurrent>11.1</RatedCurrent>
-        <TorqueConstant>0.125</TorqueConstant>
+        <Polarity>-1</Polarity>
+        <CountBias>0</CountBias>
+        <EncoderResolution>131072</EncoderResolution>
+        <GearRatioTor>15.916</GearRatioTor>
+        <GearRatioPosVel>15.916</GearRatioPosVel>
+        <RatedCurrent>20</RatedCurrent>
+        <TorqueConstant>0.13234705</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>11.25</RatedTorque>
-        <MaximumTorque>58.5</MaximumTorque>
-        <MinimumPosition>-0.87266465</MinimumPosition>
-        <MaximumPosition>0.506145497</MaximumPosition>
-    </Motor>-->
+        <RatedTorque>30</RatedTorque>
+        <MaximumTorque>90</MaximumTorque>
+        <MinimumPosition>-0.611</MinimumPosition>
+        <MaximumPosition>0.803</MaximumPosition>
+    </Motor>
     <Motor limb="2" motor="0" alias="13">
-        <Polarity>-1</Polarity>
+        <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>120</GearRatioTor>
@@ -1320,8 +1192,8 @@
         <RatedCurrent>5</RatedCurrent>
         <TorqueConstant>0.112</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>0</RatedTorque>
-        <MaximumTorque>80</MaximumTorque>
+        <RatedTorque>25</RatedTorque>
+        <MaximumTorque>75</MaximumTorque>
         <MinimumPosition>-2.96705981</MinimumPosition>
         <MaximumPosition>2.96705981</MaximumPosition>
     </Motor>
@@ -1340,7 +1212,7 @@
         <MaximumPosition>1.832595765</MaximumPosition>
     </Motor>
     <Motor limb="2" motor="2" alias="15">
-        <Polarity>-1</Polarity>
+        <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>100</GearRatioTor>
@@ -1382,7 +1254,7 @@
         <MaximumPosition>2.96705981</MaximumPosition>
     </Motor>
     <Motor limb="2" motor="5" alias="18">
-        <Polarity>-1</Polarity>
+        <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>101</GearRatioTor>
@@ -1410,7 +1282,7 @@
         <MaximumPosition>1.569</MaximumPosition>
     </Motor>
     <Motor limb="3" motor="0" alias="20">
-        <Polarity>-1</Polarity>
+        <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>120</GearRatioTor>
@@ -1418,8 +1290,8 @@
         <RatedCurrent>5</RatedCurrent>
         <TorqueConstant>0.112</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>0</RatedTorque>
-        <MaximumTorque>80</MaximumTorque>
+        <RatedTorque>25</RatedTorque>
+        <MaximumTorque>75</MaximumTorque>
         <MinimumPosition>-2.96705981</MinimumPosition>
         <MaximumPosition>2.96705981</MaximumPosition>
     </Motor>
@@ -1438,7 +1310,7 @@
         <MaximumPosition>1.832595765</MaximumPosition>
     </Motor>
     <Motor limb="3" motor="2" alias="22">
-        <Polarity>-1</Polarity>
+        <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>100</GearRatioTor>
@@ -1480,7 +1352,7 @@
         <MaximumPosition>2.96705981</MaximumPosition>
     </Motor>
     <Motor limb="3" motor="5" alias="25">
-        <Polarity>-1</Polarity>
+        <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>101</GearRatioTor>
@@ -1509,7 +1381,7 @@
     </Motor>
     <Motor limb="4" motor="0" alias="27">
         <Polarity>1</Polarity>
-        <CountBias>78090</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>81</GearRatioTor>
         <GearRatioPosVel>81</GearRatioPosVel>
@@ -1523,7 +1395,7 @@
     </Motor>
     <Motor limb="4" motor="1" alias="28">
         <Polarity>1</Polarity>
-        <CountBias>-44451</CountBias>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>81</GearRatioTor>
         <GearRatioPosVel>81</GearRatioPosVel>
@@ -1536,8 +1408,8 @@
         <MaximumPosition>0.436332325</MaximumPosition>
     </Motor>
     <Motor limb="4" motor="2" alias="29">
-        <Polarity>-1</Polarity>
-        <CountBias>-71514</CountBias>
+        <Polarity>1</Polarity>
+        <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>51</GearRatioTor>
         <GearRatioPosVel>51</GearRatioPosVel>
@@ -1550,7 +1422,7 @@
         <MaximumPosition>0.69813172</MaximumPosition>
     </Motor>
     <Motor limb="5" motor="0" alias="30">
-        <Polarity>-1</Polarity>
+        <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>4</GearRatioTor>
@@ -1558,13 +1430,13 @@
         <RatedCurrent>9</RatedCurrent>
         <TorqueConstant>0.123673975</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>
-        <RatedTorque>5</RatedTorque>
-        <MaximumTorque>26</MaximumTorque>
+        <RatedTorque>12</RatedTorque>
+        <MaximumTorque>36</MaximumTorque>
         <MinimumPosition>-1.569</MinimumPosition>
         <MaximumPosition>1.569</MaximumPosition>
     </Motor>
     <Motor limb="5" motor="1" alias="31">
-        <Polarity>-1</Polarity>
+        <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
         <GearRatioTor>4</GearRatioTor>
@@ -1578,5 +1450,5 @@
         <MaximumPosition>0.69813172</MaximumPosition>
     </Motor>
 </Motors>
-<IMU device="" baudrate="460800"/>
+<IMU device="/dev/ttyUSB5" baudrate="115200" type="HiPNUC"/>
 </Config>
