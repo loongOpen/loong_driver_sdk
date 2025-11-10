@@ -1,0 +1,55 @@
+{
+    "nodes": [{
+        "id": 0,
+        "enable": true,
+        "mode_comment": "value_table: R, W, RW",
+        "mode": "RW",
+        "target": "can5_ins0ch4",
+        "clk_source": "/dev/hrtc0",
+        "io_channel": {
+            "device_type_comment": "value_table: can, eth, ipcf, spi",
+            "device_type": "ipcf",
+            "channel_id": 0
+        },
+        "raw_protocol": "built_1.0"
+    },{
+        "id": 1,
+        "enable": true,
+        "mode_comment": "value_table: R, W, RW",
+        "mode": "RW",
+        "target": "can6_ins0ch6",
+        "clk_source": "/dev/hrtc0",
+        "io_channel": {
+            "device_type_comment": "value_table: can, eth, ipcf, spi",
+            "device_type": "ipcf",
+            "channel_id" : 1
+        },
+        "raw_protocol" : "built_1.0"
+    },{
+        "id": 2,
+        "enable": true,
+        "mode_comment": "value_table: R, W, RW",
+        "mode": "RW",
+        "target": "can7_ins0ch7",
+        "clk_source": "/dev/hrtc0",
+        "io_channel": {
+            "device_type_comment": "value_table: can, eth, ipcf, spi",
+            "device_type": "ipcf",
+            "channel_id": 2
+        },
+        "raw_protocol": "built_1.0"
+    },{
+        "id": 3,
+        "enable": true,
+        "mode_comment": "value_table: R, W, RW",
+        "mode": "RW",
+        "target": "can8_ins0ch2",
+        "clk_source": "/dev/hrtc0",
+        "io_channel": {
+            "device_type_comment": "value_table: can, eth, ipcf, spi",
+            "device_type": "ipcf",
+            "channel_id": 3
+        },
+        "raw_protocol": "built_1.0"
+    }]
+}

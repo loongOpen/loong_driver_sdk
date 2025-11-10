@@ -1,0 +1,57 @@
+{
+    "enable": true,
+    "libipcf_path": "/usr/hobot/lib/libhbipcfhal.so.1",
+    "channels": [{
+        "id": 0,
+        "channel": {
+            "name": "can5_ins0ch4",
+            "instance": 0,
+            "channel": 4,
+            "fifo_size": 64000,
+            "fifo_type": 0,
+            "pkg_size_max": 4096,
+            "dev_path": "/dev/ipcdrv",
+            "dev_name": "ipcdrv",
+            "recv_timeout": 1000
+        }
+    },{
+        "id" : 1,
+        "channel": {
+            "name": "can6_ins0ch6",
+            "instance": 0,
+            "channel": 6,
+            "fifo_size": 64000,
+            "fifo_type": 0,
+            "pkg_size_max": 4096,
+            "dev_path": "/dev/ipcdrv",
+            "dev_name": "ipcdrv",
+            "recv_timeout": 1000
+        }
+    },{
+        "id": 2,
+        "channel": {
+            "name": "can7_ins0ch7",
+            "instance": 0,
+            "channel": 7,
+            "fifo_size": 64000,
+            "fifo_type": 0,
+            "pkg_size_max": 4096,
+            "dev_path": "/dev/ipcdrv",
+            "dev_name": "ipcdrv",
+            "recv_timeout": 1000
+        }
+    },{
+        "id": 3,
+        "channel": {
+            "name": "can8_ins0ch2",
+            "instance": 0,
+            "channel": 2,
+            "fifo_size": 64000,
+            "fifo_type": 0,
+            "pkg_size_max": 4096,
+            "dev_path": "/dev/ipcdrv",
+            "dev_name": "ipcdrv",
+            "recv_timeout": 1000
+        }
+    }]
+}

@@ -238,8 +238,8 @@ int DriverSDK::impClass::init(char const* xmlFile){
     if(dofEffector > 0){
         digits = new WrapperPair<DigitRxData, DigitTxData, EffectorParameters>[dofEffector];
     }
-    CAN::rxPth = 0;
-    CAN::txPth = 0;
+    CAN::CANHAL = 0;
+    CAN::rxPth = CAN::txPth = CAN::txPth_ = 0;
     CAN::type2parameters.clear();
     CAN::alias2masterID_ = new int[dofAll + 1];
     CAN::alias2status = new unsigned short[dofAll + 1];

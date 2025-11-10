@@ -16,6 +16,7 @@
  */
 
 #include "config_xml.h"
+#include "hobot_can_hal.h"
 #include "can.h"
 #include <unistd.h>
 #include <net/if.h>
@@ -30,6 +31,7 @@ namespace DriverSDK{
 #define CANFD_BRS 0x01
 #define CANFD_ESI 0x02
 #define CANFD_FDF 0x04
+#define BSWAP(X) (((unsigned int)(X) & 0xff000000) >> 24 | ((unsigned int)(X) & 0x00ff0000) >> 8 | ((unsigned int)(X) & 0x0000ff00) << 8 | ((unsigned int)(X) & 0x000000ff) << 24)
 
 extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> canAlias2type;
@@ -259,7 +261,8 @@ DriverParameters::~DriverParameters(){
 }
 
 long CAN::period;
-pthread_t CAN::rxPth, CAN::txPth;
+int CAN::CANHAL;
+pthread_t CAN::rxPth, CAN::txPth, CAN::txPth_;
 std::map<std::string, DriverParameters*> CAN::type2parameters;
 int* CAN::alias2masterID_;
 unsigned short* CAN::alias2status;
@@ -274,11 +277,13 @@ CAN::CAN(int const order, char const* device){
     sock = -1;
     MASK = 0;
     mask = 0;
+    rollingCounter = 0xff;
     this->order = order;
     alias2type = canAlias2type[order];
     alias2masterID = canAlias2masterID[order];
     alias2slaveID = canAlias2slaveID[order];
     if(alias2type.size() == 0){
+        canhal = 0;
         return;
     }
     printf("cans[%d]\n", order);
@@ -301,60 +306,22 @@ CAN::CAN(int const order, char const* device){
     }
     this->device = (char*)malloc(strlen(device) + 1);
     strcpy(this->device, device);
+    canhal    = configXML->feature("CAN", order, "canhal");
     baudrate  = configXML->attribute("CAN", order, "baudrate");
     canfd     = configXML->feature("CAN", order, "canfd");
     dbaudrate = configXML->attribute("CAN", order, "dbaudrate");
     division  = configXML->attribute("CAN", order, "division");
 }
 
-int CAN::config(){
-    if(alias2type.size() == 0){
-        return 0;
-    }
-    if(ifaceUp() < 0){
-        return -1;
-    }
-    sock = open(0);
-    if(sock < 0){
-        return -1;
-    }
-    rxSwap = new SwapList(dofAll * sizeof(DriverRxData));
-    txSwap = new SwapList(dofAll * sizeof(DriverTxData));
-    int i = 0;
-    auto itr = alias2slaveID.begin();
-    while(itr != alias2slaveID.end()){
-        int alias = itr->first, slave = itr->second;
-        std::string type = alias2type.find(alias)->second;
-        if(drivers[alias - 1].init("CAN", 1, order, 0, slave, alias, type, i * sizeof(DriverRxData), i * sizeof(DriverTxData), nullptr, nullptr) != 0){
-            printf("\tdrivers[%d] init failed\n", alias - 1);
-            return -1;
-        }
-        switch(drivers[alias - 1].config("CAN", order, 0, rxSwap, txSwap)){
-        case 2:
-            drivers[alias - 1].tx->StatusWord = 0xffff;
-            break;
-        case 1:
-            break;
-        case 0:
-            break;
-        case -1:
-            printf("\tdrivers[%d] config failed\n", alias - 1);
-            return -1;
-            break;
-        }
-        itr++;
-        i++;
-    }
-    return 0;
-}
-
 int CAN::ifaceIsUp(){
+    if(canhal == 1){
+        return 1;
+    }
     if(device[0] == '/'){
         if(access(device, F_OK) == 0){
             return 1;
-        }else{
-            return 0;
         }
+        return 0;
     }
     int ret;
     struct ifreq ifr;
@@ -378,7 +345,8 @@ int CAN::ifaceUp(){
     if(ifaceIsUp() == 1){
         printf("iface %s is up\n", device);
         return 0;
-    }else if(device[0] == '/'){
+    }
+    if(device[0] == '/'){
         printf("iface %s is down\n", device);
         return -1;
     }
@@ -399,7 +367,7 @@ int CAN::ifaceUp(){
 }
 
 int CAN::ifaceDown(){
-    if(device[0] == '/'){
+    if(canhal == 1 || device[0] == '/'){
         return 0;
     }
     char cmd[128];
@@ -412,7 +380,7 @@ int CAN::ifaceDown(){
 int CAN::open(int const masterID){
     int sock;
     if(device[0] == '/'){
-        sock = socket(AF_INET, SOCK_STREAM, 0);
+        sock = socket(AF_UNIX, SOCK_STREAM, 0);
         if(sock == -1){
             printf("creating socket failed\n");
             return -1;
@@ -432,7 +400,6 @@ int CAN::open(int const masterID){
     }
     struct ifreq ifr;
     struct sockaddr_can addr;
-    struct can_filter rfilter[1];
     if(ifaceIsUp() != 1){
         printf("iface %s is down\n", device);
         return -1;
@@ -455,6 +422,7 @@ int CAN::open(int const masterID){
         return -1;
     }
     if(masterID > 0){
+        struct can_filter rfilter[1];
         rfilter[0].can_id = masterID;
         rfilter[0].can_mask = CAN_SFF_MASK;
         if(setsockopt(sock, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter)) != 0){
@@ -491,6 +459,49 @@ int CAN::open(int const masterID){
     return sock;
 }
 
+int CAN::config(){
+    if(alias2type.size() == 0){
+        return 0;
+    }
+    if(ifaceUp() == -1){
+        return -1;
+    }
+    if(canhal == 0){
+        sock = open(0);
+        if(sock == -1){
+            return -1;
+        }
+    }
+    rxSwap = new SwapList(dofAll * sizeof(DriverRxData));
+    txSwap = new SwapList(dofAll * sizeof(DriverTxData));
+    int i = 0;
+    auto itr = alias2slaveID.begin();
+    while(itr != alias2slaveID.end()){
+        int alias = itr->first, slave = itr->second;
+        std::string type = alias2type.find(alias)->second;
+        if(drivers[alias - 1].init("CAN", 1, order, 0, slave, alias, type, i * sizeof(DriverRxData), i * sizeof(DriverTxData), nullptr, nullptr) != 0){
+            printf("\tdrivers[%d] init failed\n", alias - 1);
+            return -1;
+        }
+        switch(drivers[alias - 1].config("CAN", order, 0, rxSwap, txSwap)){
+        case 2:
+            drivers[alias - 1].tx->StatusWord = 0xffff;
+            break;
+        case 1:
+            break;
+        case 0:
+            break;
+        case -1:
+            printf("\tdrivers[%d] config failed\n", alias - 1);
+            return -1;
+            break;
+        }
+        itr++;
+        i++;
+    }
+    return 0;
+}
+
 int CAN::send(int const slaveID, unsigned char const* data, int length){
     int ret;
     struct can_frame frame;
@@ -503,7 +514,11 @@ int CAN::send(int const slaveID, unsigned char const* data, int length){
     memcpy(frame.data, data, length);
     ret = write(sock, &frame, sizeof(frame));
     if(ret != sizeof(frame)){
-        printf("send: cans[%d] write ret = %d\n", order, ret);
+        static unsigned int cnt = 0xffffffff;
+        cnt++;
+        if(cnt % 500 == 0){
+            printf("send: cans[%d] write ret = %d\n", order, ret);
+        }
         return -1;
     }
     return frame.can_id;
@@ -547,7 +562,11 @@ int CAN::sendfd(int const slaveID, unsigned char const* data, int const length){
     memcpy(frame.data, data, length);
     ret = write(sock, &frame, sizeof(frame));
     if(ret != sizeof(frame)){
-        printf("sendfd: cans[%d] write ret = %d\n", order, ret);
+        static unsigned int cnt = 0xffffffff;
+        cnt++;
+        if(cnt % 500 == 0){
+            printf("sendfd: cans[%d] write ret = %d\n", order, ret);
+        }
         return -1;
     }
     return frame.can_id;
@@ -586,6 +605,9 @@ void* CAN::rx(void* arg){
     std::vector<CAN>& cans = *(std::vector<CAN>*)arg;
     unsigned int count = 0xffffffff;
     unsigned char data[64];
+    struct canframe frames[32];
+    struct pack_info packInfo;
+    packInfo.length = 32;
     struct timespec currentTime, wakeupTime, step{0, 6 * period / 100};
     while(step.tv_nsec >= NSEC_PER_SEC){
         step.tv_nsec -= NSEC_PER_SEC;
@@ -598,14 +620,36 @@ void* CAN::rx(void* arg){
         while(i < cans.size()){
             if(cans[i].rxSwap != nullptr && count % cans[i].division == 0){
                 auto itr = cans[i].alias2slaveID.begin();
-                while(itr != cans[i].alias2slaveID.end()){
-                    int alias = itr->first, length = rxFuncs[alias2masterID_[alias]][i](alias, data);
-                    if(cans[i].device[0] == '/' || cans[i].canfd == 1){
-                        cans[i].sendfd(itr->second, data, length);
-                    }else{
-                        cans[i].send(itr->second, data, length);
+                if(cans[i].canhal == 0){
+                    while(itr != cans[i].alias2slaveID.end()){
+                        int alias = itr->first, slaveID = itr->second, length = rxFuncs[alias2masterID_[alias]][i](alias, data);
+                        if(cans[i].device[0] == '/' || cans[i].canfd == 1){
+                            cans[i].sendfd(slaveID, data, length);
+                        }else{
+                            cans[i].send(slaveID, data, length);
+                        }
+                        itr++;
                     }
-                    itr++;
+                }else if(cans[i].canhal == 1){
+                    packInfo.data_num = 0;
+                    while(itr != cans[i].alias2slaveID.end()){
+                        int alias = itr->first, slaveID = itr->second, nr = packInfo.data_num;
+                        frames[nr].canid = BSWAP(slaveID);
+                        frames[nr].count = cans[i].rollingCounter++;
+                        frames[nr].can_type = cans[i].canfd;
+                        frames[nr].can_channel = cans[i].device[3] - '0';
+                        frames[nr].len = rxFuncs[alias2masterID_[alias]][i](alias, frames[nr].data);
+                        packInfo.data_num++;
+                        itr++;
+                    }
+                    int ret = canSendMsgFrame(cans[i].device, frames, &packInfo);
+                    if(ret <= 0){
+                        static unsigned int cnt = 0xffffffff;
+                        cnt++;
+                        if(cnt % 500 == 0){
+                            printf("canSendMsgFrame: cans[%d] write ret = %d\n", i, ret);
+                        }
+                    }
                 }
             }
             i++;
@@ -675,7 +719,7 @@ void* CAN::tx(void* arg){
         while(i < count){
             int order = sock2order[events[i].data.fd], masterID = 0, length = 0;
             CAN& can = cans[order];
-            if(cans[i].device[0] == '/' || can.canfd == 1){
+            if(can.device[0] == '/' || can.canfd == 1){
                 length = can.recvfd(data, 64, &masterID);
             }else{
                 length = can.recv(data, 64, &masterID);
@@ -692,16 +736,65 @@ void* CAN::tx(void* arg){
     return nullptr;
 }
 
+void* CAN::tx_(void* arg){
+    std::vector<CAN>& cans = *(std::vector<CAN>*)arg;
+    struct canframe frames[32];
+    struct pack_info packInfo;
+    packInfo.length = 32;
+    while(true){
+        int i = 0;
+        while(i < cans.size()){
+            if(cans[i].canhal != 1){
+                i++;
+                continue;
+            }
+            int ret = canRecvMsgFrame(cans[i].device, frames, &packInfo);
+            if(ret < 0){
+                static unsigned int cnt = 0xffffffff;
+                cnt++;
+                if(cnt % 500 == 0){
+                    printf("canRecvMsgFrame: cans[%d] read ret = %d\n", i, ret);
+                }
+                i++;
+                continue;
+            }
+            int j = 0;
+            while(j < packInfo.data_num){
+                int masterID = frames[j].canid, length = frames[j].len;
+                if(length == 0){
+                    j++;
+                    continue;
+                }
+                txFuncs[masterID][i](i, masterID, frames[j].data, length, &cans[i]);
+                j++;
+            }
+            i++;
+        }
+    }
+    return nullptr;
+}
+
 int CAN::run(std::vector<CAN>& cans){
     int i = 0, j = 0;
     while(i < cans.size()){
         if(cans[i].alias2type.size() > 0){
-             j++;
+            if(cans[i].canhal == 1){
+                CANHAL++;
+            }
+            j++;
         }
         i++;
     }
     if(j == 0){
         return 0;
+    }
+    if(CANHAL > 0 && canInit() < 0){
+        printf("canhal init failed\n");
+        return -1;
+    }
+    bool socketCAN = false;
+    if(j > CANHAL){
+        socketCAN = true;
     }
     period = configXML->canPeriod();
     i = 1;
@@ -783,19 +876,36 @@ int CAN::run(std::vector<CAN>& cans){
         return -1;
     }
     printf("can rx on cpu %d\n", cpu);
-    if(pthread_create(&txPth, nullptr, &tx, (void*)&cans) != 0){
-        printf("creating can tx thread failed\n");
-        return -1;
+    if(socketCAN){
+        if(pthread_create(&txPth, nullptr, &tx, (void*)&cans) != 0){
+            printf("creating socketcan tx thread failed\n");
+            return -1;
+        }
+        if(pthread_setaffinity_np(txPth, sizeof(cpu_set_t), &cpuset) != 0){
+            printf("setting socketcan tx thread cpu affinity failed\n");
+            return -1;
+        }
+        if(pthread_detach(txPth) != 0){
+            printf("detaching socketcan tx thread failed\n");
+            return -1;
+        }
+        printf("socketcan tx on cpu %d\n", cpu);
     }
-    if(pthread_setaffinity_np(txPth, sizeof(cpu_set_t), &cpuset) != 0){
-        printf("setting can tx thread cpu affinity failed\n");
-        return -1;
+    if(CANHAL > 0){
+        if(pthread_create(&txPth_, nullptr, &tx_, (void*)&cans) != 0){
+            printf("creating canhal tx thread failed\n");
+            return -1;
+        }
+        if(pthread_setaffinity_np(txPth_, sizeof(cpu_set_t), &cpuset) != 0){
+            printf("setting canhal tx thread cpu affinity failed\n");
+            return -1;
+        }
+        if(pthread_detach(txPth_) != 0){
+            printf("detaching canhal tx thread failed\n");
+            return -1;
+        }
+        printf("canhal tx on cpu %d\n", cpu);
     }
-    if(pthread_detach(txPth) != 0){
-        printf("detaching can tx thread failed\n");
-        return -1;
-    }
-    printf("can tx on cpu %d\n", cpu);
     return 0;
 }
 
@@ -803,6 +913,14 @@ CAN::~CAN(){
     if(rxPth > 0){
         pthread_cancel(rxPth);
         rxPth = 0;
+    }
+    if(txPth_ > 0){
+        pthread_cancel(txPth_);
+        txPth_ = 0;
+    }
+    if(CANHAL > 0){
+        canDeInit();
+        CANHAL = 0;
     }
     if(txPth > 0){
         pthread_cancel(txPth);

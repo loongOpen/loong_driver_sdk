@@ -35,14 +35,15 @@ public:
 
 class CAN{
 public:
-    int order, baudrate, canfd, dbaudrate, division, sock;
+    int order, canhal, baudrate, canfd, dbaudrate, division, sock;
     std::map<int, std::string> alias2type;
     char* device;
     static long period;
+    static int CANHAL;
     std::map<int, int> alias2masterID;
     std::map<int, int> alias2slaveID;
     SwapList* rxSwap, * txSwap;
-    static pthread_t rxPth, txPth;
+    static pthread_t rxPth, txPth, txPth_;
     static std::map<std::string, DriverParameters*> type2parameters;
     static int* alias2masterID_;
     static unsigned short* alias2status;
@@ -51,12 +52,13 @@ public:
     unsigned short MASK, mask;
     static canRXFunction rxFuncs[2048][8];
     static canTXFunction txFuncs[2048][8];
+    unsigned char rollingCounter;
     CAN(int const order, char const* device);
-    int config();
     int ifaceIsUp();
     int ifaceUp();
     int ifaceDown();
     int open(int const masterID);
+    int config();
     int send(int const slaveID, unsigned char const* data, int const length);
     int recv(unsigned char* const data, int const length, int* const masterID);
     int sendfd(int const slaveID, unsigned char const* data, int const length);
@@ -64,6 +66,7 @@ public:
     static void cleanup(void* arg);
     static void* rx(void* arg);
     static void* tx(void* arg);
+    static void* tx_(void* arg);
     static int run(std::vector<CAN>& cans);
     ~CAN();
 };

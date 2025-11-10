@@ -853,12 +853,12 @@
         <Category name="sensor">
         </Category>
     </Categories>
-    <Masters period="1000000">
-        <Master order="0" device="can0" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
-        <Master order="1" device="can1" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
-        <Master order="2" device="can2" baudrate="1000000" canfd="false" dbaudrate="4000000" division="4"/>
-        <Master order="3" device="can3" baudrate="1000000" canfd="false" dbaudrate="4000000" division="4"/>
-        <Master order="4" device="can0" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+    <Masters period="2000000">
+        <Master order="0" device="can0" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+        <Master order="1" device="can1" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+        <Master order="2" device="can2" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+        <Master order="3" device="can3" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+        <Master order="4" device="can0" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
     </Masters>
     <Slaves>
         <Slave master="0" master_id="1" slave_id="1" alias="1"  type="Encos" >0</Slave>
