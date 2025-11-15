@@ -44,7 +44,7 @@ extern WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
 extern WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
 extern WrapperPair<ConverterRxData, ConverterTxData, EffectorParameters> converters[2];
 extern WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
-extern unsigned short processorECAT;
+extern std::vector<unsigned short> processorsECAT;
 extern std::vector<unsigned short> maxCurrent;
 extern std::atomic<int> ecatStalled;
 extern std::vector<RS485>* rs485sPtr;
@@ -909,8 +909,8 @@ int ECAT::run(){
         return 0;
     }
     int cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
-    if(cpu > processorECAT){
-        cpu = processorECAT;
+    if(cpu > processorsECAT[order]){
+        cpu = processorsECAT[order];
     }
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);

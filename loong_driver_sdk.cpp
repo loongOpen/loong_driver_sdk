@@ -38,7 +38,7 @@ WrapperPair<DriverRxData, DriverTxData, MotorParameters>** legs[2], ** arms[2], 
 WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
 WrapperPair<ConverterRxData, ConverterTxData, EffectorParameters> converters[2];
 WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
-unsigned short processorECAT, processorCAN;
+std::vector<unsigned short> processorsECAT, processorsCAN;
 std::vector<char> operatingMode;
 std::vector<unsigned short> maxCurrent;
 std::atomic<int> ecatStalled;
@@ -87,8 +87,16 @@ DriverSDK::impClass::impClass(){
     digits = nullptr;
     CAN::alias2masterID_ = nullptr;
     imu = nullptr;
-    processorECAT = sysconf(_SC_NPROCESSORS_ONLN) - 1;
-    processorCAN = sysconf(_SC_NPROCESSORS_ONLN) - 1;
+    int i = 0;
+    while(i < 4){
+        processorsECAT.push_back(sysconf(_SC_NPROCESSORS_ONLN) - 1);
+        i++;
+    }
+    i = 0;
+    while(i < 3){
+        processorsCAN.push_back(sysconf(_SC_NPROCESSORS_ONLN) - 1);
+        i++;
+    }
     ecatStalled.store(0);
     rs485sPtr = &rs485s;
     rs485s.reserve(8);
@@ -137,7 +145,7 @@ int DriverSDK::impClass::driverCheck(std::vector<std::map<int, std::string>> con
     while(i < canAlias2type.size()){
         auto itr = canAlias2type[i].begin();
         while(itr != canAlias2type[i].end()){
-            existing[itr->first] = true;
+            existing[itr->first - 1] = true;
             itr++;
         }
         i++;
@@ -146,7 +154,7 @@ int DriverSDK::impClass::driverCheck(std::vector<std::map<int, std::string>> con
     while(i < ecatAlias2type.size()){
         auto itr = ecatAlias2type[i].begin();
         while(itr != ecatAlias2type[i].end()){
-            if(existing[itr->first]){
+            if(existing[itr->first - 1]){
                 return -1;
             }
             itr++;
@@ -617,16 +625,27 @@ DriverSDK::DriverSDK(): imp(*new impClass()){
 }
 
 void DriverSDK::setCPU(unsigned short const cpu){
-    processorECAT = cpu;
-    processorCAN = cpu;
+    int i = 0;
+    while(i < 4){
+        processorsECAT[i] = cpu;
+        i++;
+    }
+    i = 0;
+    while(i < 3){
+        processorsCAN[i] = cpu;
+        i++;
+    }
 }
 
-void DriverSDK::setCPU(unsigned short const cpu, std::string const& bus){
-    if(bus == "ECAT"){
-        processorECAT = cpu;
-    }else if(bus == "CAN"){
-        processorCAN = cpu;
+int DriverSDK::setCPUs(std::vector<unsigned short> const& cpus, std::string const& bus){
+    if(bus == "ECAT" && cpus.size() == 4){
+        processorsECAT = cpus;
+    }else if(bus == "CAN" && cpus.size() == 3){
+        processorsCAN = cpus;
+    }else{
+        return -1;
     }
+    return 0;
 }
 
 void DriverSDK::setMaxCurr(std::vector<unsigned short> const& maxCurr){

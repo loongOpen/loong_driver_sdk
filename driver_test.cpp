@@ -25,8 +25,10 @@ float const Pi = std::acos(-1);
 int main(int argc, char** argv){
     DriverSDK::DriverSDK& driverSDK = DriverSDK::DriverSDK::instance();
     printf("loong_driver_sdk version: %s\n", driverSDK.version().c_str());
-    driverSDK.setCPU(2, "ECAT");
-    driverSDK.setCPU(2, "CAN");
+    std::vector<unsigned short> cpusECAT = {2, 3, 3, 3};
+    driverSDK.setCPUs(cpusECAT, "ECAT");
+    std::vector<unsigned short> cpusCAN = {4, 4, 4};
+    driverSDK.setCPUs(cpusCAN, "CAN");
     std::vector<unsigned short> maxCurr = {
         1000, 1000, 1000, 1000, 1000, 1000,
         1000, 1000, 1000, 1000, 1000, 1000,

@@ -66,6 +66,8 @@ public:
     static void cleanup(void* arg);
     static void* rx(void* arg);
     static void* tx(void* arg);
+    static void cleanup_(void* arg);
+    static void* tx__(void* arg);
     static void* tx_(void* arg);
     static int run(std::vector<CAN>& cans);
     ~CAN();

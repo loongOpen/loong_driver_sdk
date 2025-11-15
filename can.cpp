@@ -38,7 +38,7 @@ extern std::vector<std::map<int, std::string>> canAlias2type;
 extern std::vector<std::map<int, int>> canAlias2masterID, canAlias2slaveID;
 extern int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector;
 extern WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
-extern unsigned short processorCAN;
+extern std::vector<unsigned short> processorsCAN;
 
 unsigned short float2para(float const f, float const min, float const max, int const bit){
     return (f - min) * ((1 << bit) - 1.0) / (max - min);
@@ -686,6 +686,7 @@ void* CAN::tx(void* arg){
         printf("epoll_create1() error\n");
         exit(-1);
     }
+    pthread_cleanup_push(cleanup, &epfd);
     int i = 0, sock2order[128];
     while(i < 128){
         sock2order[i] = -1;
@@ -700,15 +701,14 @@ void* CAN::tx(void* arg){
             ev.data.fd = cans[i].sock;
             if(epoll_ctl(epfd, EPOLL_CTL_ADD, cans[i].sock, &ev) == -1){
                 printf("epoll_ctl() EPOLL_CTL_ADD error, errno: %d\n", errno);
-                exit(-1);
+                pthread_exit(nullptr);
             }
         }
         i++;
     }
+    printf("epoll_waiting...\n");
     unsigned char data[64];
     struct epoll_event events[8];
-    pthread_cleanup_push(cleanup, &epfd);
-    printf("epoll_waiting...\n");
     while(true){
         int count = epoll_wait(epfd, events, 8, -1);
         if(count == -1){
@@ -736,41 +736,71 @@ void* CAN::tx(void* arg){
     return nullptr;
 }
 
-void* CAN::tx_(void* arg){
-    std::vector<CAN>& cans = *(std::vector<CAN>*)arg;
+void CAN::cleanup_(void* arg){
+    std::vector<pthread_t> pths = *(std::vector<pthread_t>*)arg;
+    int i = 0;
+    while(i < pths.size()){
+        if(pths[i] > 0){
+            pthread_cancel(pths[i]);
+            pths[i] = 0;
+        }
+        i++;
+    }
+}
+
+void* CAN::tx__(void* arg){
+    CAN& can = *(CAN*)arg;
     struct canframe frames[32];
     struct pack_info packInfo;
     packInfo.length = 32;
     while(true){
+        int ret = canRecvMsgFrame(can.device, frames, &packInfo);
+        if(ret < 0){
+            static unsigned int cnt = 0xffffffff;
+            cnt++;
+            if(cnt % 500 == 0){
+                printf("canRecvMsgFrame: cans[%d] read ret = %d\n", can.order, ret);
+            }
+            continue;
+        }
         int i = 0;
-        while(i < cans.size()){
-            if(cans[i].canhal != 1){
+        while(i < packInfo.data_num){
+            int masterID = frames[i].canid, length = frames[i].len;
+            if(length == 0){
                 i++;
                 continue;
             }
-            int ret = canRecvMsgFrame(cans[i].device, frames, &packInfo);
-            if(ret < 0){
-                static unsigned int cnt = 0xffffffff;
-                cnt++;
-                if(cnt % 500 == 0){
-                    printf("canRecvMsgFrame: cans[%d] read ret = %d\n", i, ret);
-                }
-                i++;
-                continue;
-            }
-            int j = 0;
-            while(j < packInfo.data_num){
-                int masterID = frames[j].canid, length = frames[j].len;
-                if(length == 0){
-                    j++;
-                    continue;
-                }
-                txFuncs[masterID][i](i, masterID, frames[j].data, length, &cans[i]);
-                j++;
-            }
+            txFuncs[masterID][can.order](can.order, masterID, frames[i].data, length, &can);
             i++;
         }
     }
+    return nullptr;
+}
+
+void* CAN::tx_(void* arg){
+    std::vector<CAN>& cans = *(std::vector<CAN>*)arg;
+    std::vector<pthread_t> pths;
+    pthread_cleanup_push(cleanup_, &pths);
+    int i = 0;
+    while(i < cans.size()){
+        if(cans[i].canhal != 1){
+            i++;
+            continue;
+        }
+        pthread_t pth;
+        if(pthread_create(&pth, nullptr, &tx__, (void*)&cans[i]) != 0){
+            printf("creating canhal tx__ thread failed\n");
+            pthread_exit(nullptr);
+        }
+        pths.push_back(pth);
+        i++;
+    }
+    i = 0;
+    while(i < pths.size()){
+        pthread_join(pths[i], nullptr);
+        i++;
+    }
+    pthread_cleanup_pop(1);
     return nullptr;
 }
 
@@ -857,8 +887,8 @@ int CAN::run(std::vector<CAN>& cans){
         i++;
     }
     int cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
-    if(cpu > processorCAN){
-        cpu = processorCAN;
+    if(cpu > processorsCAN[0]){
+        cpu = processorsCAN[0];
     }
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -877,6 +907,12 @@ int CAN::run(std::vector<CAN>& cans){
     }
     printf("can rx on cpu %d\n", cpu);
     if(socketCAN){
+        cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
+        if(cpu > processorsCAN[1]){
+            cpu = processorsCAN[1];
+        }
+        CPU_ZERO(&cpuset);
+        CPU_SET(cpu, &cpuset);
         if(pthread_create(&txPth, nullptr, &tx, (void*)&cans) != 0){
             printf("creating socketcan tx thread failed\n");
             return -1;
@@ -892,19 +928,25 @@ int CAN::run(std::vector<CAN>& cans){
         printf("socketcan tx on cpu %d\n", cpu);
     }
     if(CANHAL > 0){
+        cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
+        if(cpu > processorsCAN[2]){
+            cpu = processorsCAN[2];
+        }
+        CPU_ZERO(&cpuset);
+        CPU_SET(cpu, &cpuset);
         if(pthread_create(&txPth_, nullptr, &tx_, (void*)&cans) != 0){
-            printf("creating canhal tx thread failed\n");
+            printf("creating canhal tx_ thread failed\n");
             return -1;
         }
         if(pthread_setaffinity_np(txPth_, sizeof(cpu_set_t), &cpuset) != 0){
-            printf("setting canhal tx thread cpu affinity failed\n");
+            printf("setting canhal tx_ thread cpu affinity failed\n");
             return -1;
         }
         if(pthread_detach(txPth_) != 0){
-            printf("detaching canhal tx thread failed\n");
+            printf("detaching canhal tx_ thread failed\n");
             return -1;
         }
-        printf("canhal tx on cpu %d\n", cpu);
+        printf("canhal tx_ on cpu %d\n", cpu);
     }
     return 0;
 }
