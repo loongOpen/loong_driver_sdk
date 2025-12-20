@@ -28,8 +28,8 @@ link_directories(
     ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/lib;
     ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/lib
 )
-add_library(hbcanhal_${arch} SHARED hobot_can_hal.c)
-set_target_properties(hbcanhal_${arch} PROPERTIES NO_SONAME ON)
+add_library(hbcanhal_${march} SHARED hobot_can_hal.c)
+set_target_properties(hbcanhal_${march} PROPERTIES NO_SONAME ON)
 if(NIIC)
     add_library(loong_driver_sdk_${arch} SHARED common.cpp config_xml.cpp rs232.cpp rs485.cpp can.cpp ecat.cxx loong_driver_sdk.cpp)
 else(NIIC)
@@ -44,13 +44,13 @@ target_include_directories(loong_driver_sdk_${arch} PUBLIC
     ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/include
 )
 if(NIIC)
-    target_link_libraries(loong_driver_sdk_${arch} PUBLIC Necro::qiuniu ethercat-cpp modbus tinyxml2 pthread hbcanhal_${arch})
+    target_link_libraries(loong_driver_sdk_${arch} PUBLIC Necro::qiuniu ethercat-cpp modbus_${march} tinyxml2_${march} pthread hbcanhal_${march})
 else(NIIC)
-    target_link_libraries(loong_driver_sdk_${arch} PUBLIC ethercat modbus tinyxml2 pthread hbcanhal_${arch})
+    target_link_libraries(loong_driver_sdk_${arch} PUBLIC ethercat_${march} modbus_${march} tinyxml2_${march} pthread hbcanhal_${march})
 endif(NIIC)
-add_executable(driver_test_${arch} driver_test.cpp)
-target_link_libraries(driver_test_${arch} PUBLIC loong_driver_sdk_${arch})
-install(TARGETS loong_driver_sdk_${arch} hbcanhal_${arch} driver_test_${arch}
+add_executable(driver_test_${march} driver_test.cpp)
+target_link_libraries(driver_test_${march} PUBLIC loong_driver_sdk_${arch})
+install(TARGETS loong_driver_sdk_${arch} hbcanhal_${march} driver_test_${march}
     RUNTIME DESTINATION .
     LIBRARY DESTINATION .
 )

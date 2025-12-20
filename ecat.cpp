@@ -256,11 +256,6 @@ int ECAT::check(){
         init();
         return 1;
     }
-    itr = alias2slave.begin();
-    while(itr != alias2slave.end()){
-        while(requestState(itr->second, "INIT") < 0);
-        itr++;
-    }
     return 0;
 }
 
