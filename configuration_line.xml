@@ -9,7 +9,7 @@
                 <Object>TargetPosition</Object>
                 <Object>TargetVelocity</Object>
                 <Object>TargetTorque</Object>
-                <Object>Controlword</Object>
+                <Object>ControlWord</Object>
                 <Object>Mode</Object>
                 <Object>RxPDOPadding</Object>
                 <Object>TorqueOffset</Object>
@@ -29,7 +29,7 @@
                 <Object index="0x607a" subindex="0x00" signed="1" bit_length="32" operation="0">TargetPosition</Object>
                 <Object index="0x60ff" subindex="0x00" signed="1" bit_length="32" operation="0">TargetVelocity</Object>
                 <Object index="0x6071" subindex="0x00" signed="1" bit_length="16" operation="0">TargetTorque</Object>
-                <Object index="0x6040" subindex="0x00" signed="0" bit_length="16" operation="0">Controlword</Object>
+                <Object index="0x6040" subindex="0x00" signed="0" bit_length="16" operation="0">ControlWord</Object>
                 <Object index="0x6060" subindex="0x00" signed="1" bit_length="8"  operation="0">Mode</Object>
                 <Object index="0x5ffe" subindex="0x00" signed="1" bit_length="8"  operation="0">RxPDOPadding</Object>
                 <Object index="0x60b2" subindex="0x00" signed="1" bit_length="16" operation="0">TorqueOffset</Object>
@@ -53,7 +53,7 @@
                 <Object>TargetPosition</Object>
                 <Object>TargetVelocity</Object>
                 <Object>TargetTorque</Object>
-                <Object>Controlword</Object>
+                <Object>ControlWord</Object>
                 <Object>Mode</Object>
                 <Object>RxPDOPadding</Object>
                 <Object>TorqueOffset</Object>
@@ -73,7 +73,7 @@
                 <Object index="0x607a" subindex="0x00" signed="1" bit_length="32" operation="0">TargetPosition</Object>
                 <Object index="0x60ff" subindex="0x00" signed="1" bit_length="32" operation="0">TargetVelocity</Object>
                 <Object index="0x6071" subindex="0x00" signed="1" bit_length="16" operation="0">TargetTorque</Object>
-                <Object index="0x6040" subindex="0x00" signed="0" bit_length="16" operation="0">Controlword</Object>
+                <Object index="0x6040" subindex="0x00" signed="0" bit_length="16" operation="0">ControlWord</Object>
                 <Object index="0x6060" subindex="0x00" signed="1" bit_length="8"  operation="0">Mode</Object>
                 <Object index="0x2000" subindex="0x00" signed="1" bit_length="8"  operation="0">RxPDOPadding</Object>
                 <Object index="0x60b2" subindex="0x00" signed="1" bit_length="16" operation="0">TorqueOffset</Object>
@@ -97,7 +97,7 @@
                 <Object>TargetPosition</Object>
                 <Object>TargetVelocity</Object>
                 <Object>TargetTorque</Object>
-                <Object>Controlword</Object>
+                <Object>ControlWord</Object>
                 <Object>Mode</Object>
                 <Object>RxPDOPadding</Object>
                 <Object>TorqueOffset</Object>
@@ -117,7 +117,7 @@
                 <Object index="0x607a" subindex="0x00" signed="1" bit_length="32" operation="0">TargetPosition</Object>
                 <Object index="0x60ff" subindex="0x00" signed="1" bit_length="32" operation="0">TargetVelocity</Object>
                 <Object index="0x6071" subindex="0x00" signed="1" bit_length="16" operation="0">TargetTorque</Object>
-                <Object index="0x6040" subindex="0x00" signed="0" bit_length="16" operation="0">Controlword</Object>
+                <Object index="0x6040" subindex="0x00" signed="0" bit_length="16" operation="0">ControlWord</Object>
                 <Object index="0x6060" subindex="0x00" signed="1" bit_length="8"  operation="0">Mode</Object>
                 <Object index="0x0000" subindex="0x00" signed="1" bit_length="8"  operation="0">RxPDOPadding</Object>
                 <Object index="0x60b2" subindex="0x00" signed="1" bit_length="16" operation="0">TorqueOffset</Object>
@@ -716,6 +716,8 @@
         </Device>
     </Devices>
     <Categories>
+        <Category name="battery">
+        </Category>
         <Category name="driver">
             <Type>TsinoDynatron</Type>
             <Type>JohnsonElectric</Type>
@@ -731,8 +733,8 @@
         </Category>
     </Categories>
     <Masters>
-        <Master order="0" dc="true" period="1000000"/>
-        <Master order="1" dc="true" period="4000000"/>
+        <Master order="0" eni="NIIC_ENI_M0.xml" dc="true" period="1000000"/>
+        <Master order="1" eni="NIIC_ENI_M1.xml" dc="true" period="4000000"/>
     </Masters>
     <Domains>
         <Domain master="0" order="0"  division="1"/>
@@ -828,6 +830,8 @@
         </Device>
     </Devices>
     <Categories>
+        <Category name="battery">
+        </Category>
         <Category name="driver">
             <Type master_id="1" masters="0 1">Encos</Type>
             <Type master_id="2" masters="0 1">Encos</Type>
@@ -859,6 +863,7 @@
         <Master order="2" device="can2" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
         <Master order="3" device="can3" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
         <Master order="4" device="can0" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+        <Master order="5" device="can1" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
     </Masters>
     <Slaves>
         <Slave master="0" master_id="1" slave_id="1" alias="1"  type="Encos" >0</Slave>
@@ -896,6 +901,8 @@
 </CAN>
 <RS485Emu>
     <Categories>
+        <Category name="battery">
+        </Category>
         <Category name="driver">
         </Category>
         <Category name="effector">
@@ -920,6 +927,8 @@
 </RS485Emu>
 <RS485>
     <Categories>
+        <Category name="battery">
+        </Category>
         <Category name="driver">
         </Category>
         <Category name="effector">

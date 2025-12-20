@@ -12,7 +12,7 @@
             "pkg_size_max": 4096,
             "dev_path": "/dev/ipcdrv",
             "dev_name": "ipcdrv",
-            "recv_timeout": 1000
+            "recv_timeout": 4000
         }
     },{
         "id" : 1,
@@ -25,7 +25,7 @@
             "pkg_size_max": 4096,
             "dev_path": "/dev/ipcdrv",
             "dev_name": "ipcdrv",
-            "recv_timeout": 1000
+            "recv_timeout": 4000
         }
     },{
         "id": 2,
@@ -38,7 +38,7 @@
             "pkg_size_max": 4096,
             "dev_path": "/dev/ipcdrv",
             "dev_name": "ipcdrv",
-            "recv_timeout": 1000
+            "recv_timeout": 4000
         }
     },{
         "id": 3,
@@ -51,7 +51,7 @@
             "pkg_size_max": 4096,
             "dev_path": "/dev/ipcdrv",
             "dev_name": "ipcdrv",
-            "recv_timeout": 1000
+            "recv_timeout": 4000
         }
     }]
 }

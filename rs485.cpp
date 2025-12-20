@@ -81,6 +81,11 @@ void changingTekTX(modbus_t* const ctx, int const alias){
     *((unsigned short*)&position + 1) = data[0];
     *(unsigned short*)&position = data[1];
     position = (position - 100) * 90 / (1150 - 100);
+    if(position < 0){
+        position = 0;
+    }else if(position > 90){
+        position = 90;
+    }
     if(alias == 200){
         digits[0].tx.next()->ActualPosition = position;
     }else if(alias == 201){
@@ -229,7 +234,7 @@ RS485::RS485(int const order, char const* deviceR, char const* deviceS){
     strcpy(this->deviceR, deviceR);
     strcpy(this->deviceS, deviceS);
     baudrate = std::numeric_limits<int>::max();
-    period = configXML->attribute("RS485Emu", order, "period");
+    period = configXML->masterAttribute("RS485Emu", order, "period");
 }
 
 RS485::RS485(int const order, char const* device){
@@ -255,8 +260,8 @@ RS485::RS485(int const order, char const* device){
     }
     this->device = (char*)malloc(strlen(device) + 1);
     strcpy(this->device, device);
-    baudrate = configXML->attribute("RS485", order, "baudrate");
-    period = configXML->attribute("RS485", order, "period");
+    baudrate = configXML->masterAttribute("RS485", order, "baudrate");
+    period = configXML->masterAttribute("RS485", order, "period");
 }
 
 int RS485::config(){
@@ -313,7 +318,11 @@ int RS485::config(){
     if(itr != alias2type.end()){
         int i = 0;
         while(i < dofLeftEffector){
+#ifndef NIIC
             if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
+#else
+            if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData)) != 0){
+#endif
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
             }
@@ -345,7 +354,11 @@ int RS485::config(){
     if(itr != alias2type.end()){
         int i = dofLeftEffector;
         while(i < dofEffector){
+#ifndef NIIC
             if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
+#else
+            if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData)) != 0){
+#endif
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
             }

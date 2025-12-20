@@ -21,7 +21,11 @@
 #include "rs232.h"
 #include "rs485.h"
 #include "can.h"
+#ifndef NIIC
 #include "ecat.h"
+#else
+#include "ecat.hpp"
+#endif
 #include <unistd.h>
 #include <atomic>
 #include <sstream>
@@ -31,8 +35,8 @@ namespace DriverSDK{
 ConfigXML* configXML;
 std::vector<std::map<int, std::string>> rs485alias2type, canAlias2type, ecatAlias2type, rs485emuAlias2type;
 std::vector<std::map<int, int>> canAlias2masterID, canAlias2slaveID, ecatAlias2domain;
-std::vector<std::vector<int>> ecatDomainDivision;
-int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector;
+std::vector<std::vector<int>> ecatDomainDivisions;
+int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector, batteryCount;
 WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
 WrapperPair<DriverRxData, DriverTxData, MotorParameters>** legs[2], ** arms[2], ** waist, ** neck;
 WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
@@ -62,7 +66,8 @@ class DriverSDK::impClass{
 public:
     RS232* imu;
     std::vector<RS485> rs485s;
-    std::vector<CAN> cans;
+    std::vector<CANDriver> cans;
+    std::vector<Battery> bats;
     std::vector<ECAT> ecats;
     impClass();
     int effectorCheck(std::vector<std::map<int, std::string>> const& alias2type, char const* bus);
@@ -85,7 +90,7 @@ DriverSDK::impClass::impClass(){
     drivers = nullptr;
     legs[0] = legs[1] = arms[0] = arms[1] = waist = neck = nullptr;
     digits = nullptr;
-    CAN::alias2masterID_ = nullptr;
+    CANDriver::alias2masterID_ = nullptr;
     imu = nullptr;
     int i = 0;
     while(i < 4){
@@ -140,8 +145,13 @@ int DriverSDK::impClass::effectorCheck(std::vector<std::map<int, std::string>> c
 }
 
 int DriverSDK::impClass::driverCheck(std::vector<std::map<int, std::string>> const& canAlias2type, std::vector<std::map<int, std::string>> const& ecatAlias2type){
-    bool existing[dofAll] = {false};
+    bool existing[dofAll];
     int i = 0;
+    while(i < dofAll){
+        existing[i] = false;
+        i++;
+    }
+    i = 0;
     while(i < canAlias2type.size()){
         auto itr = canAlias2type[i].begin();
         while(itr != canAlias2type[i].end()){
@@ -247,31 +257,31 @@ int DriverSDK::impClass::init(char const* xmlFile){
         digits = new WrapperPair<DigitRxData, DigitTxData, EffectorParameters>[dofEffector];
     }
     CAN::CANHAL = 0;
-    CAN::rxPth = CAN::txPth = CAN::txPth_ = 0;
-    CAN::type2parameters.clear();
-    CAN::alias2masterID_ = new int[dofAll + 1];
-    CAN::alias2status = new unsigned short[dofAll + 1];
-    CAN::alias2parameters = new DriverParameters*[dofAll + 1];
+    CANDriver::rxPth = CANDriver::txPth = CANDriver::txPth_ = 0;
+    CANDriver::type2parameters.clear();
+    CANDriver::alias2masterID_ = new int[dofAll + 1];
+    CANDriver::alias2status = new unsigned short[dofAll + 1];
+    CANDriver::alias2parameters = new DriverParameters*[dofAll + 1];
     i = 0;
     while(i <= dofAll){
-        CAN::alias2masterID_[i] = -1;
-        CAN::alias2status[i] = 65535;
-        CAN::alias2parameters[i] = nullptr;
+        CANDriver::alias2masterID_[i] = -1;
+        CANDriver::alias2status[i] = 65535;
+        CANDriver::alias2parameters[i] = nullptr;
         i++;
     }
     i = 0;
     while(i < 8){
         int j = 0;
         while(j < 16){
-            CAN::orderSlaveID2alias[i][j] = -1;
+            CANDriver::orderSlaveID2alias[i][j] = -1;
             j++;
         }
         i++;
     }
-    canAlias2masterID  = configXML->alias2attribute("CAN", "master_id");
-    canAlias2slaveID   = configXML->alias2attribute("CAN", "slave_id");
-    ecatAlias2domain   = configXML->alias2attribute("ECAT", "domain");
-    ecatDomainDivision = configXML->domainDivision("ECAT");
+    canAlias2masterID   = configXML->alias2attribute("CAN", "master_id");
+    canAlias2slaveID    = configXML->alias2attribute("CAN", "slave_id");
+    ecatAlias2domain    = configXML->alias2attribute("ECAT", "domain");
+    ecatDomainDivisions = configXML->domainDivisions("ECAT");
     i = 0;
     if(operatingMode.size() == 0){
         while(i < dofAll){
@@ -304,14 +314,14 @@ int DriverSDK::impClass::init(char const* xmlFile){
     int rs485masterCount = rs485alias2type.size();
     i = 0;
     while(i < rs485masterCount){
-        rs485s.emplace_back(i, configXML->device("RS485", i, "device").c_str());
+        rs485s.emplace_back(i, configXML->masterDevice("RS485", i, "device").c_str());
         printf("rs485s[%d] created\n", i);
         i++;
     }
     i = 0;
     while(i < rs485emuAlias2type.size()){
         rs485alias2type.push_back(rs485emuAlias2type[i]);
-        rs485s.emplace_back(i + rs485masterCount, configXML->device("RS485Emu", i, "deviceR").c_str(), configXML->device("RS485Emu", i, "deviceS").c_str());
+        rs485s.emplace_back(i + rs485masterCount, configXML->masterDevice("RS485Emu", i, "deviceR").c_str(), configXML->masterDevice("RS485Emu", i, "deviceS").c_str());
         printf("rs485s[%d] (rs485emus[%d]) created\n", i, i - rs485masterCount);
         i++;
     }
@@ -323,13 +333,14 @@ int DriverSDK::impClass::init(char const* xmlFile){
             return -1;
         }else if(res == 1){
             sleep(1);
+            printf("rs485s[%d] config retrying\n", i);
             continue;
         }
         i++;
     }
     i = 0;
     while(i < canAlias2type.size()){
-        cans.emplace_back(i, configXML->device("CAN", i, "device").c_str());
+        cans.emplace_back(i, configXML->masterDevice("CAN", i, "device").c_str());
         printf("cans[%d] created\n", i);
         i++;
     }
@@ -355,6 +366,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
             return -1;
         }else if(res == 1){
             sleep(1);
+            printf("ecats[%d] check retrying\n", i);
             continue;
         }
         i++;
@@ -411,7 +423,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
         }
         i++;
     }
-    if(CAN::run(cans) < 0){
+    if(CANDriver::run(cans) < 0){
         printf("can run failed\n");
         return -1;
     }
@@ -531,7 +543,7 @@ void DriverSDK::impClass::ecatUpdate(){
     i = 0;
     while(i < ecats.size()){
         int j = 0;
-        while(j < ecats[i].domainDivision.size()){
+        while(j < ecats[i].domainDivisions.size()){
             if(ecats[i].rxPDOSwaps[j] != nullptr){
                 ecats[i].rxPDOSwaps[j]->advanceNodePtr();
             }
@@ -558,25 +570,25 @@ DriverSDK::impClass::~impClass(){
         delete imu;
         imu = nullptr;
     }
-    if(CAN::alias2masterID_ != nullptr){
-        delete[] CAN::alias2masterID_;
-        CAN::alias2masterID_ = nullptr;
+    if(CANDriver::alias2masterID_ != nullptr){
+        delete[] CANDriver::alias2masterID_;
+        CANDriver::alias2masterID_ = nullptr;
     }
-    if(CAN::alias2status != nullptr){
-        delete[] CAN::alias2status;
-        CAN::alias2status = nullptr;
+    if(CANDriver::alias2status != nullptr){
+        delete[] CANDriver::alias2status;
+        CANDriver::alias2status = nullptr;
     }
-    if(CAN::alias2parameters != nullptr){
+    if(CANDriver::alias2parameters != nullptr){
         int i = 1;
         while(i <= dofAll){
-            if(CAN::alias2parameters[i] != nullptr){
-                delete CAN::alias2parameters[i];
-                CAN::alias2parameters[i] = nullptr;
+            if(CANDriver::alias2parameters[i] != nullptr){
+                delete CANDriver::alias2parameters[i];
+                CANDriver::alias2parameters[i] = nullptr;
             }
             i++;
         }
-        delete[] CAN::alias2parameters;
-        CAN::alias2parameters = nullptr;
+        delete[] CANDriver::alias2parameters;
+        CANDriver::alias2parameters = nullptr;
     }
     if(digits != nullptr){
         delete[] digits;
@@ -749,14 +761,14 @@ int DriverSDK::fillSDO(motorSDOClass& data, char const* object){
         data.subindex = 0x00;
         return 1;
     }
-    std::vector<std::string> entry = configXML->entry(configXML->busDevice("ECAT", itr->second.c_str()), object);
+    std::vector<std::string> entry = configXML->entry(configXML->device("ECAT", itr->second.c_str()), object);
     data.value     = 0;
     data.state     = 0;
     data.index     = (unsigned short)strtoul(entry[1].c_str(), nullptr, 16);
-    data.subindex  = (unsigned  char)strtoul(entry[2].c_str(), nullptr, 16);
-    data.signed_   = (unsigned  char)strtoul(entry[3].c_str(), nullptr, 10);
-    data.bitLength = (unsigned  char)strtoul(entry[4].c_str(), nullptr, 10);
-    data.operation = (unsigned  char)strtoul(entry[5].c_str(), nullptr, 10);
+    data.subindex  = (unsigned char )strtoul(entry[2].c_str(), nullptr, 16);
+    data.signed_   = (unsigned char )strtoul(entry[3].c_str(), nullptr, 10);
+    data.bitLength = (unsigned char )strtoul(entry[4].c_str(), nullptr, 10);
+    data.operation = (unsigned char )strtoul(entry[5].c_str(), nullptr, 10);
     return 0;
 }
 
@@ -1024,7 +1036,11 @@ int DriverSDK::getEncoderCount(std::vector<int>& data){
 }
 
 int DriverSDK::sendMotorSDORequest(motorSDOClass const& data){
+#ifndef NIIC
     if(drivers[data.i].sdoHandler == nullptr || data.index == 0x0000){
+#else
+    if(drivers[data.i].slave == -1 || data.index == 0x0000){
+#endif
         return 1;
     }
     drivers[data.i].parameters.sdoTemplate.index     = data.index;
@@ -1036,7 +1052,11 @@ int DriverSDK::sendMotorSDORequest(motorSDOClass const& data){
 }
 
 int DriverSDK::recvMotorSDOResponse(motorSDOClass& data){
+#ifndef NIIC
     if(drivers[data.i].sdoHandler == nullptr || data.index == 0x0000){
+#else
+    if(drivers[data.i].slave == -1 || data.index == 0x0000){
+#endif
         return 1;
     }
     drivers[data.i].parameters.sdoTemplate.index     = data.index;
@@ -1070,7 +1090,7 @@ int DriverSDK::calibrate(int const i){
     if(fillSDO(data, "ActualPosition") != 0){
         return std::numeric_limits<int>::min();
     }
-    long period = configXML->attribute("ECAT", drivers[i].order, "period");
+    long period = configXML->masterAttribute("ECAT", drivers[i].order, "period");
     int tryCount = 0;
     while(sendMotorSDORequest(data) != 0){
         tryCount++;

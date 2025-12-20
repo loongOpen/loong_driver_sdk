@@ -47,9 +47,9 @@ int main(int argc, char** argv){
         8, 8
     };
     driverSDK.setMode(mode);
-    driverSDK.init("configuration_lite.xml");
+    driverSDK.init("configuration.xml");
     std::vector<int> activeMotors = driverSDK.getActiveMotors();
-    int i = 0, j = 0, motorNr = driverSDK.getTotalMotorNr(), digitNr = driverSDK.getLeftDigitNr() + driverSDK.getRightDigitNr();;
+    int i = 0, j = 0, motorNr = driverSDK.getTotalMotorNr(), digitNr = driverSDK.getLeftDigitNr() + driverSDK.getRightDigitNr();
     printf("digitNr %d\nmotorNr %d:\t", digitNr, motorNr);
     while(i < activeMotors.size()){
         printf("%d ", activeMotors[i]);

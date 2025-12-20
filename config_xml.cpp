@@ -80,7 +80,7 @@ std::vector<std::vector<int>> ConfigXML::motorAlias(){
     return ret;
 }
 
-std::vector<std::vector<int>> ConfigXML::domainDivision(char const* bus){
+std::vector<std::vector<int>> ConfigXML::domainDivisions(char const* bus){
     std::vector<std::vector<int>> ret;
     tinyxml2::XMLElement* domainElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Domains")->FirstChildElement("Domain");
     while(domainElement != nullptr){
@@ -125,7 +125,7 @@ long ConfigXML::canPeriod(){
     if(mastersElement != nullptr){
         return mastersElement->IntAttribute("period");
     }
-    return 1000000L;
+    return 2000000L;
 }
 
 std::vector<std::tuple<int, std::vector<int>, std::string>> ConfigXML::canBus(){
@@ -160,7 +160,7 @@ std::vector<std::tuple<int, std::vector<int>, std::string>> ConfigXML::canBus(){
     return ret;
 }
 
-std::string ConfigXML::device(char const* bus, int const order, char const* name){
+std::string ConfigXML::masterDevice(char const* bus, int const order, char const* name){
     tinyxml2::XMLElement* masterElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Masters")->FirstChildElement("Master");
     while(masterElement != nullptr){
         if(masterElement->IntAttribute("order") == order){
@@ -171,7 +171,7 @@ std::string ConfigXML::device(char const* bus, int const order, char const* name
     return "";
 }
 
-int ConfigXML::attribute(char const* bus, int const order, char const* name){
+int ConfigXML::masterAttribute(char const* bus, int const order, char const* name){
     tinyxml2::XMLElement* masterElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Masters")->FirstChildElement("Master");
     while(masterElement != nullptr){
         if(masterElement->IntAttribute("order") == order){
@@ -182,7 +182,7 @@ int ConfigXML::attribute(char const* bus, int const order, char const* name){
     return 0;
 }
 
-bool ConfigXML::feature(char const* bus, int const order, char const* name){
+bool ConfigXML::masterFeature(char const* bus, int const order, char const* name){
     tinyxml2::XMLElement* masterElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Masters")->FirstChildElement("Master");
     while(masterElement != nullptr){
         if(masterElement->IntAttribute("order") == order){
@@ -193,7 +193,7 @@ bool ConfigXML::feature(char const* bus, int const order, char const* name){
     return false;
 }
 
-tinyxml2::XMLElement* ConfigXML::busDevice(char const* bus, char const* VendorID, char const* ProductCode){
+tinyxml2::XMLElement* ConfigXML::device(char const* bus, char const* VendorID, char const* ProductCode){
     tinyxml2::XMLElement* deviceElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Devices")->FirstChildElement("Device");
     while(deviceElement != nullptr){
         if(strcmp(deviceElement->FirstChildElement("VendorID")->GetText(), VendorID) == 0 && strcmp(deviceElement->FirstChildElement("ProductCode")->GetText(), ProductCode) == 0){
@@ -204,7 +204,7 @@ tinyxml2::XMLElement* ConfigXML::busDevice(char const* bus, char const* VendorID
     return nullptr;
 }
 
-tinyxml2::XMLElement* ConfigXML::busDevice(char const* bus, char const* type){
+tinyxml2::XMLElement* ConfigXML::device(char const* bus, char const* type){
     tinyxml2::XMLElement* deviceElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Devices")->FirstChildElement("Device");
     while(deviceElement != nullptr){
         if(strcmp(deviceElement->Attribute("type"), type) == 0){
@@ -215,11 +215,11 @@ tinyxml2::XMLElement* ConfigXML::busDevice(char const* bus, char const* type){
     return nullptr;
 }
 
-std::string ConfigXML::type(tinyxml2::XMLElement const* deviceElement){
+std::string ConfigXML::deviceType(tinyxml2::XMLElement const* deviceElement){
     return deviceElement->Attribute("type");
 }
 
-std::string ConfigXML::category(char const* bus, char const* type){
+std::string ConfigXML::typeCategory(char const* bus, char const* type){
     tinyxml2::XMLElement* categoryElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Categories")->FirstChildElement("Category");
     while(categoryElement != nullptr){
         tinyxml2::XMLElement* typeElement = categoryElement->FirstChildElement("Type");

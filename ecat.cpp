@@ -38,7 +38,7 @@ struct ec_ioctl_slave_state_t{
 extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> ecatAlias2type;
 extern std::vector<std::map<int, int>> ecatAlias2domain;
-extern std::vector<std::vector<int>> ecatDomainDivision;
+extern std::vector<std::vector<int>> ecatDomainDivisions;
 extern int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector;
 extern WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
 extern WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
@@ -72,10 +72,10 @@ ECAT::ECAT(int const order){
         printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
         itr++;
     }
-    dc = configXML->feature("ECAT", order, "dc");
-    period = configXML->attribute("ECAT", order, "period");
+    dc = configXML->masterFeature("ECAT", order, "dc");
+    period = configXML->masterAttribute("ECAT", order, "period");
     alias2domain = ecatAlias2domain[order];
-    domainDivision = ecatDomainDivision[order];
+    domainDivisions = ecatDomainDivisions[order];
     while(init() < 0){
         clean();
     }
@@ -93,13 +93,13 @@ int ECAT::init(){
         printf("opening master device %s failed\n", deviceName.str().c_str());
         return -1;
     }
-    domains = new ec_domain_t*[domainDivision.size()];
-    domainPtrs = new unsigned char*[domainDivision.size()];
-    domainSizes = new int[domainDivision.size()];
-    rxPDOSwaps = new SwapList*[domainDivision.size()];
-    txPDOSwaps = new SwapList*[domainDivision.size()];
+    domains = new ec_domain_t*[domainDivisions.size()];
+    domainPtrs = new unsigned char*[domainDivisions.size()];
+    domainSizes = new int[domainDivisions.size()];
+    rxPDOSwaps = new SwapList*[domainDivisions.size()];
+    txPDOSwaps = new SwapList*[domainDivisions.size()];
     int i = 0;
-    while(i < domainDivision.size()){
+    while(i < domainDivisions.size()){
         domains[i] = nullptr;
         domainPtrs[i] = nullptr;
         domainSizes[i] = 0;
@@ -185,7 +185,7 @@ int ECAT::check(){
     }
     auto itr = alias2domain.begin();
     while(itr != alias2domain.end()){
-        if(itr->second >= domainDivision.size()){
+        if(itr->second >= domainDivisions.size()){
             printf("master %d device with alias %d is assigned to an unspecified domain\n", order, itr->first);
             return -1;
         }
@@ -218,15 +218,15 @@ int ECAT::check(){
         sprintf(buffVID, "0x%08x", slaveInfo.vendor_id);
         sprintf(buffPC, "0x%08x", slaveInfo.product_code);
         printf(", vendor_id %s, product_code %s", buffVID, buffPC);
-        tinyxml2::XMLElement* deviceXML = configXML->busDevice("ECAT", buffVID, buffPC);
+        tinyxml2::XMLElement* deviceXML = configXML->device("ECAT", buffVID, buffPC);
         if(deviceXML == nullptr){
             printf("\n\tdevice not registered in xml\n");
             i++;
             continue;
         }
-        std::string type = configXML->type(deviceXML);
+        std::string type = configXML->deviceType(deviceXML);
         printf(", type %s", type.c_str());
-        std::string category = configXML->category("ECAT", type.c_str());
+        std::string category = configXML->typeCategory("ECAT", type.c_str());
         if(category == ""){
             printf("\n\tinvalid device category\n");
             return -1;
@@ -256,6 +256,11 @@ int ECAT::check(){
         init();
         return 1;
     }
+    itr = alias2slave.begin();
+    while(itr != alias2slave.end()){
+        while(requestState(itr->second, "INIT") < 0);
+        itr++;
+    }
     return 0;
 }
 
@@ -264,7 +269,7 @@ int ECAT::config(){
         return 0;
     }
     int i = 0;
-    while(i < domainDivision.size()){
+    while(i < domainDivisions.size()){
         domains[i] = ecrt_master_create_domain(master);
         if(domains[i] == nullptr){
             printf("creating master %d domain[%d] failed\n", order, i);
@@ -272,14 +277,14 @@ int ECAT::config(){
         }
         i++;
     }
-    ec_slave_config_t* refClockSlaveConfig = nullptr;
+    // ec_slave_config_t* refClockSlaveConfig = nullptr;
     auto itr = alias2slave.begin();
     while(itr != alias2slave.end()){
         int alias = itr->first, slave = itr->second, domain = alias2domain.find(alias)->second;
-        std::string type = alias2type.find(alias)->second, category = configXML->category("ECAT", type.c_str());
+        std::string type = alias2type.find(alias)->second, category = configXML->typeCategory("ECAT", type.c_str());
         printf("master %d, domain %d, slave %d, alias %d, category %s, type %s\n", order, domain, slave, alias, category.c_str(), type.c_str());
         while(requestState(slave, "PREOP") < 0);
-        tinyxml2::XMLElement* deviceXML = configXML->busDevice("ECAT", type.c_str());
+        tinyxml2::XMLElement* deviceXML = configXML->device("ECAT", type.c_str());
         std::vector<std::vector<std::string>> rxPDOs = configXML->pdos(deviceXML, "RxPDOs"), txPDOs = configXML->pdos(deviceXML, "TxPDOs");
         int rxPDOCount = 0, txPDOCount = 0;
         i = 0;
@@ -301,8 +306,8 @@ int ECAT::config(){
                 std::vector<std::string> entry = configXML->entry(deviceXML, rxPDOs[i][j].c_str());
                 pdoEntries[k] = ec_pdo_entry_info_t{
                     (unsigned short)strtoul(entry[1].c_str(), nullptr, 16),
-                    (unsigned  char)strtoul(entry[2].c_str(), nullptr, 16),
-                    (unsigned  char)strtoul(entry[4].c_str(), nullptr, 10)
+                    (unsigned char )strtoul(entry[2].c_str(), nullptr, 16),
+                    (unsigned char )strtoul(entry[4].c_str(), nullptr, 10)
                 };
                 j++;
                 k++;
@@ -316,8 +321,8 @@ int ECAT::config(){
                 std::vector<std::string> entry = configXML->entry(deviceXML, txPDOs[i][j].c_str());
                 pdoEntries[k] = ec_pdo_entry_info_t{
                     (unsigned short)strtoul(entry[1].c_str(), nullptr, 16),
-                    (unsigned  char)strtoul(entry[2].c_str(), nullptr, 16),
-                    (unsigned  char)strtoul(entry[4].c_str(), nullptr, 10)
+                    (unsigned char )strtoul(entry[2].c_str(), nullptr, 16),
+                    (unsigned char )strtoul(entry[4].c_str(), nullptr, 10)
                 };
                 j++;
                 k++;
@@ -381,11 +386,11 @@ int ECAT::config(){
                 }
                 i++;
             }
-            u8 = domainDivision[domain] * period / 1000000L;
+            u8 = domainDivisions[domain] * period / 1000000L;
             while(ecrt_master_sdo_download(master, slave, 0x60c2, 0x01, &u8, sizeof(u8), &abortCode) < 0){
                 sleep(1);
             }
-            std::vector<std::string> timeoutEntry = configXML->entry(configXML->busDevice("ECAT", type.c_str()), "Timeout");
+            std::vector<std::string> timeoutEntry = configXML->entry(configXML->device("ECAT", type.c_str()), "Timeout");
             switch((unsigned char)strtoul(timeoutEntry[4].c_str(), nullptr, 10)){
             case 8:
                 u8 = 100;
@@ -512,7 +517,7 @@ int ECAT::config(){
             }
         }
         if(dc){
-            ecrt_slave_config_dc(slaveConfig, 0x0300, domainDivision[domain] * period, domainDivision[domain] * period / 2, 0, 0);
+            ecrt_slave_config_dc(slaveConfig, 0x0300, domainDivisions[domain] * period, domainDivisions[domain] * period / 2, 0, 0);
             /* if(refClockSlaveConfig == nullptr){
                 refClockSlaveConfig = slaveConfig;
                 ecrt_master_select_reference_clock(master, refClockSlaveConfig);
@@ -526,7 +531,7 @@ int ECAT::config(){
         return -1;
     }
     i = 0;
-    while(i < domainDivision.size()){
+    while(i < domainDivisions.size()){
         domainPtrs[i] = ecrt_domain_data(domains[i]);
         if(domainPtrs[i] == nullptr){
             printf("obtaining master %d domains[%d] data failed\n", order, i);
@@ -661,11 +666,13 @@ int ECAT::config(){
 
 void* ECAT::rxtx(void* arg){
     ECAT* ecat = (ECAT*)arg;
-    int domainCount = ecat->domainDivision.size(), tryCount = 0, slavesResponding = 0, alStates = 0, workingCounters[domainCount] = {0}, wcStates[domainCount] = {0};
+    int domainCount = ecat->domainDivisions.size(), slavesResponding = 0, alStates = 0, workingCounters[domainCount], wcStates[domainCount], tryCount = 0;
     printf("ecats[%d], period %ld, dc %d, domainCount %d, domainDivisions ", ecat->order, ecat->period, ecat->dc, domainCount);
     int i = 0, previousIncompleteness = 0;
     while(i < domainCount){
-        printf("%d ", ecat->domainDivision[i]);
+        workingCounters[i] = 0;
+        wcStates[i] = 0;
+        printf("%d ", ecat->domainDivisions[i]);
         i++;
     }
     printf("\n");
@@ -705,7 +712,7 @@ void* ECAT::rxtx(void* arg){
                 case EC_REQUEST_SUCCESS:
                     if(sdoMsg->operation == 0){
                         ecrt_sdo_request_write(sdoMsg->sdoHandler);
-                    }else if(sdoMsg->operation == 1){
+                    }else{
                         ecrt_sdo_request_read(sdoMsg->sdoHandler);
                     }
                     sdoMsg->state = 2;
@@ -724,13 +731,13 @@ void* ECAT::rxtx(void* arg){
                         if(sdoMsg->signed_ == 0){
                             if(sdoMsg->operation == 0){
                                 EC_WRITE_U8(ecrt_sdo_request_data(sdoMsg->sdoHandler), sdoMsg->value);
-                            }else if(sdoMsg->operation == 1){
+                            }else{
                                 sdoMsg->value = EC_READ_U8(ecrt_sdo_request_data(sdoMsg->sdoHandler));
                             }
-                        }else if(sdoMsg->signed_ == 1){
+                        }else{
                             if(sdoMsg->operation == 0){
                                 EC_WRITE_S8(ecrt_sdo_request_data(sdoMsg->sdoHandler), sdoMsg->value);
-                            }else if(sdoMsg->operation == 1){
+                            }else{
                                 sdoMsg->value = EC_READ_S8(ecrt_sdo_request_data(sdoMsg->sdoHandler));
                             }
                         }
@@ -738,13 +745,13 @@ void* ECAT::rxtx(void* arg){
                         if(sdoMsg->signed_ == 0){
                             if(sdoMsg->operation == 0){
                                 EC_WRITE_U16(ecrt_sdo_request_data(sdoMsg->sdoHandler), sdoMsg->value);
-                            }else if(sdoMsg->operation == 1){
+                            }else{
                                 sdoMsg->value = EC_READ_U16(ecrt_sdo_request_data(sdoMsg->sdoHandler));
                             }
-                        }else if(sdoMsg->signed_ == 1){
+                        }else{
                             if(sdoMsg->operation == 0){
                                 EC_WRITE_S16(ecrt_sdo_request_data(sdoMsg->sdoHandler), sdoMsg->value);
-                            }else if(sdoMsg->operation == 1){
+                            }else{
                                 sdoMsg->value = EC_READ_S16(ecrt_sdo_request_data(sdoMsg->sdoHandler));
                             }
                         }
@@ -752,13 +759,13 @@ void* ECAT::rxtx(void* arg){
                         if(sdoMsg->signed_ == 0){
                             if(sdoMsg->operation == 0){
                                 EC_WRITE_U32(ecrt_sdo_request_data(sdoMsg->sdoHandler), sdoMsg->value);
-                            }else if(sdoMsg->operation == 1){
+                            }else{
                                 sdoMsg->value = EC_READ_U32(ecrt_sdo_request_data(sdoMsg->sdoHandler));
                             }
-                        }else if(sdoMsg->signed_ == 1){
+                        }else{
                             if(sdoMsg->operation == 0){
                                 EC_WRITE_S32(ecrt_sdo_request_data(sdoMsg->sdoHandler), sdoMsg->value);
-                            }else if(sdoMsg->operation == 1){
+                            }else{
                                 sdoMsg->value = EC_READ_S32(ecrt_sdo_request_data(sdoMsg->sdoHandler));
                             }
                         }
@@ -791,7 +798,7 @@ void* ECAT::rxtx(void* arg){
         count++;
         i = 0;
         while(i < domainCount){
-            if(ecat->rxPDOSwaps[i] != nullptr && count % ecat->domainDivision[i] == 0){
+            if(ecat->rxPDOSwaps[i] != nullptr && count % ecat->domainDivisions[i] == 0){
                 ecat->rxPDOSwaps[i]->copyTo(ecat->domainPtrs[i], ecat->domainSizes[i]);
                 ecrt_domain_queue(ecat->domains[i]);
             }
@@ -836,7 +843,7 @@ void* ECAT::rxtx(void* arg){
         int incompleteness = 0;
         i = 0;
         while(i < domainCount){
-            if(ecat->txPDOSwaps[i] == nullptr || count % ecat->domainDivision[i] != 0){
+            if(ecat->txPDOSwaps[i] == nullptr || count % ecat->domainDivisions[i] != 0){
                 i++;
                 continue;
             }
@@ -911,6 +918,8 @@ int ECAT::run(){
     int cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
     if(cpu > processorsECAT[order]){
         cpu = processorsECAT[order];
+    }else{
+        processorsECAT[order] = cpu;
     }
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -930,8 +939,7 @@ int ECAT::run(){
     printf("ecats[%d] rxtx on cpu %d\n", order, cpu);
     auto itr = alias2slave.begin();
     while(itr != alias2slave.end()){
-        int slave = itr->second;
-        while(requestState(slave, "OP") < 0);
+        while(requestState(itr->second, "OP") < 0);
         itr++;
     }
     return 0;
@@ -951,7 +959,7 @@ void ECAT::clean(){
         master = nullptr;
     }
     int i = 0;
-    while(i < domainDivision.size()){
+    while(i < domainDivisions.size()){
         if(rxPDOSwaps[i] != nullptr){
             delete rxPDOSwaps[i];
             rxPDOSwaps[i] = nullptr;

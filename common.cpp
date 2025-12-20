@@ -144,7 +144,11 @@ MotorParameters::MotorParameters(){
     minimumPosition = -1.0;
 }
 
+#ifndef NIIC
 int MotorParameters::load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler){
+#else
+int MotorParameters::load(std::string const& bus, int const alias, std::string const& type, int const slave){
+#endif
     polarity          = configXML->readMotorParameter(alias,          "Polarity");
     countBias         = configXML->readMotorParameter(alias,         "CountBias");
     encoderResolution = configXML->readMotorParameter(alias, "EncoderResolution");
@@ -172,7 +176,11 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
     }
     if(bus == "ECAT"){
         sdoTemplate = SDOMsg{
+#ifndef NIIC
             sdoHandler,
+#else
+            slave,
+#endif
             0,
             alias,
             0,
@@ -183,30 +191,38 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
             0,
             0
         };
-        std::vector<std::string> entry = configXML->entry(configXML->busDevice("ECAT", type.c_str()), "Temperature");
+        std::vector<std::string> entry = configXML->entry(configXML->device("ECAT", type.c_str()), "Temperature");
         temperatureSDO = SDOMsg{
+#ifndef NIIC
             sdoHandler,
+#else
+            slave,
+#endif
             0,
             alias,
             0,
             (unsigned short)strtoul(entry[1].c_str(), nullptr, 16),
-            (unsigned  char)strtoul(entry[2].c_str(), nullptr, 16),
-            (unsigned  char)strtoul(entry[3].c_str(), nullptr, 10),
-            (unsigned  char)strtoul(entry[4].c_str(), nullptr, 10),
-            (unsigned  char)strtoul(entry[5].c_str(), nullptr, 10),
+            (unsigned char )strtoul(entry[2].c_str(), nullptr, 16),
+            (unsigned char )strtoul(entry[3].c_str(), nullptr, 10),
+            (unsigned char )strtoul(entry[4].c_str(), nullptr, 10),
+            (unsigned char )strtoul(entry[5].c_str(), nullptr, 10),
             0
         };
-        entry = configXML->entry(configXML->busDevice("ECAT", type.c_str()), "ClearError");
+        entry = configXML->entry(configXML->device("ECAT", type.c_str()), "ClearError");
         clearErrorSDO = SDOMsg{
+#ifndef NIIC
             sdoHandler,
+#else
+            slave,
+#endif
             1,
             alias,
             0,
             (unsigned short)strtoul(entry[1].c_str(), nullptr, 16),
-            (unsigned  char)strtoul(entry[2].c_str(), nullptr, 16),
-            (unsigned  char)strtoul(entry[3].c_str(), nullptr, 10),
-            (unsigned  char)strtoul(entry[4].c_str(), nullptr, 10),
-            (unsigned  char)strtoul(entry[5].c_str(), nullptr, 10),
+            (unsigned char )strtoul(entry[2].c_str(), nullptr, 16),
+            (unsigned char )strtoul(entry[3].c_str(), nullptr, 10),
+            (unsigned char )strtoul(entry[4].c_str(), nullptr, 10),
+            (unsigned char )strtoul(entry[5].c_str(), nullptr, 10),
             0
         };
     }
@@ -219,7 +235,11 @@ MotorParameters::~MotorParameters(){
 EffectorParameters::EffectorParameters(){
 }
 
+#ifndef NIIC
 int EffectorParameters::load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler){
+#else
+int EffectorParameters::load(std::string const& bus, int const alias, std::string const& type, int const slave){
+#endif
     return 0;
 }
 
@@ -229,7 +249,11 @@ EffectorParameters::~EffectorParameters(){
 SensorParameters::SensorParameters(){
 }
 
+#ifndef NIIC
 int SensorParameters::load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler){
+#else
+int SensorParameters::load(std::string const& bus, int const alias, std::string const& type, int const slave){
+#endif
     return 0;
 }
 

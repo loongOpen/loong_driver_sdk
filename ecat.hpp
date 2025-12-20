@@ -1,4 +1,4 @@
-/* Copyright 2025 人形机器人（上海）有限公司
+﻿/* Copyright 2025 人形机器人（上海）有限公司
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,24 +24,26 @@ namespace DriverSDK{
 class ECAT{
 public:
     bool dc, sdoRequestable, regRequestable;
-    int order, fd, effectorAlias, sensorAlias, * domainSizes;
+    int order, effectorAlias, sensorAlias, * domainSizes, tryCount;
     std::map<int, std::string> alias2type;
+    std::string eni;
     long period;
     std::map<int, int> alias2slave, alias2domain;
     std::vector<int> domainDivisions;
-    ec_domain_t** domains;
-    unsigned char** domainPtrs;
     SwapList** rxPDOSwaps, ** txPDOSwaps;
+    SDOMsg* sdoMsg;
+    REGMsg* regMsg;
     PtrQue<SDOMsg> sdoRequestQueue, sdoResponseQueue, regRequestQueue, regResponseQueue;
-    ec_master_t* master;
-    pthread_t pth;
+    ecat::task* task;
+    ecat::master* master;
+    ecat::PdoRegInfo** targetPosition, ** targetVelocity, ** targetTorque, ** controlWord, ** mode, ** torqueOffset, ** velocityOffset, ** actualPosition, ** actualVelocity, ** actualTorque, ** statusWord, ** modeDisplay, ** errorCode;
+    ecat::sdo_request* sdoRequest;
     ECAT(int const order);
     int init();
     int readAlias(unsigned short const slave, std::string const& category, unsigned short const index, unsigned char const subindex, unsigned char const bitLength);
     int requestState(unsigned short const slave, char const* stateString);
     int check();
     int config();
-    static void* rxtx(void* arg);
     int run();
     void clean();
     ~ECAT();

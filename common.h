@@ -17,7 +17,11 @@
 
 #pragma once
 
+#ifndef NIIC
 #include <ecrt.h>
+#else
+#include <ecat/task.hpp>
+#endif
 #include <string>
 #include <atomic>
 #include <cmath>
@@ -50,7 +54,11 @@ public:
 };
 
 struct SDOMsg{
+#ifndef NIIC
     ec_sdo_request_t* sdoHandler;
+#else
+    int slave;
+#endif
     long value;
     int alias;
     short state;                // -1: error; 0: pending; 1, 2: processing; 3: completed
@@ -63,7 +71,11 @@ struct SDOMsg{
 };
 
 struct REGMsg{
+#ifndef NIIC
     ec_reg_request_t* regHandler;
+#else
+    int slave;
+#endif
     long value;
     int alias;
     int recycled;
@@ -95,7 +107,11 @@ public:
     float polarity, countBias, encoderResolution, gearRatioTor, gearRatioPosVel, ratedCurrent, torqueConstant, ratedTorque, maximumTorque, minimumPosition, maximumPosition;
     SDOMsg sdoTemplate, temperatureSDO, clearErrorSDO;
     MotorParameters();
+#ifndef NIIC
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
+#else
+    int load(std::string const& bus, int const alias, std::string const& type, int const slave);
+#endif
     ~MotorParameters();
 };
 
@@ -168,7 +184,11 @@ struct ConverterTxData{
 class EffectorParameters{
 public:
     EffectorParameters();
+#ifndef NIIC
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
+#else
+    int load(std::string const& bus, int const alias, std::string const& type, int const slave);
+#endif
     ~EffectorParameters();
 };
 
@@ -198,7 +218,11 @@ struct SensorTxData{
 class SensorParameters{
 public:
     SensorParameters();
+#ifndef NIIC
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
+#else
+    int load(std::string const& bus, int const alias, std::string const& type, int const slave);
+#endif
     ~SensorParameters();
 };
 
@@ -251,8 +275,10 @@ public:
     std::string bus, type;
     DataWrapper<RxData> rx;
     DataWrapper<TxData> tx;
+#ifndef NIIC
     ec_sdo_request_t* sdoHandler;
     ec_reg_request_t* regHandler;
+#endif
     Parameters parameters;
     WrapperPair(){
         busCode = -1;
@@ -263,10 +289,16 @@ public:
         enabled = 0;
         bus = "";
         type = "";
+#ifndef NIIC
         sdoHandler = nullptr;
         regHandler = nullptr;
+#endif
     }
+#ifndef NIIC
     int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler, ec_reg_request_t* const regHandler){
+#else
+    int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset){
+#endif
         if(this->order != -1){
             printf("trying to re-init %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
             return -1;
@@ -280,8 +312,10 @@ public:
         this->type = type;
         rx.init(rxOffset);
         tx.init(txOffset);
+#ifndef NIIC
         this->sdoHandler = sdoHandler;
         this->regHandler = regHandler;
+#endif
         return 0;
     }
     int config(std::string const& bus, int const order, int const domain, SwapList* const rxSwap, SwapList* const txSwap){
@@ -293,7 +327,11 @@ public:
         }
         rx.config(rxSwap);
         tx.config(txSwap);
+#ifndef NIIC
         if(parameters.load(bus, alias, type, sdoHandler) < 0){
+#else
+        if(parameters.load(bus, alias, type, slave) < 0){
+#endif
             printf("loading parameters failed for %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
             return -1;
         }
