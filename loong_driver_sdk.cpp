@@ -93,7 +93,7 @@ DriverSDK::impClass::impClass(){
     CANDriver::alias2masterID_ = nullptr;
     imu = nullptr;
     int i = 0;
-    while(i < 4){
+    while(i < 6){
         processorsECAT.push_back(sysconf(_SC_NPROCESSORS_ONLN) - 1);
         i++;
     }
@@ -106,7 +106,7 @@ DriverSDK::impClass::impClass(){
     rs485sPtr = &rs485s;
     rs485s.reserve(8);
     cans.reserve(8);
-    ecats.reserve(4);
+    ecats.reserve(6);
 }
 
 int DriverSDK::impClass::effectorCheck(std::vector<std::map<int, std::string>> const& alias2type, char const* bus){
@@ -212,9 +212,25 @@ int DriverSDK::impClass::init(char const* xmlFile){
         neck    = new WrapperPair<DriverRxData, DriverTxData, MotorParameters>*[ dofNeck];
     }
     rs485alias2type    = configXML->alias2type("RS485");
+    rs485emuAlias2type = configXML->alias2type("RS485Emu");
     canAlias2type      = configXML->alias2type("CAN");
     ecatAlias2type     = configXML->alias2type("ECAT");
-    rs485emuAlias2type = configXML->alias2type("RS485Emu");
+    if(rs485alias2type.size() > 4){
+        printf("4 rs485 masters at most\n");
+        return -1;
+    }
+    if(rs485emuAlias2type.size() > 4){
+        printf("4 rs485emu masters at most\n");
+        return -1;
+    }
+    if(canAlias2type.size() > 8){
+        printf("8 can masters at most\n");
+        return -1;
+    }
+    if(ecatAlias2type.size() > 6){
+        printf("6 ecat masters at most\n");
+        return -1;
+    }
     if(effectorCheck(rs485alias2type, "RS485") != 0 || effectorCheck(ecatAlias2type, "ECAT") != 0){
         printf("invalid effector configuration\n");
         return -1;
@@ -255,28 +271,6 @@ int DriverSDK::impClass::init(char const* xmlFile){
     printf("dofLeftEffector %d, dofRightEffector %d, dofEffector %d\n", dofLeftEffector, dofRightEffector, dofEffector);
     if(dofEffector > 0){
         digits = new WrapperPair<DigitRxData, DigitTxData, EffectorParameters>[dofEffector];
-    }
-    CAN::CANHAL = 0;
-    CANDriver::rxPth = CANDriver::txPth = CANDriver::txPth_ = 0;
-    CANDriver::type2parameters.clear();
-    CANDriver::alias2masterID_ = new int[dofAll + 1];
-    CANDriver::alias2status = new unsigned short[dofAll + 1];
-    CANDriver::alias2parameters = new DriverParameters*[dofAll + 1];
-    i = 0;
-    while(i <= dofAll){
-        CANDriver::alias2masterID_[i] = -1;
-        CANDriver::alias2status[i] = 65535;
-        CANDriver::alias2parameters[i] = nullptr;
-        i++;
-    }
-    i = 0;
-    while(i < 8){
-        int j = 0;
-        while(j < 16){
-            CANDriver::orderSlaveID2alias[i][j] = -1;
-            j++;
-        }
-        i++;
     }
     canAlias2masterID   = configXML->alias2attribute("CAN", "master_id");
     canAlias2slaveID    = configXML->alias2attribute("CAN", "slave_id");
@@ -570,26 +564,6 @@ DriverSDK::impClass::~impClass(){
         delete imu;
         imu = nullptr;
     }
-    if(CANDriver::alias2masterID_ != nullptr){
-        delete[] CANDriver::alias2masterID_;
-        CANDriver::alias2masterID_ = nullptr;
-    }
-    if(CANDriver::alias2status != nullptr){
-        delete[] CANDriver::alias2status;
-        CANDriver::alias2status = nullptr;
-    }
-    if(CANDriver::alias2parameters != nullptr){
-        int i = 1;
-        while(i <= dofAll){
-            if(CANDriver::alias2parameters[i] != nullptr){
-                delete CANDriver::alias2parameters[i];
-                CANDriver::alias2parameters[i] = nullptr;
-            }
-            i++;
-        }
-        delete[] CANDriver::alias2parameters;
-        CANDriver::alias2parameters = nullptr;
-    }
     if(digits != nullptr){
         delete[] digits;
         digits = nullptr;
@@ -638,7 +612,7 @@ DriverSDK::DriverSDK(): imp(*new impClass()){
 
 void DriverSDK::setCPU(unsigned short const cpu){
     int i = 0;
-    while(i < 4){
+    while(i < 6){
         processorsECAT[i] = cpu;
         i++;
     }
@@ -650,7 +624,7 @@ void DriverSDK::setCPU(unsigned short const cpu){
 }
 
 int DriverSDK::setCPUs(std::vector<unsigned short> const& cpus, std::string const& bus){
-    if(bus == "ECAT" && cpus.size() == 4){
+    if(bus == "ECAT" && cpus.size() == 6){
         processorsECAT = cpus;
     }else if(bus == "CAN" && cpus.size() == 3){
         processorsCAN = cpus;
@@ -997,9 +971,6 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
         }
         if(drivers[i].busCode == 0){
             imp.putDriverSDORequest(drivers[i].parameters.temperatureSDO);
-            data[i].pos = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
-            data[i].vel = 2.0 * Pi * drivers[i].parameters.polarity * drivers[i].tx->ActualVelocity / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
-            data[i].tor = drivers[i].parameters.polarity * drivers[i].tx->ActualTorque / 1000.0 * drivers[i].parameters.ratedCurrent * drivers[i].parameters.torqueConstant * drivers[i].parameters.gearRatioTor;
             if(imp.getDriverSDOResponse(drivers[i].parameters.temperatureSDO) == 0){
                 if(drivers[i].parameters.temperatureSDO.state < 0){
                     printf("requesting drivers[%d] temperature failed\n", i);
@@ -1007,6 +978,9 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
                     data[i].temp = drivers[i].parameters.temperatureSDO.value;
                 }
             }
+            data[i].pos = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
+            data[i].vel = 2.0 * Pi * drivers[i].parameters.polarity * drivers[i].tx->ActualVelocity / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
+            data[i].tor = drivers[i].parameters.polarity * drivers[i].tx->ActualTorque / 1000.0 * drivers[i].parameters.ratedCurrent * drivers[i].parameters.torqueConstant * drivers[i].parameters.gearRatioTor;
             data[i].statusWord = drivers[i].tx->StatusWord;
             data[i].errorCode = drivers[i].tx->ErrorCode;
         }else if(drivers[i].busCode == 1){

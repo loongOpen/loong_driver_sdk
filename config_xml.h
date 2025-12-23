@@ -37,7 +37,7 @@ public:
     std::string typeAttribute(char const* bus, char const* type, char const* name);
     std::string imuAttribute(char const* name);
     int imuBaudrate();
-    long canPeriod();
+    int canAttribute(char const* name);
     std::vector<std::tuple<int, std::vector<int>, std::string>> canBus();
     std::string masterDevice(char const* bus, int const order, char const* name);
     int masterAttribute(char const* bus, int const order, char const* name);

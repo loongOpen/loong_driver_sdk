@@ -54,10 +54,10 @@ public:
 class CANDriver : public CAN{
 public:
     std::map<int, std::string> alias2type;
-    std::map<int, int> alias2masterID;
-    std::map<int, int> alias2slaveID;
+    std::map<int, int> alias2masterID, alias2slaveID;
     SwapList* rxSwap, * txSwap;
     static pthread_t rxPth, txPth, txPth_;
+    static int rxCPU, txCPU, txCPU_;
     static std::map<std::string, DriverParameters*> type2parameters;
     static int* alias2masterID_;
     static unsigned short* alias2status;

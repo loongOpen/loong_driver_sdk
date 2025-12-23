@@ -24,7 +24,7 @@ namespace DriverSDK{
 class ECAT{
 public:
     bool dc, sdoRequestable, regRequestable;
-    int order, effectorAlias, sensorAlias, * domainSizes, tryCount;
+    int order, effectorAlias, sensorAlias, * domainSizes, cpu, tryCount;
     std::map<int, std::string> alias2type;
     std::string eni;
     long period;
@@ -36,8 +36,8 @@ public:
     PtrQue<SDOMsg> sdoRequestQueue, sdoResponseQueue, regRequestQueue, regResponseQueue;
     ecat::task* task;
     ecat::master* master;
-    ecat::PdoRegInfo** targetPosition, ** targetVelocity, ** targetTorque, ** controlWord, ** mode, ** torqueOffset, ** velocityOffset, ** actualPosition, ** actualVelocity, ** actualTorque, ** statusWord, ** modeDisplay, ** errorCode;
     ecat::sdo_request* sdoRequest;
+    ecat::PdoRegInfo** targetPosition, ** targetVelocity, ** targetTorque, ** controlWord, ** mode, ** torqueOffset, ** velocityOffset, ** actualPosition, ** actualVelocity, ** actualTorque, ** statusWord, ** modeDisplay, ** errorCode;
     ECAT(int const order);
     int init();
     int readAlias(unsigned short const slave, std::string const& category, unsigned short const index, unsigned char const subindex, unsigned char const bitLength);

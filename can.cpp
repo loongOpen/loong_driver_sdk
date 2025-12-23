@@ -265,10 +265,14 @@ int CAN::CANHAL;
 
 CAN::CAN(){
     canhal = 0;
-    static bool loaded = false;
-    if(!loaded){
-        period = configXML->canPeriod();
-        loaded = true;
+    static bool initialized = false;
+    if(!initialized){
+        period = configXML->canAttribute("period");
+        if(period < 1){
+            period = 2000000L;
+        }
+        CANHAL = 0;
+        initialized = true;
     }
 }
 
@@ -524,6 +528,7 @@ CAN::~CAN(){
 }
 
 pthread_t CANDriver::rxPth, CANDriver::txPth, CANDriver::txPth_;
+int CANDriver::rxCPU, CANDriver::txCPU, CANDriver::txCPU_;
 std::map<std::string, DriverParameters*> CANDriver::type2parameters;
 int* CANDriver::alias2masterID_;
 unsigned short* CANDriver::alias2status;
@@ -581,6 +586,37 @@ CANDriver::CANDriver(int const order, char const* device) : CAN(){
     canfd     = configXML->masterFeature("CAN", order, "canfd");
     dbaudrate = configXML->masterAttribute("CAN", order, "dbaudrate");
     division  = configXML->masterAttribute("CAN", order, "division");
+    static bool initialized = false;
+    if(!initialized){
+        rxPth = txPth = txPth_ = 0;
+        rxCPU  = configXML->canAttribute("rx_cpu");
+        txCPU  = configXML->canAttribute("tx_cpu");
+        txCPU_ = configXML->canAttribute("tx_cpu_");
+        adjustCPU(&rxCPU,  processorsCAN[0]);
+        adjustCPU(&txCPU,  processorsCAN[1]);
+        adjustCPU(&txCPU_, processorsCAN[2]);
+        type2parameters.clear();
+        alias2masterID_ = new int[dofAll + 1];
+        alias2status = new unsigned short[dofAll + 1];
+        alias2parameters = new DriverParameters*[dofAll + 1];
+        int i = 0;
+        while(i <= dofAll){
+            alias2masterID_[i] = -1;
+            alias2status[i] = 65535;
+            alias2parameters[i] = nullptr;
+            i++;
+        }
+        i = 0;
+        while(i < 8){
+            int j = 0;
+            while(j < 16){
+                orderSlaveID2alias[i][j] = -1;
+                j++;
+            }
+            i++;
+        }
+        initialized = true;
+    }
 }
 
 int CANDriver::config(){
@@ -923,15 +959,9 @@ int CANDriver::run(std::vector<CANDriver>& cans){
         printf(", type %s\n", type.c_str());
         i++;
     }
-    int cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
-    if(cpu > processorsCAN[0]){
-        cpu = processorsCAN[0];
-    }else{
-        processorsCAN[0] = cpu;
-    }
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    CPU_SET(cpu, &cpuset);
+    CPU_SET(rxCPU, &cpuset);
     if(pthread_create(&rxPth, nullptr, &rx, (void*)&cans) != 0){
         printf("creating can rx thread failed\n");
         return -1;
@@ -944,16 +974,10 @@ int CANDriver::run(std::vector<CANDriver>& cans){
         printf("detaching can rx thread failed\n");
         return -1;
     }
-    printf("can rx on cpu %d\n", cpu);
+    printf("can rx on cpu %d\n", rxCPU);
     if(socketCAN){
-        cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
-        if(cpu > processorsCAN[1]){
-            cpu = processorsCAN[1];
-        }else{
-            processorsCAN[1] = cpu;
-        }
         CPU_ZERO(&cpuset);
-        CPU_SET(cpu, &cpuset);
+        CPU_SET(txCPU, &cpuset);
         if(pthread_create(&txPth, nullptr, &tx, (void*)&cans) != 0){
             printf("creating socketcan tx thread failed\n");
             return -1;
@@ -966,17 +990,11 @@ int CANDriver::run(std::vector<CANDriver>& cans){
             printf("detaching socketcan tx thread failed\n");
             return -1;
         }
-        printf("socketcan tx on cpu %d\n", cpu);
+        printf("socketcan tx on cpu %d\n", txCPU);
     }
     if(CANHAL > 0){
-        cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
-        if(cpu > processorsCAN[2]){
-            cpu = processorsCAN[2];
-        }else{
-            processorsCAN[2] = cpu;
-        }
         CPU_ZERO(&cpuset);
-        CPU_SET(cpu, &cpuset);
+        CPU_SET(txCPU_, &cpuset);
         if(pthread_create(&txPth_, nullptr, &tx_, (void*)&cans) != 0){
             printf("creating canhal tx_ thread failed\n");
             return -1;
@@ -989,7 +1007,7 @@ int CANDriver::run(std::vector<CANDriver>& cans){
             printf("detaching canhal tx_ thread failed\n");
             return -1;
         }
-        printf("canhal tx_ on cpu %d\n", cpu);
+        printf("canhal tx_ on cpu %d\n", txCPU_);
     }
     return 0;
 }
@@ -1006,6 +1024,26 @@ CANDriver::~CANDriver(){
     if(txPth > 0){
         pthread_cancel(txPth);
         txPth = 0;
+    }
+    if(alias2masterID_ != nullptr){
+        delete[] alias2masterID_;
+        alias2masterID_ = nullptr;
+    }
+    if(alias2status != nullptr){
+        delete[] alias2status;
+        alias2status = nullptr;
+    }
+    if(alias2parameters != nullptr){
+        int i = 1;
+        while(i <= dofAll){
+            if(alias2parameters[i] != nullptr){
+                delete alias2parameters[i];
+                alias2parameters[i] = nullptr;
+            }
+            i++;
+        }
+        delete[] alias2parameters;
+        alias2parameters = nullptr;
     }
     if(sock > -1){
         close(sock);

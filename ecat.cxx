@@ -53,6 +53,8 @@ ECAT::ECAT(int const order){
     regRequestable = false;
     task = nullptr;
     master = nullptr;
+    sdoRequest = nullptr;
+    targetPosition = targetVelocity = targetTorque = controlWord = mode = torqueOffset = velocityOffset = actualPosition = actualVelocity = actualTorque = statusWord = modeDisplay = errorCode = nullptr;
     this->order = order;
     alias2type = ecatAlias2type[order];
     if(alias2type.size() == 0){
@@ -64,9 +66,11 @@ ECAT::ECAT(int const order){
         printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
         itr++;
     }
-    eni = configXML->masterDevice("ECAT", order, "eni");
-    dc = configXML->masterFeature("ECAT", order, "dc");
+    eni    = configXML->masterDevice("ECAT", order, "eni");
+    dc     = configXML->masterFeature("ECAT", order, "dc");
     period = configXML->masterAttribute("ECAT", order, "period");
+    cpu    = configXML->masterAttribute("ECAT", order, "cpu");
+    adjustCPU(&cpu, processorsECAT[order]);
     alias2domain = ecatAlias2domain[order];
     domainDivisions = ecatDomainDivisions[order];
     while(init() < 0){
@@ -85,12 +89,6 @@ int ECAT::init(){
         return -1;
     }
     master = task->get_master_ptr();
-    int cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
-    if(cpu > processorsECAT[order]){
-        cpu = processorsECAT[order];
-    }else{
-        processorsECAT[order] = cpu;
-    }
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(cpu, &cpuset);
@@ -256,18 +254,18 @@ int ECAT::config(){
     if(alias2type.size() == 0){
         return 0;
     }
-    targetPosition = new ecat::PdoRegInfo*[alias2slave.size()],
-    targetVelocity = new ecat::PdoRegInfo*[alias2slave.size()],
-    targetTorque   = new ecat::PdoRegInfo*[alias2slave.size()],
-    controlWord    = new ecat::PdoRegInfo*[alias2slave.size()],
-    mode           = new ecat::PdoRegInfo*[alias2slave.size()],
-    torqueOffset   = new ecat::PdoRegInfo*[alias2slave.size()],
-    velocityOffset = new ecat::PdoRegInfo*[alias2slave.size()],
-    actualPosition = new ecat::PdoRegInfo*[alias2slave.size()],
-    actualVelocity = new ecat::PdoRegInfo*[alias2slave.size()],
-    actualTorque   = new ecat::PdoRegInfo*[alias2slave.size()],
-    statusWord     = new ecat::PdoRegInfo*[alias2slave.size()],
-    modeDisplay    = new ecat::PdoRegInfo*[alias2slave.size()],
+    targetPosition = new ecat::PdoRegInfo*[alias2slave.size()];
+    targetVelocity = new ecat::PdoRegInfo*[alias2slave.size()];
+    targetTorque   = new ecat::PdoRegInfo*[alias2slave.size()];
+    controlWord    = new ecat::PdoRegInfo*[alias2slave.size()];
+    mode           = new ecat::PdoRegInfo*[alias2slave.size()];
+    torqueOffset   = new ecat::PdoRegInfo*[alias2slave.size()];
+    velocityOffset = new ecat::PdoRegInfo*[alias2slave.size()];
+    actualPosition = new ecat::PdoRegInfo*[alias2slave.size()];
+    actualVelocity = new ecat::PdoRegInfo*[alias2slave.size()];
+    actualTorque   = new ecat::PdoRegInfo*[alias2slave.size()];
+    statusWord     = new ecat::PdoRegInfo*[alias2slave.size()];
+    modeDisplay    = new ecat::PdoRegInfo*[alias2slave.size()];
     errorCode      = new ecat::PdoRegInfo*[alias2slave.size()];
     int count = 0, rxPDOOffsets[alias2slave.size()], txPDOOffsets[alias2slave.size()];
     auto itr = alias2slave.begin();
@@ -438,11 +436,7 @@ int ECAT::config(){
     while(itr != alias2slave.end()){
         int alias = itr->first, slave = itr->second;
         std::string type = alias2type.find(alias)->second;
-#ifndef NIIC
-        if(drivers[alias - 1].init("ECAT", 0, order, 0, slave, alias, type, rxPDOOffsets[count], txPDOOffsets[count], nullptr, nullptr) != 0){
-#else
         if(drivers[alias - 1].init("ECAT", 0, order, 0, slave, alias, type, rxPDOOffsets[count], txPDOOffsets[count]) != 0){
-#endif
             printf("\tdrivers[%d] init failed\n", alias - 1);
             return -1;
         }
@@ -530,26 +524,9 @@ int ECAT::config(){
     });
     task->set_activation_callback([this](){
         tryCount = 0;
-        sdoRequest = nullptr;
         auto itr = alias2slave.begin();
         while(itr != alias2slave.end()){
             while(requestState(itr->second, "OP") < 0);
-            itr++;
-        }
-    });
-    task->set_send_callback([this](){
-        int count = 0;
-        auto itr = alias2slave.begin();
-        while(itr != alias2slave.end()){
-            int alias = itr->first;
-            *(           int*)targetPosition[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetPosition;
-            *(           int*)targetVelocity[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetVelocity;
-            *(         short*)  targetTorque[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetTorque;
-            *(unsigned short*)   controlWord[count]->dataPtr = drivers[alias - 1].rx.previous()->ControlWord;
-            *(          char*)          mode[count]->dataPtr = drivers[alias - 1].rx.previous()->Mode;
-            *(         short*)  torqueOffset[count]->dataPtr = drivers[alias - 1].rx.previous()->TorqueOffset;
-            *(           int*)velocityOffset[count]->dataPtr = drivers[alias - 1].rx.previous()->VelocityOffset;
-            count++;
             itr++;
         }
     });
@@ -565,7 +542,6 @@ int ECAT::config(){
                     sdoRequest = task->create_sdo(sdoMsg->slave, {sdoMsg->index, sdoMsg->subindex}, sdoMsg->bitLength / 8, false);
                     sdoMsg->state = 2;
                 }catch(std::exception const& e){
-                    ecat::delete_sdo(sdoRequest);
                     tryCount++;
                 }
             }else if(sdoMsg->state == 2){
@@ -637,6 +613,13 @@ int ECAT::config(){
         auto itr = alias2slave.begin();
         while(itr != alias2slave.end()){
             int alias = itr->first;
+            *(           int*)targetPosition[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetPosition;
+            *(           int*)targetVelocity[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetVelocity;
+            *(         short*)  targetTorque[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetTorque;
+            *(unsigned short*)   controlWord[count]->dataPtr = drivers[alias - 1].rx.previous()->ControlWord;
+            *(          char*)          mode[count]->dataPtr = drivers[alias - 1].rx.previous()->Mode;
+            *(         short*)  torqueOffset[count]->dataPtr = drivers[alias - 1].rx.previous()->TorqueOffset;
+            *(           int*)velocityOffset[count]->dataPtr = drivers[alias - 1].rx.previous()->VelocityOffset;
             drivers[alias - 1].tx.next()->ActualPosition = *(           int*)actualPosition[count]->dataPtr;
             drivers[alias - 1].tx.next()->ActualVelocity = *(           int*)actualVelocity[count]->dataPtr;
             drivers[alias - 1].tx.next()->ActualTorque   = *(         short*)  actualTorque[count]->dataPtr;
@@ -655,7 +638,7 @@ int ECAT::run(){
     if(alias2type.size() == 0){
         return 0;
     }
-    printf("ecats[%d] rxtx on cpu %d\n", order, processorsECAT[order]);
+    printf("ecats[%d] rxtx on cpu %d\n", order, cpu);
     task->start();
     return 0;
 }
@@ -664,9 +647,60 @@ void ECAT::clean(){
     if(task != nullptr){
         task->break_();
         sleep(1);
+        if(sdoRequest != nullptr){
+            ecat::delete_sdo(sdoRequest);
+            sdoRequest = nullptr;
+        }
         task->release();
         master = nullptr;
         task = nullptr;
+    }
+    if(targetPosition != nullptr){
+        delete[] targetPosition;
+    }
+    if(targetVelocity != nullptr){
+        delete[] targetVelocity;
+    }
+    if(targetTorque != nullptr){
+        delete[] targetTorque;
+    }
+    if(controlWord != nullptr){
+        delete[] controlWord;
+    }
+    if(mode != nullptr){
+        delete[] mode;
+    }
+    if(torqueOffset != nullptr){
+        delete[] torqueOffset;
+    }
+    if(velocityOffset != nullptr){
+        delete[] velocityOffset;
+    }
+    if(actualPosition != nullptr){
+        delete[] actualPosition;
+    }
+    if(actualVelocity != nullptr){
+        delete[] actualVelocity;
+    }
+    if(actualTorque != nullptr){
+        delete[] actualTorque;
+    }
+    if(statusWord != nullptr){
+        delete[] statusWord;
+    }
+    if(modeDisplay != nullptr){
+        delete[] modeDisplay;
+    }
+    if(errorCode != nullptr){
+        delete[] errorCode;
+    }
+    if(sdoMsg != nullptr){
+        delete sdoMsg;
+        sdoMsg = nullptr;
+    }
+    if(regMsg != nullptr){
+        delete regMsg;
+        regMsg = nullptr;
     }
     int i = 0;
     while(i < domainDivisions.size()){

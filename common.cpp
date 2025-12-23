@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "config_xml.h"
+#include <unistd.h>
 #include <bit>
 #include <limits>
 
@@ -87,6 +88,15 @@ float half2single(unsigned short u){
     unsigned int result = sign | exp | (halfMan << 13);
     float f = *(float*)&result;
     return f;
+}
+
+void adjustCPU(int* cpu, int processor){
+    if(*cpu < 1 || *cpu >= sysconf(_SC_NPROCESSORS_ONLN)){
+        *cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
+        if(*cpu > processor && processor > 0){
+            *cpu = processor;
+        }
+    }
 }
 
 SwapNode::SwapNode(int const size){

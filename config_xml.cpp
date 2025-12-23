@@ -120,12 +120,12 @@ int ConfigXML::imuBaudrate(){
     return xmlDoc.FirstChildElement("Config")->FirstChildElement("IMU")->IntAttribute("baudrate");
 }
 
-long ConfigXML::canPeriod(){
+int ConfigXML::canAttribute(char const* name){
     tinyxml2::XMLElement* mastersElement = xmlDoc.FirstChildElement("Config")->FirstChildElement("CAN")->FirstChildElement("Masters");
     if(mastersElement != nullptr){
-        return mastersElement->IntAttribute("period");
+        return mastersElement->IntAttribute(name);
     }
-    return 2000000L;
+    return 0;
 }
 
 std::vector<std::tuple<int, std::vector<int>, std::string>> ConfigXML::canBus(){

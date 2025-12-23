@@ -733,8 +733,8 @@
         </Category>
     </Categories>
     <Masters>
-        <Master order="0" eni="NIIC_ENI_M0.xml" dc="true" period="1000000"/>
-        <Master order="1" eni="NIIC_ENI_M1.xml" dc="true" period="4000000"/>
+        <Master order="0" eni="NIIC_ENI_M0.xml" dc="true" period="1000000" cpu="-1"/>
+        <Master order="1" eni="NIIC_ENI_M1.xml" dc="true" period="4000000" cpu="-1"/>
     </Masters>
     <Domains>
         <Domain master="0" order="0"  division="1"/>
@@ -759,6 +759,10 @@
         <Domain master="1" order="2"  division="1"/>
         <Domain master="1" order="3"  division="1"/>
         <Domain master="1" order="4"  division="1"/>
+        <Domain master="2" order="0"  division="1"/>
+        <Domain master="3" order="0"  division="1"/>
+        <Domain master="4" order="0"  division="1"/>
+        <Domain master="5" order="0"  division="1"/>
     </Domains>
     <Slaves>
         <Slave master="0" domain="0"  alias="1"   type="Elmo"       >0</Slave>
@@ -929,7 +933,7 @@
         <Category name="sensor">
         </Category>
     </Categories>
-    <Masters period="2000000">
+    <Masters period="2000000" rx_cpu="-1" tx_cpu="-1" tx_cpu_="-1">
         <Master order="0" device="can0" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
         <Master order="1" device="can1" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
         <Master order="2" device="can2" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>

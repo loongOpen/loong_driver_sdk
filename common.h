@@ -34,6 +34,7 @@ float const Pi = std::acos(-1);
 
 unsigned short single2half(float f);
 float half2single(unsigned short u);
+void adjustCPU(int* cpu, int processor);
 
 class SwapNode{
 public:

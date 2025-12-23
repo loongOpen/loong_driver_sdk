@@ -72,8 +72,10 @@ ECAT::ECAT(int const order){
         printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
         itr++;
     }
-    dc = configXML->masterFeature("ECAT", order, "dc");
+    dc     = configXML->masterFeature("ECAT", order, "dc");
     period = configXML->masterAttribute("ECAT", order, "period");
+    cpu    = configXML->masterAttribute("ECAT", order, "cpu");
+    adjustCPU(&cpu, processorsECAT[order]);
     alias2domain = ecatAlias2domain[order];
     domainDivisions = ecatDomainDivisions[order];
     while(init() < 0){
@@ -909,12 +911,6 @@ void* ECAT::rxtx(void* arg){
 int ECAT::run(){
     if(alias2type.size() == 0){
         return 0;
-    }
-    int cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
-    if(cpu > processorsECAT[order]){
-        cpu = processorsECAT[order];
-    }else{
-        processorsECAT[order] = cpu;
     }
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
