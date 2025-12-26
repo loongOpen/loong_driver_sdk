@@ -53,7 +53,6 @@ ECAT::ECAT(int const order){
     regRequestable = false;
     task = nullptr;
     master = nullptr;
-    sdoRequest = nullptr;
     targetPosition = targetVelocity = targetTorque = controlWord = mode = torqueOffset = velocityOffset = actualPosition = actualVelocity = actualTorque = statusWord = modeDisplay = errorCode = nullptr;
     this->order = order;
     alias2type = ecatAlias2type[order];
@@ -430,13 +429,14 @@ int ECAT::config(){
     }
     txPDOOffsets[0] = rxPDOOffsets[0];
     rxPDOOffsets[0] = 0;
+    printf("master %d, domain 0, domainSize %d\n", order, domainSizes[0]);
     rxPDOSwaps[0] = new SwapList(domainSizes[0]);
     txPDOSwaps[0] = new SwapList(domainSizes[0]);
     itr = alias2slave.begin();
     while(itr != alias2slave.end()){
         int alias = itr->first, slave = itr->second;
         std::string type = alias2type.find(alias)->second;
-        if(drivers[alias - 1].init("ECAT", 0, order, 0, slave, alias, type, rxPDOOffsets[count], txPDOOffsets[count]) != 0){
+        if(drivers[alias - 1].init("ECAT", 0, order, 0, slave, alias, type, rxPDOOffsets[count], txPDOOffsets[count], nullptr) != 0){
             printf("\tdrivers[%d] init failed\n", alias - 1);
             return -1;
         }
@@ -526,7 +526,29 @@ int ECAT::config(){
         tryCount = 0;
         auto itr = alias2slave.begin();
         while(itr != alias2slave.end()){
-            while(requestState(itr->second, "OP") < 0);
+            int alias = itr->first, slave = itr->second;
+            while(requestState(slave, "OP") < 0);
+            ecat::sdo_request* sdoHandler = nullptr;
+            try{
+                sdoHandler = task->create_sdo(slave, {0x0000, 0x00}, 4, false);
+            }catch(std::exception const& e){
+                printf("creating SDO request failed\n");
+                exit(-1);
+            }
+            sdoHandler->timeout(500);
+            switch(drivers[alias - 1].config("ECAT", order, 0, sdoHandler)){
+            case 2:
+                drivers[alias - 1].tx->StatusWord = 0xffff;
+                break;
+            case 1:
+                break;
+            case 0:
+                break;
+            case -1:
+                printf("drivers[%d] config failed\n", alias - 1);
+                exit(-1);
+                break;
+            }
             itr++;
         }
     });
@@ -538,38 +560,32 @@ int ECAT::config(){
                 sdoMsg->state = -1;
             }
             if(sdoMsg->state == 0){
-                try{
-                    sdoRequest = task->create_sdo(sdoMsg->slave, {sdoMsg->index, sdoMsg->subindex}, sdoMsg->bitLength / 8, false);
-                    sdoMsg->state = 2;
-                }catch(std::exception const& e){
-                    tryCount++;
-                }
+                sdoMsg->sdoHandler->index({sdoMsg->index, sdoMsg->subindex}, false);
+                sdoMsg->state = 2;
             }else if(sdoMsg->state == 2){
-                switch(sdoRequest->state()){
-                case ecat::request_state::error:
-                    tryCount++;
+                switch(sdoMsg->sdoHandler->state()){
                 case ecat::request_state::usused:
                     if(sdoMsg->operation == 0){
                         if(sdoMsg->signed_ == 0){
                             if(sdoMsg->bitLength == 8){
-                                sdoRequest->data<unsigned char>(sdoMsg->value);
+                                sdoMsg->sdoHandler->data<unsigned char>(sdoMsg->value);
                             }else if(sdoMsg->bitLength == 16){
-                                sdoRequest->data<unsigned short>(sdoMsg->value);
+                                sdoMsg->sdoHandler->data<unsigned short>(sdoMsg->value);
                             }else if(sdoMsg->bitLength == 32){
-                                sdoRequest->data<unsigned int>(sdoMsg->value);
+                                sdoMsg->sdoHandler->data<unsigned int>(sdoMsg->value);
                             }
                         }else{
                             if(sdoMsg->bitLength == 8){
-                                sdoRequest->data<char>(sdoMsg->value);
+                                sdoMsg->sdoHandler->data<char>(sdoMsg->value);
                             }else if(sdoMsg->bitLength == 16){
-                                sdoRequest->data<short>(sdoMsg->value);
+                                sdoMsg->sdoHandler->data<short>(sdoMsg->value);
                             }else if(sdoMsg->bitLength == 32){
-                                sdoRequest->data<int>(sdoMsg->value);
+                                sdoMsg->sdoHandler->data<int>(sdoMsg->value);
                             }
                         }
-                        sdoRequest->write();
+                        sdoMsg->sdoHandler->write();
                     }else{
-                        sdoRequest->read();
+                        sdoMsg->sdoHandler->read();
                     }
                     break;
                 case ecat::request_state::success:
@@ -578,31 +594,36 @@ int ECAT::config(){
                     }else{
                         if(sdoMsg->signed_ == 0){
                             if(sdoMsg->bitLength == 8){
-                                sdoMsg->value = sdoRequest->data<unsigned char>();
+                                sdoMsg->value = sdoMsg->sdoHandler->data<unsigned char>();
                             }else if(sdoMsg->bitLength == 16){
-                                sdoMsg->value = sdoRequest->data<unsigned short>();
+                                sdoMsg->value = sdoMsg->sdoHandler->data<unsigned short>();
                             }else if(sdoMsg->bitLength == 32){
-                                sdoMsg->value = sdoRequest->data<unsigned int>();
+                                sdoMsg->value = sdoMsg->sdoHandler->data<unsigned int>();
                             }
                         }else{
                             if(sdoMsg->bitLength == 8){
-                                sdoMsg->value = sdoRequest->data<char>();
+                                sdoMsg->value = sdoMsg->sdoHandler->data<char>();
                             }else if(sdoMsg->bitLength == 16){
-                                sdoMsg->value = sdoRequest->data<short>();
+                                sdoMsg->value = sdoMsg->sdoHandler->data<short>();
                             }else if(sdoMsg->bitLength == 32){
-                                sdoMsg->value = sdoRequest->data<int>();
+                                sdoMsg->value = sdoMsg->sdoHandler->data<int>();
                             }
                         }
                     }
                     sdoMsg->state = 3;
                     break;
+                case ecat::request_state::error:
+                    if(sdoMsg->operation == 0){
+                        sdoMsg->sdoHandler->write();
+                    }else{
+                        sdoMsg->sdoHandler->read();
+                    }
                 case ecat::request_state::busy:
                     tryCount++;
                     break;
                 }
             }else if(sdoMsg->state == 3 || sdoMsg->state == -1){
                 sdoResponseQueue.put(sdoMsg);
-                ecat::delete_sdo(sdoRequest);
                 sdoMsg = nullptr;
                 tryCount = 0;
             }
@@ -647,10 +668,6 @@ void ECAT::clean(){
     if(task != nullptr){
         task->break_();
         sleep(1);
-        if(sdoRequest != nullptr){
-            ecat::delete_sdo(sdoRequest);
-            sdoRequest = nullptr;
-        }
         task->release();
         master = nullptr;
         task = nullptr;

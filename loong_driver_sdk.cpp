@@ -433,7 +433,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
 }
 
 int DriverSDK::impClass::putDriverSDORequest(SDOMsg const& msg, int const priority){
-    if(ecats[drivers[msg.alias - 1].order].sdoRequestable && drivers[msg.alias - 1].tx->StatusWord > 0){
+    if(ecats[drivers[msg.alias - 1].order].sdoRequestable){
         SDOMsg* sdoMsg = new SDOMsg();
         *sdoMsg = msg;
         sdoMsg->state = 0;
@@ -548,14 +548,26 @@ void DriverSDK::impClass::ecatUpdate(){
 }
 
 void DriverSDK::impClass::sdoRequestableUpdate(){
-    int i = 0;
-    while(i < ecats.size()){
-        if(ecats[i].sdoRequestQueue.size() < dofAll && ecats[i].sdoResponseQueue.size() < dofAll){
-            ecats[i].sdoRequestable = true;
-        }else{
-            ecats[i].sdoRequestable = false;
+    static bool initialized = false;
+    if(initialized){
+        int i = 0;
+        while(i < ecats.size()){
+            if(ecats[i].sdoRequestQueue.size() < dofAll && ecats[i].sdoResponseQueue.size() < dofAll){
+                ecats[i].sdoRequestable = true;
+            }else{
+                ecats[i].sdoRequestable = false;
+            }
+            i++;
         }
-        i++;
+    }else{
+        initialized = true;
+        int i = 0;
+        while(i < dofAll){
+            if(drivers[i].busCode == 0 && drivers[i].tx->StatusWord == 0){
+                initialized = false;
+            }
+            i++;
+        }
     }
 }
 

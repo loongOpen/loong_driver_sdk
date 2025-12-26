@@ -49,7 +49,7 @@ void changingTekRX(modbus_t* const ctx, int const alias){
         }
         lastTime = currentTime;
         position = lastPosition = targetPosition;
-    }else if(alias == 201){
+    }else{
         static long lastTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         static unsigned short lastPosition = 0;
         long currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -80,15 +80,15 @@ void changingTekTX(modbus_t* const ctx, int const alias){
     int position = 0;
     *((unsigned short*)&position + 1) = data[0];
     *(unsigned short*)&position = data[1];
-    position = (position - 100) * 90 / (1150 - 100);
     if(position < 0){
         position = 0;
-    }else if(position > 90){
-        position = 90;
+    }else if(position > 1000){
+        position = 1000;
     }
+    position = position * 90 / 1000;
     if(alias == 200){
         digits[0].tx.next()->ActualPosition = position;
-    }else if(alias == 201){
+    }else{
         digits[dofLeftEffector].tx.next()->ActualPosition = position;
     }
 }
@@ -137,6 +137,61 @@ void inspireTX(modbus_t* const ctx, int const alias){
             digits[i + j].tx.next()->ActualPosition = 90 - actualPositions[j] * 90 / 1000;
         }
         j++;
+    }
+}
+
+unsigned int const TargetPosRegs_[] = {0x0410, 0x0411, 0x0412, 0x0413, 0x0414, 0x0415};
+
+void inspireRX_(modbus_t* const ctx, int const alias){
+    int i = 0;
+    if(alias == 201){
+        i = dofLeftEffector;
+    }
+    unsigned short targetPositions[] = {0, 0, 0, 0, 0, 0};
+    int j = 0;
+    while(j < 4){
+        targetPositions[j] = 1750 - digits[i + j].rx.previous()->TargetPosition * (1750 - 900) / 90;
+        j++;
+    }
+    targetPositions[4] = 1350 - digits[i + 4].rx.previous()->TargetPosition * (1350 - 1200) / 90;
+    targetPositions[5] = 1800 - digits[i + 5].rx.previous()->TargetPosition * (1800 - 600) / 90;
+    modbus_set_slave(ctx, alias);
+    j = 0;
+    while(j < 6){
+        modbus_write_register(ctx, TargetPosRegs_[j], targetPositions[j]);
+        usleep(2000);
+        j++;
+    }
+}
+
+unsigned int const ActualPosRegs_[] = {0x0428, 0x0429, 0x042a, 0x042b, 0x042c, 0x042d};
+
+void inspireTX_(modbus_t* const ctx, int const alias){
+    int i = 0;
+    if(alias == 201){
+        i = dofLeftEffector;
+    }
+    unsigned short actualPositions[] = {0, 0, 0, 0, 0, 0};
+    int readResults[] = {0, 0, 0, 0, 0, 0};
+    modbus_set_slave(ctx, alias);
+    int j = 0;
+    while(j < 6){
+        readResults[j] = modbus_read_registers(ctx, ActualPosRegs_[j], 1, actualPositions + j);
+        usleep(2000);
+        j++;
+    }
+    j = 0;
+    while(j < 4){
+        if(readResults[j] == 1){
+            digits[i + j].tx.next()->ActualPosition = (1750 - actualPositions[j]) * 90 / (1750 - 900);
+        }
+        j++;
+    }
+    if(readResults[4] == 1){
+        digits[i + 4].tx.next()->ActualPosition = (1350 - actualPositions[4]) * 90 / (1350 - 1200);
+    }
+    if(readResults[5] == 1){
+        digits[i + 5].tx.next()->ActualPosition = (1800 - actualPositions[5]) * 90 / (1800 - 600);
     }
 }
 
@@ -321,7 +376,7 @@ int RS485::config(){
 #ifndef NIIC
             if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
 #else
-            if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData)) != 0){
+            if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
 #endif
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
@@ -338,6 +393,9 @@ int RS485::config(){
         }else if(itr->second == "Inspire"){
             leftRX = inspireRX;
             leftTX = inspireTX;
+        }else if(itr->second == "Inspire_"){
+            leftRX = inspireRX_;
+            leftTX = inspireTX_;
         }else if(itr->second == "BrainCo"){
             leftRX = brainCoRX;
             leftTX = brainCoTX;
@@ -357,7 +415,7 @@ int RS485::config(){
 #ifndef NIIC
             if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
 #else
-            if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData)) != 0){
+            if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
 #endif
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
@@ -374,6 +432,9 @@ int RS485::config(){
         }else if(itr->second == "Inspire"){
             rightRX = inspireRX;
             rightTX = inspireTX;
+        }else if(itr->second == "Inspire_"){
+            rightRX = inspireRX_;
+            rightTX = inspireTX_;
         }else if(itr->second == "BrainCo"){
             rightRX = brainCoRX;
             rightTX = brainCoTX;

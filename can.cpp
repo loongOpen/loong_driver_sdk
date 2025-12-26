@@ -642,7 +642,7 @@ int CANDriver::config(){
 #ifndef NIIC
         if(drivers[alias - 1].init("CAN", 1, order, 0, slave, alias, type, i * sizeof(DriverRxData), i * sizeof(DriverTxData), nullptr, nullptr) != 0){
 #else
-        if(drivers[alias - 1].init("CAN", 1, order, 0, slave, alias, type, i * sizeof(DriverRxData), i * sizeof(DriverTxData)) != 0){
+        if(drivers[alias - 1].init("CAN", 1, order, 0, slave, alias, type, i * sizeof(DriverRxData), i * sizeof(DriverTxData), nullptr) != 0){
 #endif
             printf("\tdrivers[%d] init failed\n", alias - 1);
             return -1;

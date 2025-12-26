@@ -157,7 +157,7 @@ MotorParameters::MotorParameters(){
 #ifndef NIIC
 int MotorParameters::load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler){
 #else
-int MotorParameters::load(std::string const& bus, int const alias, std::string const& type, int const slave){
+int MotorParameters::load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler){
 #endif
     polarity          = configXML->readMotorParameter(alias,          "Polarity");
     countBias         = configXML->readMotorParameter(alias,         "CountBias");
@@ -186,11 +186,7 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
     }
     if(bus == "ECAT"){
         sdoTemplate = SDOMsg{
-#ifndef NIIC
             sdoHandler,
-#else
-            slave,
-#endif
             0,
             alias,
             0,
@@ -203,11 +199,7 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
         };
         std::vector<std::string> entry = configXML->entry(configXML->device("ECAT", type.c_str()), "Temperature");
         temperatureSDO = SDOMsg{
-#ifndef NIIC
             sdoHandler,
-#else
-            slave,
-#endif
             0,
             alias,
             0,
@@ -220,11 +212,7 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
         };
         entry = configXML->entry(configXML->device("ECAT", type.c_str()), "ClearError");
         clearErrorSDO = SDOMsg{
-#ifndef NIIC
             sdoHandler,
-#else
-            slave,
-#endif
             1,
             alias,
             0,
@@ -248,7 +236,7 @@ EffectorParameters::EffectorParameters(){
 #ifndef NIIC
 int EffectorParameters::load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler){
 #else
-int EffectorParameters::load(std::string const& bus, int const alias, std::string const& type, int const slave){
+int EffectorParameters::load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler){
 #endif
     return 0;
 }
@@ -262,7 +250,7 @@ SensorParameters::SensorParameters(){
 #ifndef NIIC
 int SensorParameters::load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler){
 #else
-int SensorParameters::load(std::string const& bus, int const alias, std::string const& type, int const slave){
+int SensorParameters::load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler){
 #endif
     return 0;
 }

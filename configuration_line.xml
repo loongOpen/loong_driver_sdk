@@ -912,6 +912,7 @@
         <Category name="effector">
             <Type dof="1">ChangingTek</Type>
             <Type dof="6">Inspire</Type>
+            <Type dof="6">Inspire_</Type>
             <Type dof="6">BrainCo</Type>
             <Type dof="6">HumanoidShanghai</Type>
         </Category>
@@ -925,8 +926,10 @@
     <Slaves>
         <Slave master="0" alias="200" type="ChangingTek">0</Slave>
         <Slave master="0" alias="200" type="Inspire"    >0</Slave>
+        <Slave master="0" alias="200" type="Inspire_"   >0</Slave>
         <Slave master="1" alias="201" type="ChangingTek">0</Slave>
         <Slave master="1" alias="201" type="Inspire"    >0</Slave>
+        <Slave master="1" alias="201" type="Inspire_"   >0</Slave>
     </Slaves>
 </RS485Emu>
 <RS485>
@@ -938,6 +941,7 @@
         <Category name="effector">
             <Type dof="1">ChangingTek</Type>
             <Type dof="6">Inspire</Type>
+            <Type dof="6">Inspire_</Type>
             <Type dof="6">BrainCo</Type>
             <Type dof="6">HumanoidShanghai</Type>
         </Category>
@@ -951,8 +955,10 @@
     <Slaves>
         <Slave master="0" alias="200" type="ChangingTek">0</Slave>
         <Slave master="0" alias="200" type="Inspire"    >0</Slave>
+        <Slave master="0" alias="200" type="Inspire_"   >0</Slave>
         <Slave master="0" alias="201" type="ChangingTek">0</Slave>
         <Slave master="1" alias="201" type="Inspire"    >0</Slave>
+        <Slave master="1" alias="201" type="Inspire_"   >0</Slave>
     </Slaves>
 </RS485>
 <Motors>

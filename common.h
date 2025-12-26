@@ -58,7 +58,7 @@ struct SDOMsg{
 #ifndef NIIC
     ec_sdo_request_t* sdoHandler;
 #else
-    int slave;
+    ecat::sdo_request* sdoHandler;
 #endif
     long value;
     int alias;
@@ -111,7 +111,7 @@ public:
 #ifndef NIIC
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
 #else
-    int load(std::string const& bus, int const alias, std::string const& type, int const slave);
+    int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
 #endif
     ~MotorParameters();
 };
@@ -188,7 +188,7 @@ public:
 #ifndef NIIC
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
 #else
-    int load(std::string const& bus, int const alias, std::string const& type, int const slave);
+    int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
 #endif
     ~EffectorParameters();
 };
@@ -222,7 +222,7 @@ public:
 #ifndef NIIC
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
 #else
-    int load(std::string const& bus, int const alias, std::string const& type, int const slave);
+    int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
 #endif
     ~SensorParameters();
 };
@@ -279,6 +279,8 @@ public:
 #ifndef NIIC
     ec_sdo_request_t* sdoHandler;
     ec_reg_request_t* regHandler;
+#else
+    ecat::sdo_request* sdoHandler;
 #endif
     Parameters parameters;
     WrapperPair(){
@@ -290,15 +292,15 @@ public:
         enabled = 0;
         bus = "";
         type = "";
-#ifndef NIIC
         sdoHandler = nullptr;
+#ifndef NIIC
         regHandler = nullptr;
 #endif
     }
 #ifndef NIIC
     int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler, ec_reg_request_t* const regHandler){
 #else
-    int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset){
+    int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ecat::sdo_request* const sdoHandler){
 #endif
         if(this->order != -1){
             printf("trying to re-init %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
@@ -313,8 +315,8 @@ public:
         this->type = type;
         rx.init(rxOffset);
         tx.init(txOffset);
-#ifndef NIIC
         this->sdoHandler = sdoHandler;
+#ifndef NIIC
         this->regHandler = regHandler;
 #endif
         return 0;
@@ -328,16 +330,26 @@ public:
         }
         rx.config(rxSwap);
         tx.config(txSwap);
-#ifndef NIIC
         if(parameters.load(bus, alias, type, sdoHandler) < 0){
-#else
-        if(parameters.load(bus, alias, type, slave) < 0){
-#endif
             printf("loading parameters failed for %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
             return -1;
         }
         return 0;
     }
+#ifdef NIIC
+    int config(std::string const& bus, int const order, int const domain, ecat::sdo_request* const sdoHandler){
+        if(this->order == -1){
+            return 2;
+        }
+        if(this->bus != bus || this->order != order || this->domain != domain){
+            return 1;
+        }
+        parameters.sdoTemplate   .sdoHandler = sdoHandler;
+        parameters.temperatureSDO.sdoHandler = sdoHandler;
+        parameters.clearErrorSDO .sdoHandler = sdoHandler;
+        return 0;
+    }
+#endif
     ~WrapperPair(){
     }
 };

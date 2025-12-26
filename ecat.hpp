@@ -36,7 +36,6 @@ public:
     PtrQue<SDOMsg> sdoRequestQueue, sdoResponseQueue, regRequestQueue, regResponseQueue;
     ecat::task* task;
     ecat::master* master;
-    ecat::sdo_request* sdoRequest;
     ecat::PdoRegInfo** targetPosition, ** targetVelocity, ** targetTorque, ** controlWord, ** mode, ** torqueOffset, ** velocityOffset, ** actualPosition, ** actualVelocity, ** actualTorque, ** statusWord, ** modeDisplay, ** errorCode;
     ECAT(int const order);
     int init();
