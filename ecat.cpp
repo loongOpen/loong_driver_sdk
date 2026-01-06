@@ -463,7 +463,7 @@ int ECAT::config(){
         ec_sdo_request_t* sdoHandler = ecrt_slave_config_create_sdo_request(slaveConfig, 0x0000, 0x00, 4);
         ec_reg_request_t* regHandler = ecrt_slave_config_create_reg_request(slaveConfig, 4);
         if(sdoHandler == nullptr){
-            printf("\tcreating SDO request failed\n");
+            printf("\tcreating sdo request failed\n");
             return -1;
         }
         ecrt_sdo_request_timeout(sdoHandler, 500);

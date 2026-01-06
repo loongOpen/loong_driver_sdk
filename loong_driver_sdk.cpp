@@ -301,10 +301,6 @@ int DriverSDK::impClass::init(char const* xmlFile){
         printf("imu run failed\n");
         return -1;
     }
-    if(imu->pth > 0 && pthread_detach(imu->pth) != 0){
-        printf("detaching imu recv thread failed\n");
-        return -1;
-    }
     int rs485masterCount = rs485alias2type.size();
     i = 0;
     while(i < rs485masterCount){
@@ -990,11 +986,11 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
                     data[i].temp = drivers[i].parameters.temperatureSDO.value;
                 }
             }
-            data[i].pos = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
-            data[i].vel = 2.0 * Pi * drivers[i].parameters.polarity * drivers[i].tx->ActualVelocity / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
-            data[i].tor = drivers[i].parameters.polarity * drivers[i].tx->ActualTorque / 1000.0 * drivers[i].parameters.ratedCurrent * drivers[i].parameters.torqueConstant * drivers[i].parameters.gearRatioTor;
+            data[i].pos        = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
+            data[i].vel        = 2.0 * Pi * drivers[i].parameters.polarity * drivers[i].tx->ActualVelocity / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
+            data[i].tor        = drivers[i].parameters.polarity * drivers[i].tx->ActualTorque / 1000.0 * drivers[i].parameters.ratedCurrent * drivers[i].parameters.torqueConstant * drivers[i].parameters.gearRatioTor;
             data[i].statusWord = drivers[i].tx->StatusWord;
-            data[i].errorCode = drivers[i].tx->ErrorCode;
+            data[i].errorCode  = drivers[i].tx->ErrorCode;
         }else if(drivers[i].busCode == 1){
             data[i].pos        = drivers[i].parameters.polarity * (*reinterpret_cast<float*>(&drivers[i].tx->ActualPosition) - drivers[i].parameters.countBias);
             data[i].vel        = drivers[i].parameters.polarity *  *reinterpret_cast<float*>(&drivers[i].tx->ActualVelocity);

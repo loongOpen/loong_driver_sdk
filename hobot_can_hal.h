@@ -57,6 +57,7 @@ struct pack_info{
     unsigned short length;
     unsigned short unused;
     unsigned long unused_1;
+    unsigned char crc_enabled;
 };
 
 int canInit();

@@ -31,7 +31,7 @@ struct ChainNode{
 class RS232{
 public:
     char* device;
-    int baudrate, frameLength;
+    int fd, baudrate, frameLength;
     unsigned char header0, header1;
     std::atomic<ChainNode*> ptr;
     SwapList* txSwap;

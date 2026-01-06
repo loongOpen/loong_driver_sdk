@@ -941,11 +941,11 @@
         <Master order="4" device="can4" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
         <Master order="5" device="can5" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
     </Masters>
-    <!--<Masters period="2000000">
+    <!--<Masters period="2000000" rx_cpu="-1" tx_cpu="-1" tx_cpu_="-1">
         <Master order="0" device="can5_ins0ch4" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
         <Master order="1" device="can6_ins0ch6" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
-        <Master order="2" device="can7_ins0ch7" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
-        <Master order="3" device="can8_ins0ch2" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+        <Master order="2" device="can7_ins4ch7" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+        <Master order="3" device="can8_ins4ch2" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
         <Master order="4" device="can9_ins0ch3" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
         <Master order="5" device="can0"         canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
     </Masters>-->

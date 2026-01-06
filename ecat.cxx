@@ -24,8 +24,6 @@
 #include <atomic>
 #include <sstream>
 #include <limits>
-#include <ecat/niic_api.hpp>
-#include <qiuniu/init.h>
 
 namespace DriverSDK{
 extern ConfigXML* configXML;
@@ -78,10 +76,6 @@ ECAT::ECAT(int const order){
 }
 
 int ECAT::init(){
-    static bool initialized = false;
-    if(!initialized){
-        qiuniu_init();
-    }
     task = new ecat::task(order);
     if(task == nullptr){
         printf("creating task %d failed\n", order);
@@ -532,7 +526,7 @@ int ECAT::config(){
             try{
                 sdoHandler = task->create_sdo(slave, {0x0000, 0x00}, 4, false);
             }catch(std::exception const& e){
-                printf("creating SDO request failed\n");
+                printf("creating sdo request failed\n");
                 exit(-1);
             }
             sdoHandler->timeout(500);

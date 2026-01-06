@@ -264,7 +264,6 @@ long CAN::period;
 int CAN::CANHAL;
 
 CAN::CAN(){
-    canhal = 0;
     static bool initialized = false;
     if(!initialized){
         period = configXML->canAttribute("period");
@@ -274,6 +273,7 @@ CAN::CAN(){
         CANHAL = 0;
         initialized = true;
     }
+    canhal = 0;
 }
 
 int CAN::ifaceIsUp(){
@@ -436,7 +436,7 @@ int CAN::send(int const slaveID, unsigned char const* data, int length){
     if(ret != sizeof(frame)){
         static unsigned int cnt = 0xffffffff;
         cnt++;
-        if(cnt % 10 == 0){
+        if(cnt % 100 == 0){
             printf("send: cans[%d] write ret = %d\n", order, ret);
         }
         return -1;
@@ -484,7 +484,7 @@ int CAN::sendfd(int const slaveID, unsigned char const* data, int const length){
     if(ret != sizeof(frame)){
         static unsigned int cnt = 0xffffffff;
         cnt++;
-        if(cnt % 10 == 0){
+        if(cnt % 100 == 0){
             printf("sendfd: cans[%d] write ret = %d\n", order, ret);
         }
         return -1;
@@ -538,6 +538,37 @@ canDriverRXFunction CANDriver::rxFuncs[2048][8];
 canDriverTXFunction CANDriver::txFuncs[2048][8];
 
 CANDriver::CANDriver(int const order, char const* device) : CAN(){
+    static bool initialized = false;
+    if(!initialized){
+        rxPth = txPth = txPth_ = 0;
+        rxCPU  = configXML->canAttribute("rx_cpu");
+        txCPU  = configXML->canAttribute("tx_cpu");
+        txCPU_ = configXML->canAttribute("tx_cpu_");
+        adjustCPU(&rxCPU,  processorsCAN[0]);
+        adjustCPU(&txCPU,  processorsCAN[1]);
+        adjustCPU(&txCPU_, processorsCAN[2]);
+        type2parameters.clear();
+        alias2masterID_ = new int[dofAll + 1];
+        alias2status = new unsigned short[dofAll + 1];
+        alias2parameters = new DriverParameters*[dofAll + 1];
+        int i = 0;
+        while(i <= dofAll){
+            alias2masterID_[i] = -1;
+            alias2status[i] = 65535;
+            alias2parameters[i] = nullptr;
+            i++;
+        }
+        i = 0;
+        while(i < 8){
+            int j = 0;
+            while(j < 16){
+                orderSlaveID2alias[i][j] = -1;
+                j++;
+            }
+            i++;
+        }
+        initialized = true;
+    }
     rxSwap = nullptr;
     txSwap = nullptr;
     sock = -1;
@@ -586,37 +617,6 @@ CANDriver::CANDriver(int const order, char const* device) : CAN(){
     canfd     = configXML->masterFeature("CAN", order, "canfd");
     dbaudrate = configXML->masterAttribute("CAN", order, "dbaudrate");
     division  = configXML->masterAttribute("CAN", order, "division");
-    static bool initialized = false;
-    if(!initialized){
-        rxPth = txPth = txPth_ = 0;
-        rxCPU  = configXML->canAttribute("rx_cpu");
-        txCPU  = configXML->canAttribute("tx_cpu");
-        txCPU_ = configXML->canAttribute("tx_cpu_");
-        adjustCPU(&rxCPU,  processorsCAN[0]);
-        adjustCPU(&txCPU,  processorsCAN[1]);
-        adjustCPU(&txCPU_, processorsCAN[2]);
-        type2parameters.clear();
-        alias2masterID_ = new int[dofAll + 1];
-        alias2status = new unsigned short[dofAll + 1];
-        alias2parameters = new DriverParameters*[dofAll + 1];
-        int i = 0;
-        while(i <= dofAll){
-            alias2masterID_[i] = -1;
-            alias2status[i] = 65535;
-            alias2parameters[i] = nullptr;
-            i++;
-        }
-        i = 0;
-        while(i < 8){
-            int j = 0;
-            while(j < 16){
-                orderSlaveID2alias[i][j] = -1;
-                j++;
-            }
-            i++;
-        }
-        initialized = true;
-    }
 }
 
 int CANDriver::config(){
@@ -719,7 +719,7 @@ void* CANDriver::rx(void* arg){
                     if(ret <= 0){
                         static unsigned int cnt = 0xffffffff;
                         cnt++;
-                        if(cnt % 10 == 0){
+                        if(cnt % 100 == 0){
                             printf("canSendMsgFrame: cans[%d] write ret = %d\n", i, ret);
                         }
                     }
@@ -831,7 +831,7 @@ void* CANDriver::tx__(void* arg){
         if(ret < 0){
             static unsigned int cnt = 0xffffffff;
             cnt++;
-            if(cnt % 10 == 0){
+            if(cnt % 100 == 0){
                 printf("canRecvMsgFrame: cans[%d] read ret = %d\n", can.order, ret);
             }
             continue;
@@ -1017,13 +1017,13 @@ CANDriver::~CANDriver(){
         pthread_cancel(rxPth);
         rxPth = 0;
     }
-    if(txPth_ > 0){
-        pthread_cancel(txPth_);
-        txPth_ = 0;
-    }
     if(txPth > 0){
         pthread_cancel(txPth);
         txPth = 0;
+    }
+    if(txPth_ > 0){
+        pthread_cancel(txPth_);
+        txPth_ = 0;
     }
     if(alias2masterID_ != nullptr){
         delete[] alias2masterID_;
