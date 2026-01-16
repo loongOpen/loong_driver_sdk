@@ -4,10 +4,13 @@
 *.bak
 !libtinyxml2_x86_64.so
 !libtinyxml2_aarch64.so
+!libtinyxml2_riscv64.so
 !libmodbus_x86_64.so
 !libmodbus_aarch64.so
+!libmodbus_riscv64.so
 !libethercat_x86_64.so
 !libethercat_aarch64.so
+!libethercat_riscv64.so
 driver_test*
 !driver_test.cpp
 !driver_test.sh
