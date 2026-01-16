@@ -1,15 +1,20 @@
-# openloong_driver_sdk
+# loong_driver_sdk
 cd build
-cmake -DARM64=OFF ..
+cmake ..
 make
 make install
 
 cd build
-cmake -DARM64=ON ..
+cmake -DAARCH64=ON ..
 make
 make install
 
 cd build
-cmake -DARM64=ON -DNIIC=ON ..
+cmake -DRISCV64=ON ..
+make
+make install
+
+cd build
+cmake -DAARCH64=ON -DNIIC=ON ..
 make
 make install

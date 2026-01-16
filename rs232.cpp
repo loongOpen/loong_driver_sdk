@@ -34,7 +34,7 @@ bool validXsens(unsigned char const* buff){
         return false;
     }
     int i = 1, sum = 0;
-    while(i < 50 - 1){
+    while(i < 49){
         sum += buff[i];
         i++;
     }
@@ -43,19 +43,18 @@ bool validXsens(unsigned char const* buff){
        sum += 1;
     }
     sum &= 0xff;
-    return sum == buff[50 - 1];
+    return sum == buff[49];
 }
 
-void crcUpdate(unsigned short* currentCRC, unsigned char const* src, int const length){
+void crcUpdate(unsigned short* currentCRC, unsigned char const* buff, int const length){
     unsigned int crc = *currentCRC;
     int i = 0, j;
     while(i < length){
-        unsigned int byte = src[i];
-        crc ^= byte << 8;
+        crc ^= (unsigned int)buff[i] << 8;
         j = 0;
         while(j < 8){
             unsigned int temp = crc << 1;
-            if(crc & 0x8000){
+            if((crc & 0x8000) != 0){
                 temp ^= 0x1021;
             }
             crc = temp;
@@ -108,9 +107,9 @@ unsigned int const table[] = {
     0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
 
-unsigned int crc32(unsigned int crc, unsigned char const* buff, unsigned int const size){
+unsigned int crc32(unsigned int crc, unsigned char const* buff, unsigned int const length){
     int i = 0;
-    while(i < size){
+    while(i < length){
         crc = table[(crc ^ buff[i]) & 0xff] ^ crc >> 8;
         i++;
     }
@@ -121,6 +120,31 @@ bool validForsense(unsigned char const* buff){
     return crc32(1, buff, 50) == *(unsigned int*)(buff + 50);
 }
 
+unsigned short checksum(unsigned char const* buff, int length){
+    unsigned char a = 0, b = 0;
+	int i = 0;
+	while(i < length){
+		a += buff[i];
+		b += a;
+		i++;
+	}
+	return (unsigned short)b << 8 | a;
+}
+
+bool validYesense(unsigned char const* buff){
+    return checksum(buff + 2, 63) == *(unsigned int*)(buff + 65);
+}
+
+int quadchar2int(unsigned char const* qc){
+    int i = 0;
+    unsigned char* c = (unsigned char*)&i;
+    *(c + 0) = *(qc + 3);
+    *(c + 1) = *(qc + 2);
+    *(c + 2) = *(qc + 1);
+    *(c + 3) = *(qc + 0);
+    return i;
+}
+
 float quadchar2float(unsigned char const* qc){
     float f = 0;
     unsigned char* c = (unsigned char*)&f;
@@ -129,6 +153,10 @@ float quadchar2float(unsigned char const* qc){
     *(c + 2) = *(qc + 1);
     *(c + 3) = *(qc + 0);
     return f;
+}
+
+int quadchar2int_(unsigned char const* qc){
+    return *(int*)qc;
 }
 
 float quadchar2float_(unsigned char const* qc){
@@ -243,6 +271,42 @@ float acc2forsense(SwapList const* txSwap){
     return quadchar2float_(txSwap->nodePtr.load()->memPtr + 30) * 9.81;
 }
 
+float rpy0yesense(SwapList const* txSwap){
+    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 35) / 1000000.0 * Pi / 180.0;
+}
+
+float rpy1yesense(SwapList const* txSwap){
+    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 39) / 1000000.0 * Pi / 180.0;
+}
+
+float rpy2yesense(SwapList const* txSwap){
+    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 43) / 1000000.0 * Pi / 180.0;
+}
+
+float gyr0yesense(SwapList const* txSwap){
+    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 21) / 1000000.0 * Pi / 180.0;
+}
+
+float gyr1yesense(SwapList const* txSwap){
+    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 25) / 1000000.0 * Pi / 180.0;
+}
+
+float gyr2yesense(SwapList const* txSwap){
+    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 29) / 1000000.0 * Pi / 180.0;
+}
+
+float acc0yesense(SwapList const* txSwap){
+    return quadchar2int_(txSwap->nodePtr.load()->memPtr +  7) / 1000000.0;
+}
+
+float acc1yesense(SwapList const* txSwap){
+    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 11) / 1000000.0;
+}
+
+float acc2yesense(SwapList const* txSwap){
+    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 15) / 1000000.0;
+}
+
 RS232::RS232(char const* device, int const baudrate, char const* type){
     fd = -1;
     pth = 0;
@@ -291,6 +355,20 @@ RS232::RS232(char const* device, int const baudrate, char const* type){
         acc0 = acc0forsense;
         acc1 = acc1forsense;
         acc2 = acc2forsense;
+    }else if(strcmp(type, "YESENSE") == 0){
+        frameLength = 67;
+        header0 = 0x59;
+        header1 = 0x53;
+        valid = validYesense;
+        rpy0 = rpy0yesense;
+        rpy1 = rpy1yesense;
+        rpy2 = rpy2yesense;
+        gyr0 = gyr0yesense;
+        gyr1 = gyr1yesense;
+        gyr2 = gyr2yesense;
+        acc0 = acc0yesense;
+        acc1 = acc1yesense;
+        acc2 = acc2yesense;
     }else{
         printf("invalid imu type %s\n", type);
         exit(-1);

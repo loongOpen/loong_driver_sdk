@@ -30,8 +30,8 @@
     },{
         "id": 2,
         "channel": {
-            "name": "can7_ins0ch7",
-            "instance": 0,
+            "name": "can7_ins4ch7",
+            "instance": 4,
             "channel": 7,
             "fifo_size": 64000,
             "fifo_type": 0,
@@ -43,8 +43,8 @@
     },{
         "id": 3,
         "channel": {
-            "name": "can8_ins0ch2",
-            "instance": 0,
+            "name": "can8_ins4ch2",
+            "instance": 4,
             "channel": 2,
             "fifo_size": 64000,
             "fifo_type": 0,

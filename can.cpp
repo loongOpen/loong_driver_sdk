@@ -92,17 +92,17 @@ int encosRX(int const alias, unsigned char* const data){
     DriverParameters const* parameters = CANDriver::alias2parameters[alias];
     unsigned short p = 0, v = 0, t = 0, kp = 0, kd = 0;
     if(CANDriver::alias2status[alias] != 0x0037){
-         p = float2para(0.0,  parameters->minP,  parameters->maxP, 16);
-         v = float2para(0.0,  parameters->minV,  parameters->maxV, 12);
+         p = float2para(0.0, parameters->minP,  parameters->maxP,  16);
+         v = float2para(0.0, parameters->minV,  parameters->maxV,  12);
         kp = float2para(0.0, parameters->minKp, parameters->maxKp, 12);
         kd = float2para(0.0, parameters->minKd, parameters->maxKd,  9);
-         t = float2para(0.0,  parameters->minT,  parameters->maxT, 12);
+         t = float2para(0.0, parameters->minT,  parameters->maxT,  12);
     }else{
-         p = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetPosition),  parameters->minP,  parameters->maxP, 16);
-         v = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetVelocity),  parameters->minV,  parameters->maxV, 12);
+         p = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetPosition), parameters->minP,  parameters->maxP,  16);
+         v = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetVelocity), parameters->minV,  parameters->maxV,  12);
         kp = float2para(              half2single( drivers[alias - 1].rx.previous()->ControlWord   ), parameters->minKp, parameters->maxKp, 12);
         kd = float2para(              half2single( drivers[alias - 1].rx.previous()->TargetTorque  ), parameters->minKd, parameters->maxKd,  9);
-         t = float2para(              half2single( drivers[alias - 1].rx.previous()->TorqueOffset  ),  parameters->minT,  parameters->maxT, 12);
+         t = float2para(              half2single( drivers[alias - 1].rx.previous()->TorqueOffset  ), parameters->minT,  parameters->maxT,  12);
     }
     *(data + 0) = kp >> 7;
     *(data + 1) = kp << 1 & 0x00ff | kd >> 8;
@@ -130,11 +130,12 @@ void encosTX(int const order, int id, unsigned char* const data, int const lengt
     unsigned short t = *reinterpret_cast<unsigned short*>(data + 3);
     int const alias = CANDriver::orderSlaveID2alias[order][id];
     DriverParameters const* parameters = CANDriver::alias2parameters[alias];
+    signed char temperature = (data[7] - 50) / 2;
     *reinterpret_cast<float*>(&drivers[alias - 1].tx.next()->ActualPosition) =             para2float(p, parameters->minP, parameters->maxP, 16);
     *reinterpret_cast<float*>(&drivers[alias - 1].tx.next()->ActualVelocity) =             para2float(v, parameters->minV, parameters->maxV, 12);
                                drivers[alias - 1].tx.next()->ActualTorque    = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
-                               drivers[alias - 1].tx.next()->Undefined       = (data[7] - 50) / 2;
-                               drivers[alias - 1].tx.next()->StatusWord      = err > 0 ? 0x0018 : CANDriver::alias2status[alias];
+                               drivers[alias - 1].tx.next()->Undefined       = temperature;
+                               drivers[alias - 1].tx.next()->StatusWord      = err > 0 && (err != 4 && err != 1 || err == 1 && temperature > 99) ? 0x0018 : CANDriver::alias2status[alias];
                                drivers[alias - 1].tx.next()->ErrorCode       = err;
     can->mask |= 1 << id;
     if(can->mask == can->MASK){
@@ -178,11 +179,11 @@ int damiaoRX(int const alias, unsigned char* const data){
         break;
     }
     DriverParameters const* parameters = CANDriver::alias2parameters[alias];
-    unsigned short  p = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetPosition),  parameters->minP,  parameters->maxP, 16);
-    unsigned short  v = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetVelocity),  parameters->minV,  parameters->maxV, 12);
+    unsigned short  p = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetPosition), parameters->minP,  parameters->maxP,  16);
+    unsigned short  v = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetVelocity), parameters->minV,  parameters->maxV,  12);
     unsigned short kp = float2para(              half2single( drivers[alias - 1].rx.previous()->ControlWord   ), parameters->minKp, parameters->maxKp, 12);
     unsigned short kd = float2para(              half2single( drivers[alias - 1].rx.previous()->TargetTorque  ), parameters->minKd, parameters->maxKd, 12);
-    unsigned short  t = float2para(              half2single( drivers[alias - 1].rx.previous()->TorqueOffset  ),  parameters->minT,  parameters->maxT, 12);
+    unsigned short  t = float2para(              half2single( drivers[alias - 1].rx.previous()->TorqueOffset  ), parameters->minT,  parameters->maxT,  12);
     *(data + 0) =  p >> 8;
     *(data + 1) =  p & 0x00ff;
     *(data + 2) =  v >> 4;
@@ -906,7 +907,7 @@ int CANDriver::run(std::vector<CANDriver>& cans){
         i++;
     }
     i = 0;
-    while(i < 8){
+    while(i < cans.size()){
         printf("cans[%d]:\t", i);
         j = 0;
         while(j < 16){

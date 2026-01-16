@@ -20,9 +20,14 @@
 #include <unistd.h>
 #include <cmath>
 
-float const Pi = std::acos(-1);
+double const Pi = std::acos(-1);
 
 int main(int argc, char** argv){
+    int enabled = 0, count = 2;
+    if(argc == 3){
+        enabled = atoi(argv[1]);
+        count = atoi(argv[2]);
+    }
     DriverSDK::DriverSDK& driverSDK = DriverSDK::DriverSDK::instance();
     printf("loong_driver_sdk version: %s\n", driverSDK.version().c_str());
     std::vector<unsigned short> cpusECAT = {2, 3, 3, 3, 3, 3};
@@ -120,11 +125,11 @@ int main(int argc, char** argv){
     i = 0;
     while(i < motorNr){
         motorPositions[i] = motorActualData[i].pos;
-        // motorTargetData[i].enabled = 1;
+        motorTargetData[i].enabled = enabled;
         i++;
     }
     i = 0;
-    while(true){
+    while(count > 0){
         while(i < 3200){
             driverSDK.getIMU(imuData);
             printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
@@ -137,7 +142,7 @@ int main(int argc, char** argv){
             driverSDK.getMotorActual(motorActualData);
             j = 0;
             while(j < motorNr){
-                motorTargetData[j].pos = motorPositions[j] * std::cos(Pi / 2.0 * (float)i / 3200.0);
+                motorTargetData[j].pos = motorPositions[j] * std::cos(Pi / 2.0 * (double)i / 3200.0);
                 motorTargetData[j].kp = 50.0;
                 motorTargetData[j].kd = 0.85;
                 printf("motor%02d:\t%8.3f %8d %8d %8d\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
@@ -147,6 +152,7 @@ int main(int argc, char** argv){
             usleep(4000);
             i++;
         }
+        usleep(4000);
         while(i > 0){
             driverSDK.getIMU(imuData);
             printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
@@ -159,7 +165,7 @@ int main(int argc, char** argv){
             driverSDK.getMotorActual(motorActualData);
             j = 0;
             while(j < motorNr){
-                motorTargetData[j].pos = motorPositions[j] * std::cos(Pi / 2.0 * (float)i / 3200.0);
+                motorTargetData[j].pos = motorPositions[j] * std::cos(Pi / 2.0 * (double)i / 3200.0);
                 motorTargetData[j].kp = 50.0;
                 motorTargetData[j].kd = 0.85;
                 printf("motor%02d:\t%8.3f %8d %8d %8d\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
@@ -169,6 +175,7 @@ int main(int argc, char** argv){
             usleep(4000);
             i--;
         }
+        count--;
     }
     i = 0;
     while(i < motorNr){
@@ -239,7 +246,7 @@ int main(int argc, char** argv){
         printf("digits:\t");
         j = 0;
         while(j < digitNr){
-            digitTargetData[j].pos = std::abs(90.0 * std::sin(2.0 * Pi * (float)i / 6400.0));
+            digitTargetData[j].pos = std::abs(90.0 * std::sin(2.0 * Pi * (double)i / 6400.0));
             printf("%8d\t", digitActualData[j].pos);
             j++;
         }

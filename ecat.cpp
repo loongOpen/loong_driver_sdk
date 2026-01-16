@@ -390,19 +390,19 @@ int ECAT::config(){
             std::vector<std::string> timeoutEntry = configXML->entry(configXML->device("ECAT", type.c_str()), "Timeout");
             switch((unsigned char)strtoul(timeoutEntry[4].c_str(), nullptr, 10)){
             case 8:
-                u8 = 100;
+                u8 = 255;
                 while(ecrt_master_sdo_download(master, slave, (unsigned short)strtoul(timeoutEntry[1].c_str(), nullptr, 16), (unsigned char)strtoul(timeoutEntry[2].c_str(), nullptr, 16), &u8, sizeof(u8), &abortCode) < 0){
                     sleep(1);
                 }
                 break;
             case 16:
-                u16 = 100;
+                u16 = 255;
                 while(ecrt_master_sdo_download(master, slave, (unsigned short)strtoul(timeoutEntry[1].c_str(), nullptr, 16), (unsigned char)strtoul(timeoutEntry[2].c_str(), nullptr, 16), (unsigned char*)&u16, sizeof(u16), &abortCode) < 0){
                     sleep(1);
                 }
                 break;
             case 32:
-                u32 = 100;
+                u32 = 255;
                 while(ecrt_master_sdo_download(master, slave, (unsigned short)strtoul(timeoutEntry[1].c_str(), nullptr, 16), (unsigned char)strtoul(timeoutEntry[2].c_str(), nullptr, 16), (unsigned char*)&u32, sizeof(u32), &abortCode) < 0){
                     sleep(1);
                 }

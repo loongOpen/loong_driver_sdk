@@ -30,7 +30,7 @@
         "enable": true,
         "mode_comment": "value_table: R, W, RW",
         "mode": "RW",
-        "target": "can7_ins0ch7",
+        "target": "can7_ins4ch7",
         "clk_source": "/dev/hrtc0",
         "io_channel": {
             "device_type_comment": "value_table: can, eth, ipcf, spi",
@@ -43,7 +43,7 @@
         "enable": true,
         "mode_comment": "value_table: R, W, RW",
         "mode": "RW",
-        "target": "can8_ins0ch2",
+        "target": "can8_ins4ch2",
         "clk_source": "/dev/hrtc0",
         "io_channel": {
             "device_type_comment": "value_table: can, eth, ipcf, spi",
