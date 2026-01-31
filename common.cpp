@@ -91,7 +91,7 @@ float half2single(unsigned short u){
 }
 
 void adjustCPU(int* cpu, int processor){
-    if(*cpu < 1 || *cpu >= sysconf(_SC_NPROCESSORS_ONLN)){
+    if(*cpu <= 0 || *cpu >= sysconf(_SC_NPROCESSORS_ONLN)){
         *cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
         if(*cpu > processor && processor > 0){
             *cpu = processor;

@@ -27,7 +27,6 @@
 #include <limits>
 
 namespace DriverSDK{
-#define TXQUEUELEN 100
 #define CANFD_BRS 0x01
 #define CANFD_ESI 0x02
 #define CANFD_FDF 0x04
@@ -53,6 +52,7 @@ int nullRX(int const alias, unsigned char* const data){
 }
 
 void nullTX(int const order, int id, unsigned char* const data, int const length, CANDriver* const can){
+    printf("unexpected master_id %d on cans[%d]\n", id, order);
 }
 
 unsigned char const EncosEnable [3] = {0x71, 0x03, 0xe8};
@@ -98,11 +98,11 @@ int encosRX(int const alias, unsigned char* const data){
         kd = float2para(0.0, parameters->minKd, parameters->maxKd,  9);
          t = float2para(0.0, parameters->minT,  parameters->maxT,  12);
     }else{
-         p = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetPosition), parameters->minP,  parameters->maxP,  16);
-         v = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetVelocity), parameters->minV,  parameters->maxV,  12);
-        kp = float2para(              half2single( drivers[alias - 1].rx.previous()->ControlWord   ), parameters->minKp, parameters->maxKp, 12);
-        kd = float2para(              half2single( drivers[alias - 1].rx.previous()->TargetTorque  ), parameters->minKd, parameters->maxKd,  9);
-         t = float2para(              half2single( drivers[alias - 1].rx.previous()->TorqueOffset  ), parameters->minT,  parameters->maxT,  12);
+         p = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetPosition, parameters->minP,  parameters->maxP,  16);
+         v = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity, parameters->minV,  parameters->maxV,  12);
+        kp = float2para(half2single(drivers[alias - 1].rx.previous()->ControlWord),   parameters->minKp, parameters->maxKp, 12);
+        kd = float2para(half2single(drivers[alias - 1].rx.previous()->TargetTorque),  parameters->minKd, parameters->maxKd,  9);
+         t = float2para(half2single(drivers[alias - 1].rx.previous()->TorqueOffset),  parameters->minT,  parameters->maxT,  12);
     }
     *(data + 0) = kp >> 7;
     *(data + 1) = kp << 1 & 0x00ff | kd >> 8;
@@ -121,22 +121,23 @@ void encosTX(int const order, int id, unsigned char* const data, int const lengt
     }
     unsigned char err = data[0] & 0x1f;
     data[0] = data[2];
-    unsigned short p = *reinterpret_cast<unsigned short*>(data + 0);
+    unsigned short p = *(unsigned short*)(data + 0);
     data[2] = data[4];
-    unsigned short v = *reinterpret_cast<unsigned short*>(data + 2);
+    unsigned short v = *(unsigned short*)(data + 2);
     v >>= 4;
     data[3] = data[5];
     data[4] = data[4] & 0x0f;
-    unsigned short t = *reinterpret_cast<unsigned short*>(data + 3);
+    unsigned short t = *(unsigned short*)(data + 3);
     int const alias = CANDriver::orderSlaveID2alias[order][id];
     DriverParameters const* parameters = CANDriver::alias2parameters[alias];
-    signed char temperature = (data[7] - 50) / 2;
-    *reinterpret_cast<float*>(&drivers[alias - 1].tx.next()->ActualPosition) =             para2float(p, parameters->minP, parameters->maxP, 16);
-    *reinterpret_cast<float*>(&drivers[alias - 1].tx.next()->ActualVelocity) =             para2float(v, parameters->minV, parameters->maxV, 12);
-                               drivers[alias - 1].tx.next()->ActualTorque    = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
-                               drivers[alias - 1].tx.next()->Undefined       = temperature;
-                               drivers[alias - 1].tx.next()->StatusWord      = err > 0 && (err != 4 && err != 1 || err == 1 && temperature > 99) ? 0x0018 : CANDriver::alias2status[alias];
-                               drivers[alias - 1].tx.next()->ErrorCode       = err;
+    signed char temperature = (data[6] - 50) / 2;
+    bool error = err > 0 && (err != 1 && err != 2 && err != 4 || err == 1 && temperature > 99);
+    *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             para2float(p, parameters->minP, parameters->maxP, 16);
+    *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
+              drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
+              drivers[alias - 1].tx.next()->Undefined      = temperature;
+              drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0018 : CANDriver::alias2status[alias];
+              drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0;
     can->mask |= 1 << id;
     if(can->mask == can->MASK){
         can->txSwap->advanceNodePtr();
@@ -179,11 +180,11 @@ int damiaoRX(int const alias, unsigned char* const data){
         break;
     }
     DriverParameters const* parameters = CANDriver::alias2parameters[alias];
-    unsigned short  p = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetPosition), parameters->minP,  parameters->maxP,  16);
-    unsigned short  v = float2para(*reinterpret_cast<float*>(&drivers[alias - 1].rx.previous()->TargetVelocity), parameters->minV,  parameters->maxV,  12);
-    unsigned short kp = float2para(              half2single( drivers[alias - 1].rx.previous()->ControlWord   ), parameters->minKp, parameters->maxKp, 12);
-    unsigned short kd = float2para(              half2single( drivers[alias - 1].rx.previous()->TargetTorque  ), parameters->minKd, parameters->maxKd, 12);
-    unsigned short  t = float2para(              half2single( drivers[alias - 1].rx.previous()->TorqueOffset  ), parameters->minT,  parameters->maxT,  12);
+    unsigned short  p = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetPosition, parameters->minP,  parameters->maxP,  16);
+    unsigned short  v = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity, parameters->minV,  parameters->maxV,  12);
+    unsigned short kp = float2para(half2single(drivers[alias - 1].rx.previous()->ControlWord),   parameters->minKp, parameters->maxKp, 12);
+    unsigned short kd = float2para(half2single(drivers[alias - 1].rx.previous()->TargetTorque),  parameters->minKd, parameters->maxKd, 12);
+    unsigned short  t = float2para(half2single(drivers[alias - 1].rx.previous()->TorqueOffset),  parameters->minT,  parameters->maxT,  12);
     *(data + 0) =  p >> 8;
     *(data + 1) =  p & 0x00ff;
     *(data + 2) =  v >> 4;
@@ -202,21 +203,21 @@ void damiaoTX(int const order, int id, unsigned char* const data, int const leng
     unsigned char err = data[0] >> 4;
     id = data[0] & 0x0f;
     data[0] = data[2];
-    unsigned short p = *reinterpret_cast<unsigned short*>(data + 0);
+    unsigned short p = *(unsigned short*)(data + 0);
     data[2] = data[4];
-    unsigned short v = *reinterpret_cast<unsigned short*>(data + 2);
+    unsigned short v = *(unsigned short*)(data + 2);
     v >>= 4;
     data[3] = data[5];
     data[4] = data[4] & 0x0f;
-    unsigned short t = *reinterpret_cast<unsigned short*>(data + 3);
+    unsigned short t = *(unsigned short*)(data + 3);
     int const alias = CANDriver::orderSlaveID2alias[order][id];
     DriverParameters const* parameters = CANDriver::alias2parameters[alias];
-    *reinterpret_cast<float*>(&drivers[alias - 1].tx.next()->ActualPosition) =             para2float(p, parameters->minP, parameters->maxP, 16);
-    *reinterpret_cast<float*>(&drivers[alias - 1].tx.next()->ActualVelocity) =             para2float(v, parameters->minV, parameters->maxV, 12);
-                               drivers[alias - 1].tx.next()->ActualTorque    = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
-                               drivers[alias - 1].tx.next()->Undefined       = data[6];
-                               drivers[alias - 1].tx.next()->StatusWord      = err > 1 ? 0x0018 : CANDriver::alias2status[alias];
-                               drivers[alias - 1].tx.next()->ErrorCode       = err > 1 ? err : 0x0000;
+    *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             para2float(p, parameters->minP, parameters->maxP, 16);
+    *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
+              drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
+              drivers[alias - 1].tx.next()->Undefined      = data[7];
+              drivers[alias - 1].tx.next()->StatusWord     = err > 1 ? 0x0018 : CANDriver::alias2status[alias];
+              drivers[alias - 1].tx.next()->ErrorCode      = err > 1 ? err : 0x0000;
     can->mask |= 1 << id;
     if(can->mask == can->MASK){
         can->txSwap->advanceNodePtr();
@@ -255,7 +256,7 @@ int DriverParameters::load(std::string const& type){
 }
 
 void DriverParameters::print(){
-    printf("P[%f, %f], V[%f, %f], Kp[%f, %f], Kd[%f, %f], T[%f, %f]\n", minP, maxP, minV, maxV, minKp, maxKp, minKd, maxKd, minT, maxT);
+    printf("P[%.3f, %.3f], V[%.3f, %.3f], Kp[%.3f, %.3f], Kd[%.3f, %.3f], T[%.3f, %.3f]\n", minP, maxP, minV, maxV, minKp, maxKp, minKd, maxKd, minT, maxT);
 }
 
 DriverParameters::~DriverParameters(){
@@ -264,7 +265,7 @@ DriverParameters::~DriverParameters(){
 long CAN::period;
 int CAN::CANHAL;
 
-CAN::CAN(){
+CAN::CAN(int const order, char const* device){
     static bool initialized = false;
     if(!initialized){
         period = configXML->canAttribute("period");
@@ -274,7 +275,15 @@ CAN::CAN(){
         CANHAL = 0;
         initialized = true;
     }
-    canhal = 0;
+    this->order = order;
+    canhal    = configXML->masterFeature("CAN", order, "canhal");
+    baudrate  = configXML->masterAttribute("CAN", order, "baudrate");
+    canfd     = configXML->masterFeature("CAN", order, "canfd");
+    dbaudrate = configXML->masterAttribute("CAN", order, "dbaudrate");
+    division  = configXML->masterAttribute("CAN", order, "division");
+    slaveCount = 0;
+    this->device = (char*)malloc(strlen(device) + 1);
+    strcpy(this->device, device);
 }
 
 int CAN::ifaceIsUp(){
@@ -287,15 +296,18 @@ int CAN::ifaceIsUp(){
         }
         return 0;
     }
-    int ret;
-    struct ifreq ifr;
-    int sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    int sock = socket(PF_CAN, SOCK_RAW, CAN_RAW), ret;
     if(sock == -1){
         printf("creating socket failed\n");
         return -1;
     }
+    struct ifreq ifr;
     strcpy(ifr.ifr_name, device);
-    ioctl(sock, SIOCGIFFLAGS, &ifr);
+    if(ioctl(sock, SIOCGIFFLAGS, &ifr) == -1){
+        printf("ioctl() failed\n");
+        close(sock);
+        return -1;
+    }
     if(ifr.ifr_ifru.ifru_flags & IFF_RUNNING){
         ret = 1;
     }else{
@@ -316,17 +328,47 @@ int CAN::ifaceUp(){
     }
     printf("starting iface %s...\n", device);
     char cmd[256];
-    int length = 0;
-    length += snprintf(cmd + length, sizeof(cmd) - length, "sudo ip link set %s up type can bitrate %d", device, baudrate);
+    int length = snprintf(cmd, sizeof(cmd), "ip link set %s txqueuelen 100 up type can restart-ms 10 bitrate %d", device, baudrate);
     if(canfd == 1){
         length += snprintf(cmd + length, sizeof(cmd) - length, " fd on dbitrate %d", dbaudrate);
     }
     system(cmd);
-    sleep(1);
-    length = snprintf(cmd, sizeof(cmd), "sudo ifconfig %s txqueuelen %d", device, TXQUEUELEN);
-    system(cmd);
-    sleep(1);
-    printf("iface %s should have started\n", device);
+    usleep(500000);
+    printf("iface %s is started\n", device);
+    return 0;
+}
+
+int CAN::ifaceUp_(){
+    if(ifaceIsUp() == 1){
+        printf("iface %s is up\n", device);
+        return 0;
+    }
+    if(device[0] == '/'){
+        printf("iface %s is down\n", device);
+        return -1;
+    }
+    printf("starting iface %s...\n", device);
+    int sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    if(sock == -1){
+        printf("creating socket failed\n");
+        return -1;
+    }
+    struct ifreq ifr;
+    strcpy(ifr.ifr_name, device);
+    if(ioctl(sock, SIOCGIFFLAGS, &ifr) == -1){
+        printf("ioctl() failed\n");
+        close(sock);
+        return -1;
+    }
+    strcpy(ifr.ifr_name, device);
+    ifr.ifr_flags |= IFF_UP;
+    if(ioctl(sock, SIOCSIFFLAGS, &ifr) == -1){
+        printf("ioctl() failed\n");
+        close(sock);
+        return -1;
+    }
+    close(sock);
+    printf("iface %s is started\n", device);
     return 0;
 }
 
@@ -334,10 +376,28 @@ int CAN::ifaceDown(){
     if(canhal == 1 || device[0] == '/'){
         return 0;
     }
-    char cmd[128];
-    snprintf(cmd, sizeof(cmd), "sudo ifconfig %s down", device);
-    system(cmd);
-    sleep(1);
+    printf("stopping iface %s...\n", device);
+    int sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    if(sock == -1){
+        printf("creating socket failed\n");
+        return -1;
+    }
+    struct ifreq ifr;
+    strcpy(ifr.ifr_name, device);
+    if(ioctl(sock, SIOCGIFFLAGS, &ifr) == -1){
+        printf("ioctl() failed\n");
+        close(sock);
+        return -1;
+    }
+    strcpy(ifr.ifr_name, device);
+    ifr.ifr_flags &= ~IFF_UP;
+    if(ioctl(sock, SIOCSIFFLAGS, &ifr) == -1){
+        printf("ioctl() failed\n");
+        close(sock);
+        return -1;
+    }
+    close(sock);
+    printf("iface %s is stopped\n", device);
     return 0;
 }
 
@@ -362,12 +422,11 @@ int CAN::open(int const masterID){
         }
         return sock;
     }
-    struct ifreq ifr;
-    struct sockaddr_can addr;
     if(ifaceIsUp() != 1){
-        printf("iface %s is down\n", device);
-        return -1;
+        printf("iface %s is not ready\n", device);
+        return -2;
     }
+    printf("opening iface %s\n", device);
     sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if(sock == -1){
         printf("creating socket failed\n");
@@ -376,8 +435,10 @@ int CAN::open(int const masterID){
         printf("too many sockets\n");
         return -1;
     }
+    struct ifreq ifr;
     strcpy(ifr.ifr_name, device);
     ioctl(sock, SIOCGIFINDEX, &ifr);
+    struct sockaddr_can addr;
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
     if(bind(sock, (struct sockaddr*)&addr, sizeof(addr)) != 0){
@@ -420,6 +481,7 @@ int CAN::open(int const masterID){
         close(sock);
         return -1;
     }
+    printf("iface %s is opened\n", device);
     return sock;
 }
 
@@ -437,8 +499,10 @@ int CAN::send(int const slaveID, unsigned char const* data, int length){
     if(ret != sizeof(frame)){
         static unsigned int cnt = 0xffffffff;
         cnt++;
-        if(cnt % 100 == 0){
+        if(cnt % slaveCount == 0){
             printf("send: cans[%d] write ret = %d\n", order, ret);
+            ifaceDown();
+            ifaceUp_();
         }
         return -1;
     }
@@ -475,18 +539,25 @@ int CAN::sendfd(int const slaveID, unsigned char const* data, int const length){
     }
     frame.can_id = slaveID;
     frame.len = length;
-    if(device[0] == '/' && canfd == 0){
+    if(canfd == 0){
         frame.flags &= ~CANFD_FDF;
     }else{
-        frame.flags &= CANFD_FDF;
+        frame.flags |= CANFD_FDF;
+        if(baudrate == dbaudrate){
+            frame.flags &= ~CANFD_BRS;
+        }else{
+            frame.flags |= CANFD_BRS;
+        }
     }
     memcpy(frame.data, data, length);
     ret = write(sock, &frame, sizeof(frame));
     if(ret != sizeof(frame)){
         static unsigned int cnt = 0xffffffff;
         cnt++;
-        if(cnt % 100 == 0){
+        if(cnt % slaveCount == 0){
             printf("sendfd: cans[%d] write ret = %d\n", order, ret);
+            ifaceDown();
+            ifaceUp_();
         }
         return -1;
     }
@@ -538,7 +609,7 @@ int CANDriver::orderSlaveID2alias[8][16];
 canDriverRXFunction CANDriver::rxFuncs[2048][8];
 canDriverTXFunction CANDriver::txFuncs[2048][8];
 
-CANDriver::CANDriver(int const order, char const* device) : CAN(){
+CANDriver::CANDriver(int const order, char const* device) : CAN(order, device){
     static bool initialized = false;
     if(!initialized){
         rxPth = txPth = txPth_ = 0;
@@ -576,7 +647,6 @@ CANDriver::CANDriver(int const order, char const* device) : CAN(){
     MASK = 0;
     mask = 0;
     rollingCounter = 0xff;
-    this->order = order;
     alias2type = canAlias2type[order];
     alias2masterID = canAlias2masterID[order];
     alias2slaveID = canAlias2slaveID[order];
@@ -611,26 +681,31 @@ CANDriver::CANDriver(int const order, char const* device) : CAN(){
         alias2parameters[alias]->print();
         itr++;
     }
-    this->device = (char*)malloc(strlen(device) + 1);
-    strcpy(this->device, device);
-    canhal    = configXML->masterFeature("CAN", order, "canhal");
-    baudrate  = configXML->masterAttribute("CAN", order, "baudrate");
-    canfd     = configXML->masterFeature("CAN", order, "canfd");
-    dbaudrate = configXML->masterAttribute("CAN", order, "dbaudrate");
-    division  = configXML->masterAttribute("CAN", order, "division");
+    slaveCount = alias2type.size();
 }
 
 int CANDriver::config(){
     if(alias2type.size() == 0){
         return 0;
     }
+    if(ifaceDown() == -1){
+        return -1;
+    }
     if(ifaceUp() == -1){
         return -1;
     }
     if(canhal == 0){
-        sock = open(0);
-        if(sock == -1){
-            return -1;
+        while(true){
+            sock = open(0);
+            if(sock == -1){
+                return -1;
+            }else if(sock == -2){
+                usleep(500000);
+                printf("retesting iface %s\n", device);
+                continue;
+            }else{
+                break;
+            }
         }
     }
     rxSwap = new SwapList(dofAll * sizeof(DriverRxData));
@@ -718,11 +793,7 @@ void* CANDriver::rx(void* arg){
                     }
                     int ret = canSendMsgFrame(cans[i].device, frames, &packInfo);
                     if(ret <= 0){
-                        static unsigned int cnt = 0xffffffff;
-                        cnt++;
-                        if(cnt % 100 == 0){
-                            printf("canSendMsgFrame: cans[%d] write ret = %d\n", i, ret);
-                        }
+                        printf("canSendMsgFrame: cans[%d] write ret = %d\n", i, ret);
                     }
                 }
             }
@@ -830,11 +901,7 @@ void* CANDriver::tx__(void* arg){
     while(true){
         int ret = canRecvMsgFrame(can.device, frames, &packInfo);
         if(ret < 0){
-            static unsigned int cnt = 0xffffffff;
-            cnt++;
-            if(cnt % 100 == 0){
-                printf("canRecvMsgFrame: cans[%d] read ret = %d\n", can.order, ret);
-            }
+            printf("canRecvMsgFrame: cans[%d] read ret = %d\n", can.order, ret);
             continue;
         }
         int i = 0;
@@ -924,8 +991,8 @@ int CANDriver::run(std::vector<CANDriver>& cans){
     while(i < 2048){
         j = 0;
         while(j < 8){
-            rxFuncs[i][j] = nullptr;
-            txFuncs[i][j] = nullptr;
+            rxFuncs[i][j] = nullRX;
+            txFuncs[i][j] = nullTX;
             j++;
         }
         i++;
@@ -940,7 +1007,7 @@ int CANDriver::run(std::vector<CANDriver>& cans){
         printf("master_id %2d, masters", masterID);
         j = 0;
         while(j < masters.size()){
-            if(rxFuncs[masterID][masters[j]] != nullptr || txFuncs[masterID][masters[j]] != nullptr){
+            if(rxFuncs[masterID][masters[j]] != nullRX || txFuncs[masterID][masters[j]] != nullTX){
                 printf("\ninvalid can bus configuration\n");
                 return -1;
             }
@@ -950,9 +1017,6 @@ int CANDriver::run(std::vector<CANDriver>& cans){
             }else if(type.starts_with("Damiao")){
                 rxFuncs[masterID][masters[j]] = damiaoRX;
                 txFuncs[masterID][masters[j]] = damiaoTX;
-            }else{
-                rxFuncs[masterID][masters[j]] = nullRX;
-                txFuncs[masterID][masters[j]] = nullTX;
             }
             printf(" %d", masters[j]);
             j++;

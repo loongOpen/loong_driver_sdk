@@ -200,11 +200,11 @@ int ECAT::check(){
     }
     if(masterInfo.link_up != 1){
         printf("master %d's link is down\n", order);
-        return 1;
+        return -2;
     }
     if(masterInfo.scan_busy == 1){
         printf("master %d is scanning\n", order);
-        return 1;
+        return -2;
     }
     printf("master %d, %ld device(s) in xml, %d slave(s) on bus\n", order, alias2type.size(), masterInfo.slave_count);
     alias2slave.clear();
@@ -253,10 +253,10 @@ int ECAT::check(){
         i++;
     }
     if(alias2slave.size() != alias2type.size()){
-        printf("master %d number of devices %ld contradicts that(%ld) in xml\n", order, alias2slave.size(), alias2type.size());
+        printf("master %d the number of devices %ld contradicts that(%ld) in xml\n", order, alias2slave.size(), alias2type.size());
         clean();
         init();
-        return 1;
+        return -2;
     }
     return 0;
 }

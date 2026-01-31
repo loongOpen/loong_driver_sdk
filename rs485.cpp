@@ -93,6 +93,63 @@ void changingTekTX(modbus_t* const ctx, int const alias){
     }
 }
 
+void changingTekRX_(modbus_t* const ctx, int const alias){
+    unsigned short data[4] = {0, 0, 100, 100};
+    int position = 0;
+    if(alias == 200){
+        static long lastTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        static unsigned short lastPosition = 0;
+        long currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        unsigned short targetPosition = digits[0].rx.previous()->TargetPosition;
+        if(std::abs(targetPosition - lastPosition) < 5 || currentTime - lastTime < 800){
+            return;
+        }
+        lastTime = currentTime;
+        position = lastPosition = targetPosition;
+    }else{
+        static long lastTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        static unsigned short lastPosition = 0;
+        long currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        unsigned short targetPosition = digits[dofLeftEffector].rx.previous()->TargetPosition;
+        if(std::abs(targetPosition - lastPosition) < 5 || currentTime - lastTime < 800){
+            return;
+        }
+        lastTime = currentTime;
+        position = lastPosition = targetPosition;
+    }
+    position *= 58;
+    data[0] = position >> 16 & 0xffff;
+    data[1] = position & 0xffff;
+    modbus_set_slave(ctx, alias);
+    if(modbus_write_registers(ctx, 0x0102, 4, data) != 4){
+        return;
+    }
+    usleep(4000);
+    modbus_write_register(ctx, 0x0108, 1);
+}
+
+void changingTekTX_(modbus_t* const ctx, int const alias){
+    unsigned short data[2] = {0, 0};
+    modbus_set_slave(ctx, alias);
+    if(modbus_read_registers(ctx, 0x0609, 2, data) != 2){
+        return;
+    }
+    int position = 0;
+    *((unsigned short*)&position + 1) = data[0];
+    *(unsigned short*)&position = data[1];
+    if(position < 0){
+        position = 0;
+    }else if(position > 420){
+        position = 420;
+    }
+    position = position * 90 / 420;
+    if(alias == 200){
+        digits[0].tx.next()->ActualPosition = position;
+    }else{
+        digits[dofLeftEffector].tx.next()->ActualPosition = position;
+    }
+}
+
 unsigned int const TargetPosRegs[] = {0x05d8, 0x05d6, 0x05d4, 0x05d2, 0x05d0, 0x05ce};
 
 void inspireRX(modbus_t* const ctx, int const alias){
@@ -363,7 +420,7 @@ int RS485::config(){
     if(modbus_connect(ctx) != 0){
         modbus_free(ctx);
         ctx = nullptr;
-        return 1;
+        return -2;
     }
     // modbus_rtu_set_serial_mode(ctx, MODBUS_RTU_RS485);
     rxSwap = new SwapList(dofEffector * sizeof(DigitRxData));
@@ -390,6 +447,9 @@ int RS485::config(){
         if(itr->second == "ChangingTek"){
             leftRX = changingTekRX;
             leftTX = changingTekTX;
+        }else if(itr->second == "ChangingTek_"){
+            leftRX = changingTekRX_;
+            leftTX = changingTekTX_;
         }else if(itr->second == "Inspire"){
             leftRX = inspireRX;
             leftTX = inspireTX;
@@ -429,6 +489,9 @@ int RS485::config(){
         if(itr->second == "ChangingTek"){
             rightRX = changingTekRX;
             rightTX = changingTekTX;
+        }else if(itr->second == "ChangingTek_"){
+            rightRX = changingTekRX_;
+            rightTX = changingTekTX_;
         }else if(itr->second == "Inspire"){
             rightRX = inspireRX;
             rightTX = inspireTX;

@@ -321,7 +321,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
         if(res == -1){
             printf("rs485s[%d] config failed\n", i);
             return -1;
-        }else if(res == 1){
+        }else if(res == -2){
             sleep(1);
             printf("rs485s[%d] config retrying\n", i);
             continue;
@@ -354,7 +354,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
         if(res == -1){
             printf("ecats[%d] check failed\n", i);
             return -1;
-        }else if(res == 1){
+        }else if(res == -2){
             sleep(1);
             printf("ecats[%d] check retrying\n", i);
             continue;
@@ -882,10 +882,10 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
                 position = drivers[i].parameters.maximumPosition;
             }
             position = drivers[i].parameters.polarity * position + drivers[i].parameters.countBias;
-            *reinterpret_cast<float*>(&drivers[i].rx->TargetPosition) = position;
+            *(float*)&drivers[i].rx->TargetPosition = position;
             float velocity = data[i].vel;
             velocity = drivers[i].parameters.polarity * velocity;
-            *reinterpret_cast<float*>(&drivers[i].rx->TargetVelocity) = velocity;
+            *(float*)&drivers[i].rx->TargetVelocity = velocity;
             float torque = data[i].tor;
             if(torque > drivers[i].parameters.maximumTorque){
                 torque = drivers[i].parameters.maximumTorque;
@@ -992,12 +992,12 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
             data[i].statusWord = drivers[i].tx->StatusWord;
             data[i].errorCode  = drivers[i].tx->ErrorCode;
         }else if(drivers[i].busCode == 1){
-            data[i].pos        = drivers[i].parameters.polarity * (*reinterpret_cast<float*>(&drivers[i].tx->ActualPosition) - drivers[i].parameters.countBias);
-            data[i].vel        = drivers[i].parameters.polarity *  *reinterpret_cast<float*>(&drivers[i].tx->ActualVelocity);
-            data[i].tor        = drivers[i].parameters.polarity *                half2single( drivers[i].tx->ActualTorque  );
-            data[i].temp       =                                                              drivers[i].tx->Undefined;
-            data[i].statusWord =                                                              drivers[i].tx->StatusWord;
-            data[i].errorCode  =                                                              drivers[i].tx->ErrorCode;
+            data[i].pos        = drivers[i].parameters.polarity *  (*(float*)&drivers[i].tx->ActualPosition - drivers[i].parameters.countBias);
+            data[i].vel        = drivers[i].parameters.polarity *   *(float*)&drivers[i].tx->ActualVelocity;
+            data[i].tor        = drivers[i].parameters.polarity * half2single(drivers[i].tx->ActualTorque);
+            data[i].temp       =                                              drivers[i].tx->Undefined;
+            data[i].statusWord =                                              drivers[i].tx->StatusWord;
+            data[i].errorCode  =                                              drivers[i].tx->ErrorCode;
         }
         i++;
     }
@@ -1065,14 +1065,32 @@ int DriverSDK::recvMotorREGResponse(motorREGClass& data){
 }
 
 int DriverSDK::calibrate(int const i){
-    if(drivers[i].busCode != 0 || drivers[i].order != 0){
+    if(drivers[i].busCode == 0){
+        return calibrate_(i);
+    }else if(drivers[i].busCode == 1){
+        float value = *(float*)&drivers[i].tx->ActualPosition;
+        if(configXML->writeMotorParameter(i + 1, "CountBias", value) != 0){
+            return std::numeric_limits<int>::min();
+        }
+        if(configXML->readMotorParameter(i + 1, "CountBias") != value){
+            return std::numeric_limits<int>::min();
+        }
+        configXML->save();
+        drivers[i].parameters.countBias = value;
+        return value;
+    }
+    return std::numeric_limits<int>::max();
+}
+
+int DriverSDK::calibrate_(int const i){
+    if(drivers[i].busCode != 0 || drivers[i].order % 2 != 0){
         return std::numeric_limits<int>::max();
     }
     motorSDOClass data(i);
     if(fillSDO(data, "ActualPosition") != 0){
         return std::numeric_limits<int>::min();
     }
-    long period = configXML->masterAttribute("ECAT", drivers[i].order, "period");
+    long period = imp.ecats[drivers[i].order].period;
     int tryCount = 0;
     while(sendMotorSDORequest(data) != 0){
         tryCount++;

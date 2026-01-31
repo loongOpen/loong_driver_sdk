@@ -26,7 +26,7 @@ using canDriverTXFunction = void (*)(int const, int, unsigned char* const, int c
 
 class DriverParameters{
 public:
-    float minP = 0.0, maxP = 0.0, minV = 0.0, maxV = 0.0, minKp = 0.0, maxKp = 0.0, minKd = 0.0, maxKd = 0.0, minT = 0.0, maxT = 0.0;
+    float minP, maxP, minV, maxV, minKp, maxKp, minKd, maxKd, minT, maxT;
     DriverParameters();
     int load(std::string const& type);
     void print();
@@ -35,13 +35,14 @@ public:
 
 class CAN{
 public:
-    int order, canhal, baudrate, canfd, dbaudrate, division, sock;
+    int order, canhal, baudrate, canfd, dbaudrate, division, sock, slaveCount;
     char* device;
     static long period;
     static int CANHAL;
-    CAN();
+    CAN(int const order, char const* device);
     int ifaceIsUp();
     int ifaceUp();
+    int ifaceUp_();
     int ifaceDown();
     int open(int const masterID);
     int send(int const slaveID, unsigned char const* data, int const length);

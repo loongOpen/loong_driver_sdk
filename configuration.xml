@@ -735,6 +735,10 @@
     <Masters>
         <Master order="0" eni="NIIC_ENI_M0.xml" dc="true" period="1000000" cpu="-1"/>
         <Master order="1" eni="NIIC_ENI_M1.xml" dc="true" period="4000000" cpu="-1"/>
+        <Master order="2" eni="NIIC_ENI_M2.xml" dc="true" period="4000000" cpu="-1"/>
+        <Master order="3" eni="NIIC_ENI_M3.xml" dc="true" period="4000000" cpu="-1"/>
+        <Master order="4" eni="NIIC_ENI_M4.xml" dc="true" period="4000000" cpu="-1"/>
+        <Master order="5" eni="NIIC_ENI_M5.xml" dc="true" period="4000000" cpu="-1"/>
     </Masters>
     <Domains>
         <Domain master="0" order="0"  division="1"/>
@@ -808,19 +812,7 @@
 </ECAT>
 <CAN>
     <Devices>
-        <Device type="Encos">
-            <MinP>-12.5</MinP>
-            <MaxP>12.5</MaxP>
-            <MinV>-18.0</MinV>
-            <MaxV>18.0</MaxV>
-            <MinKp>0.0</MinKp>
-            <MaxKp>500.0</MaxKp>
-            <MinKd>0.0</MinKd>
-            <MaxKd>50.0</MaxKd>
-            <MinT>-150.0</MinT>
-            <MaxT>150.0</MaxT>
-        </Device>
-        <Device type="Damiao">
+        <Device type="Damiao DM-J4310-2EC">
             <MinP>-12.5</MinP>
             <MaxP>12.5</MaxP>
             <MinV>-30.0</MinV>
@@ -835,27 +827,26 @@
     </Devices>
     <Categories>
         <Category name="battery">
-            <Type>X</Type>
         </Category>
         <Category name="driver">
-            <Type master_id="1" masters="0 1">Encos</Type>
-            <Type master_id="2" masters="0 1">Encos</Type>
-            <Type master_id="3" masters="0 1">Encos</Type>
-            <Type master_id="4" masters="0 1">Encos</Type>
-            <Type master_id="5" masters="0 1">Encos</Type>
-            <Type master_id="6" masters="0 1">Encos</Type>
-            <Type master_id="1" masters="2 3">Damiao</Type>
-            <Type master_id="2" masters="2 3">Damiao</Type>
-            <Type master_id="3" masters="2 3">Damiao</Type>
-            <Type master_id="4" masters="2 3">Damiao</Type>
-            <Type master_id="5" masters="2 3">Damiao</Type>
-            <Type master_id="6" masters="2 3">Damiao</Type>
-            <Type master_id="7" masters="2 3">Damiao</Type>
-            <Type master_id="1" masters="4"  >Damiao</Type>
-            <Type master_id="2" masters="4"  >Damiao</Type>
-            <Type master_id="3" masters="4"  >Damiao</Type>
-            <Type master_id="4" masters="4"  >Damiao</Type>
-            <Type master_id="5" masters="4"  >Damiao</Type>
+            <Type master_id="1" masters="0 1">Damiao DM-J4310-2EC</Type>
+            <Type master_id="2" masters="0 1">Damiao DM-J4310-2EC</Type>
+            <Type master_id="3" masters="0 1">Damiao DM-J4310-2EC</Type>
+            <Type master_id="4" masters="0 1">Damiao DM-J4310-2EC</Type>
+            <Type master_id="5" masters="0 1">Damiao DM-J4310-2EC</Type>
+            <Type master_id="6" masters="0 1">Damiao DM-J4310-2EC</Type>
+            <Type master_id="1" masters="2 3">Damiao DM-J4310-2EC</Type>
+            <Type master_id="2" masters="2 3">Damiao DM-J4310-2EC</Type>
+            <Type master_id="3" masters="2 3">Damiao DM-J4310-2EC</Type>
+            <Type master_id="4" masters="2 3">Damiao DM-J4310-2EC</Type>
+            <Type master_id="5" masters="2 3">Damiao DM-J4310-2EC</Type>
+            <Type master_id="6" masters="2 3">Damiao DM-J4310-2EC</Type>
+            <Type master_id="7" masters="2 3">Damiao DM-J4310-2EC</Type>
+            <Type master_id="1" masters="4"  >Damiao DM-J4310-2EC</Type>
+            <Type master_id="2" masters="4"  >Damiao DM-J4310-2EC</Type>
+            <Type master_id="3" masters="4"  >Damiao DM-J4310-2EC</Type>
+            <Type master_id="4" masters="4"  >Damiao DM-J4310-2EC</Type>
+            <Type master_id="5" masters="4"  >Damiao DM-J4310-2EC</Type>
         </Category>
         <Category name="effector">
         </Category>
@@ -863,45 +854,45 @@
         </Category>
     </Categories>
     <Masters period="2000000" rx_cpu="-1" tx_cpu="-1" tx_cpu_="-1">
-        <Master order="0" device="can0" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
-        <Master order="1" device="can1" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
-        <Master order="2" device="can2" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
-        <Master order="3" device="can3" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
-        <Master order="4" device="can0" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
-        <Master order="5" device="can1" canhal="false" baudrate="1000000" canfd="false" dbaudrate="4000000" division="1"/>
+        <Master order="0" device="can0" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="1" device="can1" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="2" device="can2" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="3" device="can3" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="4" device="can0" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="5" device="can1" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
     </Masters>
     <Slaves>
-        <Slave master="0" master_id="1" slave_id="1" alias="1"   type="Encos" >0</Slave>
-        <Slave master="0" master_id="2" slave_id="2" alias="2"   type="Encos" >0</Slave>
-        <Slave master="0" master_id="3" slave_id="3" alias="3"   type="Encos" >0</Slave>
-        <Slave master="0" master_id="4" slave_id="4" alias="4"   type="Encos" >0</Slave>
-        <Slave master="0" master_id="5" slave_id="5" alias="5"   type="Encos" >0</Slave>
-        <Slave master="0" master_id="6" slave_id="6" alias="6"   type="Encos" >0</Slave>
-        <Slave master="1" master_id="1" slave_id="1" alias="7"   type="Encos" >0</Slave>
-        <Slave master="1" master_id="2" slave_id="2" alias="8"   type="Encos" >0</Slave>
-        <Slave master="1" master_id="3" slave_id="3" alias="9"   type="Encos" >0</Slave>
-        <Slave master="1" master_id="4" slave_id="4" alias="10"  type="Encos" >0</Slave>
-        <Slave master="1" master_id="5" slave_id="5" alias="11"  type="Encos" >0</Slave>
-        <Slave master="1" master_id="6" slave_id="6" alias="12"  type="Encos" >0</Slave>
-        <Slave master="2" master_id="1" slave_id="1" alias="13"  type="Damiao">0</Slave>
-        <Slave master="2" master_id="2" slave_id="2" alias="14"  type="Damiao">0</Slave>
-        <Slave master="2" master_id="3" slave_id="3" alias="15"  type="Damiao">0</Slave>
-        <Slave master="2" master_id="4" slave_id="4" alias="16"  type="Damiao">0</Slave>
-        <Slave master="2" master_id="5" slave_id="5" alias="17"  type="Damiao">0</Slave>
-        <Slave master="2" master_id="6" slave_id="6" alias="18"  type="Damiao">0</Slave>
-        <Slave master="2" master_id="7" slave_id="7" alias="19"  type="Damiao">0</Slave>
-        <Slave master="3" master_id="1" slave_id="1" alias="20"  type="Damiao">0</Slave>
-        <Slave master="3" master_id="2" slave_id="2" alias="21"  type="Damiao">0</Slave>
-        <Slave master="3" master_id="3" slave_id="3" alias="22"  type="Damiao">0</Slave>
-        <Slave master="3" master_id="4" slave_id="4" alias="23"  type="Damiao">0</Slave>
-        <Slave master="3" master_id="5" slave_id="5" alias="24"  type="Damiao">0</Slave>
-        <Slave master="3" master_id="6" slave_id="6" alias="25"  type="Damiao">0</Slave>
-        <Slave master="3" master_id="7" slave_id="7" alias="26"  type="Damiao">0</Slave>
-        <Slave master="4" master_id="1" slave_id="1" alias="27"  type="Damiao">0</Slave>
-        <Slave master="4" master_id="2" slave_id="2" alias="28"  type="Damiao">0</Slave>
-        <Slave master="4" master_id="3" slave_id="3" alias="29"  type="Damiao">0</Slave>
-        <Slave master="4" master_id="4" slave_id="4" alias="30"  type="Damiao">0</Slave>
-        <Slave master="4" master_id="5" slave_id="5" alias="31"  type="Damiao">0</Slave>
+        <Slave master="0" master_id="1" slave_id="1" alias="1"  type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="0" master_id="2" slave_id="2" alias="2"  type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="0" master_id="3" slave_id="3" alias="3"  type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="0" master_id="4" slave_id="4" alias="4"  type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="0" master_id="5" slave_id="5" alias="5"  type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="0" master_id="6" slave_id="6" alias="6"  type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="1" master_id="1" slave_id="1" alias="7"  type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="1" master_id="2" slave_id="2" alias="8"  type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="1" master_id="3" slave_id="3" alias="9"  type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="1" master_id="4" slave_id="4" alias="10" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="1" master_id="5" slave_id="5" alias="11" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="1" master_id="6" slave_id="6" alias="12" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="2" master_id="1" slave_id="1" alias="13" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="2" master_id="2" slave_id="2" alias="14" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="2" master_id="3" slave_id="3" alias="15" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="2" master_id="4" slave_id="4" alias="16" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="2" master_id="5" slave_id="5" alias="17" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="2" master_id="6" slave_id="6" alias="18" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="2" master_id="7" slave_id="7" alias="19" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="3" master_id="1" slave_id="1" alias="20" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="3" master_id="2" slave_id="2" alias="21" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="3" master_id="3" slave_id="3" alias="22" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="3" master_id="4" slave_id="4" alias="23" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="3" master_id="5" slave_id="5" alias="24" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="3" master_id="6" slave_id="6" alias="25" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="3" master_id="7" slave_id="7" alias="26" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="4" master_id="1" slave_id="1" alias="27" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="4" master_id="2" slave_id="2" alias="28" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="4" master_id="3" slave_id="3" alias="29" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="4" master_id="4" slave_id="4" alias="30" type="Damiao DM-J4310-2EC">0</Slave>
+        <Slave master="4" master_id="5" slave_id="5" alias="31" type="Damiao DM-J4310-2EC">0</Slave>
     </Slaves>
 </CAN>
 <RS485Emu>
@@ -912,6 +903,7 @@
         </Category>
         <Category name="effector">
             <Type dof="1">ChangingTek</Type>
+            <Type dof="1">ChangingTek_</Type>
             <Type dof="6">Inspire</Type>
             <Type dof="6">Inspire_</Type>
             <Type dof="6">BrainCo</Type>
@@ -925,12 +917,14 @@
         <Master order="1" deviceR="/dev/fifo1r" deviceS="/dev/fifo1s" period="96000000"/>
     </Masters>
     <Slaves>
-        <Slave master="0" alias="200" type="ChangingTek">0</Slave>
-        <Slave master="0" alias="200" type="Inspire"    >0</Slave>
-        <Slave master="0" alias="200" type="Inspire_"   >0</Slave>
-        <Slave master="1" alias="201" type="ChangingTek">0</Slave>
-        <Slave master="1" alias="201" type="Inspire"    >0</Slave>
-        <Slave master="1" alias="201" type="Inspire_"   >0</Slave>
+        <Slave master="0" alias="200" type="ChangingTek" >0</Slave>
+        <Slave master="0" alias="200" type="ChangingTek_">0</Slave>
+        <Slave master="0" alias="200" type="Inspire"     >0</Slave>
+        <Slave master="0" alias="200" type="Inspire_"    >0</Slave>
+        <Slave master="1" alias="201" type="ChangingTek" >0</Slave>
+        <Slave master="1" alias="201" type="ChangingTek_">0</Slave>
+        <Slave master="1" alias="201" type="Inspire"     >0</Slave>
+        <Slave master="1" alias="201" type="Inspire_"    >0</Slave>
     </Slaves>
 </RS485Emu>
 <RS485>
@@ -941,6 +935,7 @@
         </Category>
         <Category name="effector">
             <Type dof="1">ChangingTek</Type>
+            <Type dof="1">ChangingTek_</Type>
             <Type dof="6">Inspire</Type>
             <Type dof="6">Inspire_</Type>
             <Type dof="6">BrainCo</Type>
@@ -954,12 +949,14 @@
         <Master order="1" device="/dev/ttyCH341USB1" baudrate="115200" period="96000000"/>
     </Masters>
     <Slaves>
-        <Slave master="0" alias="200" type="ChangingTek">0</Slave>
-        <Slave master="0" alias="200" type="Inspire"    >0</Slave>
-        <Slave master="0" alias="200" type="Inspire_"   >0</Slave>
-        <Slave master="0" alias="201" type="ChangingTek">0</Slave>
-        <Slave master="1" alias="201" type="Inspire"    >0</Slave>
-        <Slave master="1" alias="201" type="Inspire_"   >0</Slave>
+        <Slave master="0" alias="200" type="ChangingTek" >0</Slave>
+        <Slave master="0" alias="200" type="ChangingTek_">0</Slave>
+        <Slave master="0" alias="200" type="Inspire"     >0</Slave>
+        <Slave master="0" alias="200" type="Inspire_"    >0</Slave>
+        <Slave master="0" alias="201" type="ChangingTek" >0</Slave>
+        <Slave master="0" alias="201" type="ChangingTek_">0</Slave>
+        <Slave master="1" alias="201" type="Inspire"     >0</Slave>
+        <Slave master="1" alias="201" type="Inspire_"    >0</Slave>
     </Slaves>
 </RS485>
 <Motors>
@@ -1566,5 +1563,5 @@
         <MaximumPosition>0.69813172</MaximumPosition>
     </Motor>
 </Motors>
-<IMU device="" baudrate="460800" type="Xsens"/>
+<IMU device="" baudrate="460800" type="Xsens"/><!-- type="Xsens/HiPNUC/Forsense/YESENSE" -->
 </Config>

@@ -189,7 +189,7 @@ int ECAT::check(){
     ecat::master_state masterState = master->state();
     if(masterState.link_up != 1){
         printf("master %d's link is down\n", order);
-        return 1;
+        return -2;
     }
     ecat::master_info masterInfo = master->get_info();
     printf("master %d, %ld device(s) in xml, %d slave(s) on bus\n", order, alias2type.size(), masterInfo.slave_count);
@@ -238,7 +238,7 @@ int ECAT::check(){
         printf("master %d number of devices %ld contradicts that(%ld) in xml\n", order, alias2slave.size(), alias2type.size());
         clean();
         init();
-        return 1;
+        return -2;
     }
     return 0;
 }
@@ -265,7 +265,7 @@ int ECAT::config(){
     while(itr != alias2slave.end()){
         int alias = itr->first, slave = itr->second;
         std::string type = alias2type.find(alias)->second, category = configXML->typeCategory("ECAT", type.c_str());
-        printf("master %d, domain 0, slave %d, alias %d, category %s, type %s\n", order, slave, alias, category.c_str(), type.c_str());
+        printf("master %d, domain %d, slave %d, alias %d, category %s, type %s\n", order, 0, slave, alias, category.c_str(), type.c_str());
         if(task->profile_no(slave) != 402 || task->slots_count(slave) > 1){
             printf("\tdriver must be CiA402 single-axis\n");
             return -1;
@@ -423,7 +423,7 @@ int ECAT::config(){
     }
     txPDOOffsets[0] = rxPDOOffsets[0];
     rxPDOOffsets[0] = 0;
-    printf("master %d, domain 0, domainSize %d\n", order, domainSizes[0]);
+    printf("master %d, domain %d, domainSize %d\n", order, 0, domainSizes[0]);
     rxPDOSwaps[0] = new SwapList(domainSizes[0]);
     txPDOSwaps[0] = new SwapList(domainSizes[0]);
     itr = alias2slave.begin();
@@ -517,7 +517,18 @@ int ECAT::config(){
         }
     });
     task->set_activation_callback([this](){
+        domainCount = domainDivisions.size();
+        workingCounters = new int[domainCount];
+        wcStates = new ecat::wc_state_type[domainCount];
+        previousIncompleteness = 0;
         tryCount = 0;
+        int i = 0;
+        while(i < domainCount){
+            workingCounters[i] = 0;
+            wcStates[i] = ecat::wc_state_type::zero;
+            i++;
+        }
+        domainStates = new ecat::domain_state[domainCount];
         auto itr = alias2slave.begin();
         while(itr != alias2slave.end()){
             int alias = itr->first, slave = itr->second;
@@ -624,27 +635,45 @@ int ECAT::config(){
         }
     });
     task->set_receive_callback([this](){
-        int count = 0;
-        auto itr = alias2slave.begin();
-        while(itr != alias2slave.end()){
-            int alias = itr->first;
-            *(           int*)targetPosition[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetPosition;
-            *(           int*)targetVelocity[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetVelocity;
-            *(         short*)  targetTorque[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetTorque;
-            *(unsigned short*)   controlWord[count]->dataPtr = drivers[alias - 1].rx.previous()->ControlWord;
-            *(          char*)          mode[count]->dataPtr = drivers[alias - 1].rx.previous()->Mode;
-            *(         short*)  torqueOffset[count]->dataPtr = drivers[alias - 1].rx.previous()->TorqueOffset;
-            *(           int*)velocityOffset[count]->dataPtr = drivers[alias - 1].rx.previous()->VelocityOffset;
-            drivers[alias - 1].tx.next()->ActualPosition = *(           int*)actualPosition[count]->dataPtr;
-            drivers[alias - 1].tx.next()->ActualVelocity = *(           int*)actualVelocity[count]->dataPtr;
-            drivers[alias - 1].tx.next()->ActualTorque   = *(         short*)  actualTorque[count]->dataPtr;
-            drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)    statusWord[count]->dataPtr;
-            drivers[alias - 1].tx.next()->ModeDisplay    = *(          char*)   modeDisplay[count]->dataPtr;
-            drivers[alias - 1].tx.next()->ErrorCode      = *(unsigned short*)     errorCode[count]->dataPtr;
-            count++;
-            itr++;
+        int incompleteness = 0;
+        domainStates[0] = task->get_domain_state();
+        if(domainStates[0].working_counter != workingCounters[0]){
+            workingCounters[0] = domainStates[0].working_counter;
+            printf("master %d domain %d working_counter changed to %d\n", order, 0, workingCounters[0]);
         }
-        txPDOSwaps[0]->advanceNodePtr();
+        if(domainStates[0].wc_state != wcStates[0]){
+            wcStates[0] = domainStates[0].wc_state;
+            printf("master %d domain %d wc_state changed to %d\n", order, 0, (int)wcStates[0]);
+        }
+        if(domainStates[0].wc_state == ecat::wc_state_type::complete){
+            int count = 0;
+            auto itr = alias2slave.begin();
+            while(itr != alias2slave.end()){
+                int alias = itr->first;
+                *(           int*)targetPosition[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetPosition;
+                *(           int*)targetVelocity[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetVelocity;
+                *(         short*)  targetTorque[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetTorque;
+                *(unsigned short*)   controlWord[count]->dataPtr = drivers[alias - 1].rx.previous()->ControlWord;
+                *(          char*)          mode[count]->dataPtr = drivers[alias - 1].rx.previous()->Mode;
+                *(         short*)  torqueOffset[count]->dataPtr = drivers[alias - 1].rx.previous()->TorqueOffset;
+                *(           int*)velocityOffset[count]->dataPtr = drivers[alias - 1].rx.previous()->VelocityOffset;
+                drivers[alias - 1].tx.next()->ActualPosition = *(           int*)actualPosition[count]->dataPtr;
+                drivers[alias - 1].tx.next()->ActualVelocity = *(           int*)actualVelocity[count]->dataPtr;
+                drivers[alias - 1].tx.next()->ActualTorque   = *(         short*)  actualTorque[count]->dataPtr;
+                drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)    statusWord[count]->dataPtr;
+                drivers[alias - 1].tx.next()->ModeDisplay    = *(          char*)   modeDisplay[count]->dataPtr;
+                drivers[alias - 1].tx.next()->ErrorCode      = *(unsigned short*)     errorCode[count]->dataPtr;
+                count++;
+                itr++;
+            }
+            txPDOSwaps[0]->advanceNodePtr();
+        }else if(order == 0){
+            incompleteness++;
+        }
+        if(incompleteness != previousIncompleteness){
+            ecatStalled.store(incompleteness);
+            previousIncompleteness = incompleteness;
+        }
     });
     return 0;
 }
@@ -665,6 +694,15 @@ void ECAT::clean(){
         task->release();
         master = nullptr;
         task = nullptr;
+    }
+    if(workingCounters != nullptr){
+        delete[] workingCounters;
+    }
+    if(wcStates != nullptr){
+        delete[] wcStates;
+    }
+    if(domainStates != nullptr){
+        delete[] domainStates;
     }
     if(targetPosition != nullptr){
         delete[] targetPosition;

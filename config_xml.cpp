@@ -137,7 +137,7 @@ std::vector<std::tuple<int, std::vector<int>, std::string>> ConfigXML::canBus(){
             while(typeElement != nullptr){
                 std::string type = typeElement->GetText();
                 int masterID = typeElement->IntAttribute("master_id");
-                if(masterID == 0){
+                if(masterID < 0){
                     printf("invalid master_id of device type %s\n", type.c_str());
                     exit(-1);
                 }

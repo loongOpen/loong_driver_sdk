@@ -79,7 +79,7 @@ class DriverSDK{
 public:
     static DriverSDK& instance();
     void setCPU(unsigned short const cpu);
-    int setCPUs(std::vector<unsigned short> const& cpus, std::string const& bus);   // cpus: for EtherCAT0 ~ EtherCAT3 or CAN RX, SocketCAN TX and CANHAL TX; bus: ECAT or CAN
+    int setCPUs(std::vector<unsigned short> const& cpus, std::string const& bus);   // cpus: for EtherCAT0 ~ EtherCAT5 or CAN RX, SocketCAN TX and CANHAL TX; bus: ECAT or CAN
     void setMaxCurr(std::vector<unsigned short> const& maxCurr);
     int setMode(std::vector<char> const& mode);
     void init(char const* xmlFile);
@@ -101,6 +101,7 @@ public:
     int sendMotorREGRequest(motorREGClass const& data);
     int recvMotorREGResponse(motorREGClass& data);
     int calibrate(int const i);
+    int calibrate_(int const i);
     void advance();
     std::string version();
 private:
