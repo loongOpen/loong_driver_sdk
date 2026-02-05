@@ -135,34 +135,6 @@ bool validYesense(unsigned char const* buff){
     return checksum(buff + 2, 63) == *(unsigned int*)(buff + 65);
 }
 
-int quadchar2int(unsigned char const* qc){
-    int i = 0;
-    unsigned char* c = (unsigned char*)&i;
-    *(c + 0) = *(qc + 3);
-    *(c + 1) = *(qc + 2);
-    *(c + 2) = *(qc + 1);
-    *(c + 3) = *(qc + 0);
-    return i;
-}
-
-float quadchar2float(unsigned char const* qc){
-    float f = 0;
-    unsigned char* c = (unsigned char*)&f;
-    *(c + 0) = *(qc + 3);
-    *(c + 1) = *(qc + 2);
-    *(c + 2) = *(qc + 1);
-    *(c + 3) = *(qc + 0);
-    return f;
-}
-
-int quadchar2int_(unsigned char const* qc){
-    return *(int*)qc;
-}
-
-float quadchar2float_(unsigned char const* qc){
-    return *(float*)qc;
-}
-
 float rpy0xsens(SwapList const* txSwap){
     return quadchar2float(txSwap->nodePtr.load()->memPtr +  7) * Pi / 180.0;
 }

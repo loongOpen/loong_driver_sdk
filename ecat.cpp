@@ -890,7 +890,9 @@ void* ECAT::rxtx(void* arg){
                             l++;
                         }
                         printf("\b\n");
-                        write(rs485s[k].fdR, channel.Data, channel.Length);
+                        if(write(rs485s[k].fdR, channel.Data, channel.Length) != channel.Length){
+                            printf("write() failed\n");
+                        }
                         k++;
                     }
                     j++;

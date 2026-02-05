@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <tuple>
 
 namespace DriverSDK{
 class ConfigXML{
@@ -38,7 +37,6 @@ public:
     std::string imuAttribute(char const* name);
     int imuBaudrate();
     int canAttribute(char const* name);
-    std::vector<std::tuple<int, std::vector<int>, std::string>> canBus();
     std::string masterDevice(char const* bus, int const order, char const* name);
     int masterAttribute(char const* bus, int const order, char const* name);
     bool masterFeature(char const* bus, int const order, char const* name);
@@ -52,6 +50,7 @@ public:
     std::vector<std::string> entry(tinyxml2::XMLElement* const deviceElement, char const* object);
     std::vector<std::map<int, std::string>> alias2type(char const* bus);
     std::vector<std::map<int, int>> alias2attribute(char const* bus, char const* name);
+    std::vector<std::map<int, std::vector<int>>> alias2attribute_(char const* bus, char const* name);
     tinyxml2::XMLError save();
     ~ConfigXML();
 };

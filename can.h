@@ -20,26 +20,25 @@
 #include "common.h"
 
 namespace DriverSDK{
-class CANDriver;
-using canDriverRXFunction = int (*)(int const, unsigned char* const);
-using canDriverTXFunction = void (*)(int const, int, unsigned char* const, int const, CANDriver* const);
+class CAN;
+using canRXFunction = int (*)(int const, int const, int* const, unsigned char* const);
+using canTXFunction = void (*)(int const, int const, unsigned char* const, int const, CAN* const);
 
 class DriverParameters{
 public:
-    float minP, maxP, minV, maxV, minKp, maxKp, minKd, maxKd, minT, maxT;
+    float minP, maxP, minV, maxV, minKp, maxKp, minKd, maxKd, minT, maxT, pUnit, targetVUnit, actualVUnit, vOffsetUnit, targetCUnit, actualCUnit, cOffsetUnit, tConstant;
     DriverParameters();
     int load(std::string const& type);
-    void print();
     ~DriverParameters();
 };
 
-class CAN{
+class CANBase{
 public:
     int order, canhal, baudrate, canfd, dbaudrate, division, sock, slaveCount;
     char* device;
     static long period;
     static int CANHAL;
-    CAN(int const order, char const* device);
+    CANBase(int const order, char const* device);
     int ifaceIsUp();
     int ifaceUp();
     int ifaceUp_();
@@ -49,26 +48,27 @@ public:
     int recv(unsigned char* const data, int const length, int* const masterID);
     int sendfd(int const slaveID, unsigned char const* data, int const length);
     int recvfd(unsigned char* const data, int const length, int* const masterID);
-    ~CAN();
+    ~CANBase();
 };
 
-class CANDriver : public CAN{
+class CAN : public CANBase{
 public:
     std::map<int, std::string> alias2type;
-    std::map<int, int> alias2masterID, alias2slaveID;
+    std::map<int, std::vector<int>> alias2masterIDs;
+    std::map<int, int> alias2slaveID;
     SwapList* rxSwap, * txSwap;
     static pthread_t rxPth, txPth, txPth_;
     static int rxCPU, txCPU, txCPU_;
     static std::map<std::string, DriverParameters*> type2parameters;
-    static int* alias2masterID_;
     static unsigned short* alias2status;
     static DriverParameters** alias2parameters;
     static int orderSlaveID2alias[8][16];
+    static int orderMasterID2slaveID[8][2048];
+    static canRXFunction rxFuncs[8][16];
+    static canTXFunction txFuncs[8][2048];
     unsigned short MASK, mask;
-    static canDriverRXFunction rxFuncs[2048][8];
-    static canDriverTXFunction txFuncs[2048][8];
     unsigned char rollingCounter;
-    CANDriver(int const order, char const* device);
+    CAN(int const order, char const* device);
     int config();
     static void cleanup(void* arg);
     static void* rx(void* arg);
@@ -76,11 +76,7 @@ public:
     static void cleanup_(void* arg);
     static void* tx__(void* arg);
     static void* tx_(void* arg);
-    static int run(std::vector<CANDriver>& cans);
-    ~CANDriver();
-};
-
-class Battery : public CAN{
-public:
+    static int run(std::vector<CAN>& cans);
+    ~CAN();
 };
 }

@@ -55,7 +55,7 @@ int main(int argc, char** argv){
     driverSDK.init("configuration.xml");
     std::vector<int> activeMotors = driverSDK.getActiveMotors();
     int i = 0, j = 0, motorNr = driverSDK.getTotalMotorNr(), digitNr = driverSDK.getLeftDigitNr() + driverSDK.getRightDigitNr();
-    printf("digitNr %d\nmotorNr %d:\t", digitNr, motorNr);
+    printf("digitNr %d\nmotorNr %ld/%d:\t", digitNr, activeMotors.size(), motorNr);
     while(i < activeMotors.size()){
         printf("%d ", activeMotors[i]);
         i++;

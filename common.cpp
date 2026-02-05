@@ -90,6 +90,34 @@ float half2single(unsigned short u){
     return f;
 }
 
+int quadchar2int(unsigned char const* qc){
+    int i = 0;
+    unsigned char* c = (unsigned char*)&i;
+    *(c + 0) = *(qc + 3);
+    *(c + 1) = *(qc + 2);
+    *(c + 2) = *(qc + 1);
+    *(c + 3) = *(qc + 0);
+    return i;
+}
+
+int quadchar2int_(unsigned char const* qc){
+    return *(int*)qc;
+}
+
+float quadchar2float(unsigned char const* qc){
+    float f = 0;
+    unsigned char* c = (unsigned char*)&f;
+    *(c + 0) = *(qc + 3);
+    *(c + 1) = *(qc + 2);
+    *(c + 2) = *(qc + 1);
+    *(c + 3) = *(qc + 0);
+    return f;
+}
+
+float quadchar2float_(unsigned char const* qc){
+    return *(float*)qc;
+}
+
 void adjustCPU(int* cpu, int processor){
     if(*cpu <= 0 || *cpu >= sysconf(_SC_NPROCESSORS_ONLN)){
         *cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;

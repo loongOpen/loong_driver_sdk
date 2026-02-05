@@ -53,7 +53,12 @@ float ConfigXML::readDeviceParameter(char const* bus, char const* type, char con
     tinyxml2::XMLElement* deviceElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Devices")->FirstChildElement("Device");
     while(deviceElement != nullptr){
         if(strcmp(deviceElement->Attribute("type"), type) == 0){
-            return deviceElement->FirstChildElement(parameter)->FloatText();
+            tinyxml2::XMLElement* parameterElement = deviceElement->FirstChildElement(parameter);
+            if(parameterElement == nullptr){
+                return 0.0;
+            }else{
+                return parameterElement->FloatText();
+            }
         }
         deviceElement = deviceElement->NextSiblingElement("Device");
     }
@@ -126,38 +131,6 @@ int ConfigXML::canAttribute(char const* name){
         return mastersElement->IntAttribute(name);
     }
     return 0;
-}
-
-std::vector<std::tuple<int, std::vector<int>, std::string>> ConfigXML::canBus(){
-    std::vector<std::tuple<int, std::vector<int>, std::string>> ret;
-    tinyxml2::XMLElement* categoryElement = xmlDoc.FirstChildElement("Config")->FirstChildElement("CAN")->FirstChildElement("Categories")->FirstChildElement("Category");
-    while(categoryElement != nullptr){
-        if(strcmp(categoryElement->Attribute("name"), "driver") == 0){
-            tinyxml2::XMLElement* typeElement = categoryElement->FirstChildElement("Type");
-            while(typeElement != nullptr){
-                std::string type = typeElement->GetText();
-                int masterID = typeElement->IntAttribute("master_id");
-                if(masterID < 0){
-                    printf("invalid master_id of device type %s\n", type.c_str());
-                    exit(-1);
-                }
-                std::vector<int> masters;
-                std::stringstream ss(typeElement->Attribute("masters"));
-                std::string token;
-                while(std::getline(ss, token, ' ')){
-                    masters.push_back(atoi(token.c_str()));
-                }
-                if(masters.size() == 0){
-                    printf("invalid masters of device type %s\n", type.c_str());
-                    exit(-1);
-                }
-                ret.push_back(std::make_tuple(masterID, masters, type));
-                typeElement = typeElement->NextSiblingElement("Type");
-            }
-        }
-        categoryElement = categoryElement->NextSiblingElement("Category");
-    }
-    return ret;
 }
 
 std::string ConfigXML::masterDevice(char const* bus, int const order, char const* name){
@@ -319,6 +292,39 @@ std::vector<std::map<int, int>> ConfigXML::alias2attribute(char const* bus, char
             exit(-1);
         }
         ret[master].insert(std::make_pair(alias, slaveElement->IntAttribute(name)));
+        slaveElement = slaveElement->NextSiblingElement("Slave");
+    }
+    return ret;
+}
+
+std::vector<std::map<int, std::vector<int>>> ConfigXML::alias2attribute_(char const* bus, char const* name){
+    std::vector<std::map<int, std::vector<int>>> ret;
+    tinyxml2::XMLElement* slaveElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Slaves")->FirstChildElement("Slave");
+    while(slaveElement != nullptr){
+        if(slaveElement->IntText() != 1){
+            slaveElement = slaveElement->NextSiblingElement("Slave");
+            continue;
+        }
+        int master = slaveElement->IntAttribute("master");
+        while(ret.size() <= master){
+            ret.push_back(std::map<int, std::vector<int>>());
+        }
+        int alias = slaveElement->IntAttribute("alias");
+        if(ret[master].find(alias) != ret[master].end()){
+            printf("duplicate alias on bus %s\n", bus);
+            exit(-1);
+        }
+        std::vector<int> items;
+        std::stringstream ss(slaveElement->Attribute(name));
+        std::string token;
+        while(std::getline(ss, token, ' ')){
+            items.push_back(atoi(token.c_str()));
+        }
+        if(items.size() == 0){
+            printf("invalid %s of device with alias %d\n", name, alias);
+            exit(-1);
+        }
+        ret[master].insert(std::make_pair(alias, items));
         slaveElement = slaveElement->NextSiblingElement("Slave");
     }
     return ret;

@@ -34,7 +34,8 @@ namespace DriverSDK{
 
 extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> canAlias2type;
-extern std::vector<std::map<int, int>> canAlias2masterID, canAlias2slaveID;
+extern std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs;
+extern std::vector<std::map<int, int>> canAlias2slaveID;
 extern int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector;
 extern WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
 extern std::vector<unsigned short> processorsCAN;
@@ -47,51 +48,56 @@ float para2float(unsigned short const us, float const min, float const max, int 
     return us * (max - min) / ((1 << bit) - 1.0) + min;
 }
 
-int nullRX(int const alias, unsigned char* const data){
+int nullRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
     return 0;
 }
 
-void nullTX(int const order, int id, unsigned char* const data, int const length, CANDriver* const can){
-    printf("unexpected master_id %d on cans[%d]\n", id, order);
+void nullTX(int const order, int const masterID, unsigned char* const data, int const length, CAN* const can){
+    printf("unexpected master_id %d on cans[%d]\n", masterID, order);
 }
 
 unsigned char const EncosEnable [3] = {0x71, 0x03, 0xe8};
 unsigned char const EncosDisable[3] = {0x6d, 0x00, 0x00};
 unsigned char const EncosDamp   [3] = {0x69, 0x00, 0x00};
 
-int encosRX(int const alias, unsigned char* const data){
+int encosRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 2:
-        memcpy(data, EncosDamp, 3);
-        CANDriver::alias2status[alias] = 0x0037;
-        return 3;
+        switch(CAN::alias2status[alias]){
+        case 0x0237:
+            memcpy(data, EncosDamp, 3);
+            return 3;
+            break;
+        case 0x0231:
+            break;
+        }
         break;
     case 1:
-        switch(CANDriver::alias2status[alias]){
-        case 0x0037:
+        switch(CAN::alias2status[alias]){
+        case 0x0237:
             break;
-        case 0x0031:
+        case 0x0231:
             memcpy(data, EncosEnable, 3);
-            CANDriver::alias2status[alias] = 0x0037;
+            CAN::alias2status[alias] = 0x0237;
             return 3;
             break;
         }
         break;
     case 0:
-        switch(CANDriver::alias2status[alias]){
-        case 0x0037:
+        switch(CAN::alias2status[alias]){
+        case 0x0237:
             memcpy(data, EncosDisable, 3);
-            CANDriver::alias2status[alias] = 0x0031;
+            CAN::alias2status[alias] = 0x0231;
             return 3;
             break;
-        case 0x0031:
+        case 0x0231:
             break;
         }
         break;
     }
-    DriverParameters const* parameters = CANDriver::alias2parameters[alias];
-    unsigned short p = 0, v = 0, t = 0, kp = 0, kd = 0;
-    if(CANDriver::alias2status[alias] != 0x0037){
+    DriverParameters const* parameters = CAN::alias2parameters[alias];
+    unsigned short p, v, t, kp, kd;
+    if(CAN::alias2status[alias] != 0x0237){
          p = float2para(0.0, parameters->minP,  parameters->maxP,  16);
          v = float2para(0.0, parameters->minV,  parameters->maxV,  12);
         kp = float2para(0.0, parameters->minKp, parameters->maxKp, 12);
@@ -115,7 +121,7 @@ int encosRX(int const alias, unsigned char* const data){
     return 8;
 }
 
-void encosTX(int const order, int id, unsigned char* const data, int const length, CANDriver* const can){
+void encosTX(int const order, int const masterID, unsigned char* const data, int const length, CAN* const can){
     if(length != 8){
         return;
     }
@@ -128,20 +134,30 @@ void encosTX(int const order, int id, unsigned char* const data, int const lengt
     data[3] = data[5];
     data[4] = data[4] & 0x0f;
     unsigned short t = *(unsigned short*)(data + 3);
-    int const alias = CANDriver::orderSlaveID2alias[order][id];
-    DriverParameters const* parameters = CANDriver::alias2parameters[alias];
+    int const slaveID = CAN::orderMasterID2slaveID[order][masterID], alias = CAN::orderSlaveID2alias[order][slaveID];
+    DriverParameters const* parameters = CAN::alias2parameters[alias];
     signed char temperature = (data[6] - 50) / 2;
     bool error = err > 0 && (err != 1 && err != 2 && err != 4 || err == 1 && temperature > 99);
     *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             para2float(p, parameters->minP, parameters->maxP, 16);
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
               drivers[alias - 1].tx.next()->Undefined      = temperature;
-              drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0018 : CANDriver::alias2status[alias];
+              drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0218 : CAN::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0;
-    can->mask |= 1 << id;
+    can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
         can->txSwap->advanceNodePtr();
         can->mask = 0;
+        if(CAN::alias2status[alias] == 0x0000){
+            int i = 0;
+            while(i < 16){
+                int a = CAN::orderSlaveID2alias[order][i];
+                if(a > 0){
+                    CAN::alias2status[a] = 0x0231;
+                }
+                i++;
+            }
+        }
     }
 }
 
@@ -149,37 +165,42 @@ unsigned char const DamiaoEnable [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 unsigned char const DamiaoDisable[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
 unsigned char const DamiaoClrErr [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfb};
 
-int damiaoRX(int const alias, unsigned char* const data){
+int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 1:
-        switch(CANDriver::alias2status[alias]){
-        case 0x0037:
+        switch(CAN::alias2status[alias]){
+        case 0x0237:
             break;
-        case 0x0031:
+        case 0x0231:
             memcpy(data, DamiaoEnable, 8);
-            CANDriver::alias2status[alias] = 0x0037;
+            CAN::alias2status[alias] = 0x0237;
             return 8;
             break;
         }
         break;
     case 0:
-        switch(CANDriver::alias2status[alias]){
-        case 0x0037:
+        switch(CAN::alias2status[alias]){
+        case 0x0237:
             memcpy(data, DamiaoDisable, 8);
-            CANDriver::alias2status[alias] = 0x0031;
+            CAN::alias2status[alias] = 0x0231;
             return 8;
             break;
-        case 0x0031:
+        case 0x0231:
             break;
         }
         break;
     case -1:
-        memcpy(data, DamiaoClrErr, 8);
-        CANDriver::alias2status[alias] = 0x0031;
-        return 8;
+        switch(CAN::alias2status[alias]){
+        case 0x0237:
+            break;
+        case 0x0231:
+            memcpy(data, DamiaoClrErr, 8);
+            return 8;
+            break;
+        }
         break;
     }
-    DriverParameters const* parameters = CANDriver::alias2parameters[alias];
+    DriverParameters const* parameters = CAN::alias2parameters[alias];
     unsigned short  p = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetPosition, parameters->minP,  parameters->maxP,  16);
     unsigned short  v = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity, parameters->minV,  parameters->maxV,  12);
     unsigned short kp = float2para(half2single(drivers[alias - 1].rx.previous()->ControlWord),   parameters->minKp, parameters->maxKp, 12);
@@ -196,12 +217,12 @@ int damiaoRX(int const alias, unsigned char* const data){
     return 8;
 }
 
-void damiaoTX(int const order, int id, unsigned char* const data, int const length, CANDriver* const can){
+void damiaoTX(int const order, int const masterID, unsigned char* const data, int const length, CAN* const can){
     if(length != 8){
         return;
     }
     unsigned char err = data[0] >> 4;
-    id = data[0] & 0x0f;
+    // int const slaveID = data[0] & 0x0f;
     data[0] = data[2];
     unsigned short p = *(unsigned short*)(data + 0);
     data[2] = data[4];
@@ -210,15 +231,187 @@ void damiaoTX(int const order, int id, unsigned char* const data, int const leng
     data[3] = data[5];
     data[4] = data[4] & 0x0f;
     unsigned short t = *(unsigned short*)(data + 3);
-    int const alias = CANDriver::orderSlaveID2alias[order][id];
-    DriverParameters const* parameters = CANDriver::alias2parameters[alias];
+    int const slaveID = CAN::orderMasterID2slaveID[order][masterID], alias = CAN::orderSlaveID2alias[order][slaveID];
+    DriverParameters const* parameters = CAN::alias2parameters[alias];
     *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             para2float(p, parameters->minP, parameters->maxP, 16);
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
               drivers[alias - 1].tx.next()->Undefined      = data[7];
-              drivers[alias - 1].tx.next()->StatusWord     = err > 1 ? 0x0018 : CANDriver::alias2status[alias];
+              drivers[alias - 1].tx.next()->StatusWord     = err > 1 ? 0x0218 : CAN::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = err > 1 ? err : 0x0000;
-    can->mask |= 1 << id;
+    can->mask |= 1 << slaveID;
+    if(can->mask == can->MASK){
+        can->txSwap->advanceNodePtr();
+        can->mask = 0;
+        if(CAN::alias2status[alias] == 0x0000){
+            int i = 0;
+            while(i < 16){
+                int a = CAN::orderSlaveID2alias[order][i];
+                if(a > 0){
+                    CAN::alias2status[a] = 0x0231;
+                }
+                i++;
+            }
+        }
+    }
+}
+
+unsigned char const RealManIAP    [8] = {0x02, 0x49, 0x00};
+unsigned char const RealManEnable [8] = {0x02, 0x0a, 0x01};
+unsigned char const RealManDisable[8] = {0x02, 0x0a, 0x00};
+unsigned char const RealManClrErr [8] = {0x02, 0x0f, 0x01};
+
+int realManRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
+    switch(drivers[alias - 1].rx.previous()->Undefined){
+    case 1:
+        switch(CAN::alias2status[alias]){
+        case 0x0250:
+            CAN::alias2status[alias] = 0x0237;
+        case 0x0237:
+            break;
+        case 0x0231:
+            memcpy(data, RealManEnable, 3);
+            return 3;
+            break;
+        case 0x0050:
+            *slaveID += 0x0600;
+            return 0;
+            break;
+        case 0x0000:
+            memcpy(data, RealManIAP, 3);
+            return 3;
+            break;
+        }
+        break;
+    case 0:
+        switch(CAN::alias2status[alias]){
+        case 0x0250:
+        case 0x0237:
+            memcpy(data, RealManDisable, 3);
+            return 3;
+            break;
+        case 0x0231:
+            break;
+        case 0x0050:
+            *slaveID += 0x0600;
+            return 0;
+            break;
+        case 0x0000:
+            memcpy(data, RealManIAP, 3);
+            return 3;
+            break;
+        }
+        break;
+    case -1:
+        switch(CAN::alias2status[alias]){
+        case 0x0250:
+            memcpy(data, RealManDisable, 3);
+            return 3;
+            break;
+        case 0x0237:
+            break;
+        case 0x0231:
+            memcpy(data, RealManClrErr, 3);
+            return 3;
+            break;
+        case 0x0050:
+            *slaveID += 0x0600;
+            return 0;
+            break;
+        case 0x0000:
+            memcpy(data, RealManIAP, 3);
+            return 3;
+            break;
+        }
+        break;
+    }
+    unsigned char* const data_ = data + 64;
+    int length = std::numeric_limits<int>::min(), index = (*slaveID - 1) * 8;
+    static bool enabled[8];
+    if(*slaveID == 1){
+        enabled[order] = true;
+    }
+    if(CAN::alias2status[alias] != 0x0237){
+        enabled[order] = false;
+    }
+    if(*slaveID == 1){
+        memset(data_, 0x00, 56);
+        memset(data_ + 56, 0xff, 7);
+        data_[63] = 0x5f;
+    }else if(*slaveID == 7){
+        if(enabled[order]){
+            *slaveID = 0x02f;
+            length = -64;
+        }else{
+            *slaveID = 0x07f;
+            memset(data_, 0x00, 23);
+            data_[23] = 0x0f;
+            return -24;
+        }
+    }
+    DriverParameters const* parameters = CAN::alias2parameters[alias];
+    *(  int*)(data_ + index + 0) =   *(float*)&drivers[alias - 1].rx.previous()->TargetPosition * 180.0 / Pi / parameters->pUnit;
+    *(short*)(data_ + index + 4) =   *(float*)&drivers[alias - 1].rx.previous()->VelocityOffset * 30.0 / Pi / parameters->vOffsetUnit;
+    *(short*)(data_ + index + 6) = half2single(drivers[alias - 1].rx.previous()->TorqueOffset) / parameters->tConstant / parameters->cOffsetUnit;
+    return length;
+}
+
+void realManTX(int const order, int const masterID, unsigned char* const data, int const length, CAN* const can){
+    int const slaveID = CAN::orderMasterID2slaveID[order][masterID], alias = CAN::orderSlaveID2alias[order][slaveID];
+    DriverParameters const* parameters = CAN::alias2parameters[alias];
+    if(masterID > 0x700){
+        if(length != 16){
+            return;
+        }
+        switch(CAN::alias2status[alias]){
+        case 0x0050:
+            unsigned short err = *(unsigned short*)(data + 0);
+            *(float*)&drivers[alias - 1].tx->ActualPosition = *(int*)(data + 8) * parameters->pUnit * Pi / 180.0;
+            *(float*)&drivers[alias - 1].tx->ActualVelocity = 0.0;
+                      drivers[alias - 1].tx->ActualTorque   = single2half(*(int*)(data + 12) * parameters->actualCUnit * parameters->tConstant);
+                      drivers[alias - 1].tx->Undefined      = *(short*)(data + 4) * 0.1;
+                      drivers[alias - 1].tx->StatusWord     = err > 0 ? 0x0218 : 0x0250;
+                      drivers[alias - 1].tx->ErrorCode      = err;
+            CAN::alias2status[alias] = 0x0250;
+            break;
+        }
+        return;
+    }else if(masterID > 0x100 && masterID != 0x5fe){
+        if(length != 3){
+            return;
+        }
+        switch(CAN::alias2status[alias]){
+        case 0x0250:
+        case 0x0237:
+            if(data[1] == 0x0a){
+                CAN::alias2status[alias] = 0x0231;
+            }
+            break;
+        case 0x0231:
+            if(data[1] == 0x0a){
+                CAN::alias2status[alias] = 0x0237;
+            }
+            break;
+        case 0x0000:
+            if(data[1] == 0x49 && data[2] == 0x01){
+                CAN::alias2status[alias] = 0x0050;
+            }
+            break;
+        }
+        return;
+    }else if(masterID > 0x081){
+        if(length != 24){
+            return;
+        }
+    }
+    unsigned short err = *(unsigned short*)(data + 12);
+    *(float*)&drivers[alias - 1].tx.next()->ActualPosition = *(int*)(data + 8) * parameters->pUnit * Pi / 180.0;
+    *(float*)&drivers[alias - 1].tx.next()->ActualVelocity = *(int*)(data + 4) * parameters->actualVUnit * Pi / 30.0;
+              drivers[alias - 1].tx.next()->ActualTorque   = single2half(*(int*)(data + 0) * parameters->actualCUnit * parameters->tConstant);
+              drivers[alias - 1].tx.next()->Undefined      = *(short*)(data + 16) * 0.1;
+              drivers[alias - 1].tx.next()->StatusWord     = err > 0 ? 0x0218 : CAN::alias2status[alias];
+              drivers[alias - 1].tx.next()->ErrorCode      = err;
+    can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
         can->txSwap->advanceNodePtr();
         can->mask = 0;
@@ -239,6 +432,14 @@ int DriverParameters::load(std::string const& type){
     maxKd = configXML->readDeviceParameter("CAN", type.c_str(), "MaxKd");
     minT  = configXML->readDeviceParameter("CAN", type.c_str(),  "MinT");
     maxT  = configXML->readDeviceParameter("CAN", type.c_str(),  "MaxT");
+    pUnit       = configXML->readDeviceParameter("CAN", type.c_str(),       "PUnit");
+    targetVUnit = configXML->readDeviceParameter("CAN", type.c_str(), "TargetVUnit");
+    actualVUnit = configXML->readDeviceParameter("CAN", type.c_str(), "ActualVUnit");
+    vOffsetUnit = configXML->readDeviceParameter("CAN", type.c_str(), "VOffsetUnit");
+    targetCUnit = configXML->readDeviceParameter("CAN", type.c_str(), "TargetCUnit");
+    actualCUnit = configXML->readDeviceParameter("CAN", type.c_str(), "ActualCUnit");
+    cOffsetUnit = configXML->readDeviceParameter("CAN", type.c_str(), "COffsetUnit");
+    tConstant   = configXML->readDeviceParameter("CAN", type.c_str(),   "TConstant");
     if( minP  == std::numeric_limits<float>::min() ||
         maxP  == std::numeric_limits<float>::min() ||
         minV  == std::numeric_limits<float>::min() ||
@@ -248,29 +449,33 @@ int DriverParameters::load(std::string const& type){
         minKd == std::numeric_limits<float>::min() ||
         maxKd == std::numeric_limits<float>::min() ||
         minT  == std::numeric_limits<float>::min() ||
-        maxT  == std::numeric_limits<float>::min()){
-        printf("a driver parameter is incorrectly set in xml\n");
+        maxT  == std::numeric_limits<float>::min() ||
+        pUnit       == std::numeric_limits<float>::min() ||
+        targetVUnit == std::numeric_limits<float>::min() ||
+        actualVUnit == std::numeric_limits<float>::min() ||
+        vOffsetUnit == std::numeric_limits<float>::min() ||
+        targetCUnit == std::numeric_limits<float>::min() ||
+        actualCUnit == std::numeric_limits<float>::min() ||
+        cOffsetUnit == std::numeric_limits<float>::min() ||
+        tConstant   == std::numeric_limits<float>::min()){
+        printf("no parameter of driver with type %s is set in xml\n", type.c_str());
         return -1;
     }
     return 0;
 }
 
-void DriverParameters::print(){
-    printf("P[%.3f, %.3f], V[%.3f, %.3f], Kp[%.3f, %.3f], Kd[%.3f, %.3f], T[%.3f, %.3f]\n", minP, maxP, minV, maxV, minKp, maxKp, minKd, maxKd, minT, maxT);
-}
-
 DriverParameters::~DriverParameters(){
 }
 
-long CAN::period;
-int CAN::CANHAL;
+long CANBase::period;
+int CANBase::CANHAL;
 
-CAN::CAN(int const order, char const* device){
+CANBase::CANBase(int const order, char const* device){
     static bool initialized = false;
     if(!initialized){
         period = configXML->canAttribute("period");
-        if(period < 1){
-            period = 2000000L;
+        if(period < 1000000L){
+            period = 1000000L;
         }
         CANHAL = 0;
         initialized = true;
@@ -286,7 +491,7 @@ CAN::CAN(int const order, char const* device){
     strcpy(this->device, device);
 }
 
-int CAN::ifaceIsUp(){
+int CANBase::ifaceIsUp(){
     if(canhal == 1){
         return 1;
     }
@@ -317,7 +522,7 @@ int CAN::ifaceIsUp(){
     return ret;
 }
 
-int CAN::ifaceUp(){
+int CANBase::ifaceUp(){
     if(ifaceIsUp() == 1){
         printf("iface %s is up\n", device);
         return 0;
@@ -332,13 +537,16 @@ int CAN::ifaceUp(){
     if(canfd == 1){
         length += snprintf(cmd + length, sizeof(cmd) - length, " fd on dbitrate %d", dbaudrate);
     }
-    system(cmd);
+    if(system(cmd) == -1){
+        printf("system() failed\n");
+        return -1;
+    }
     usleep(500000);
     printf("iface %s is started\n", device);
     return 0;
 }
 
-int CAN::ifaceUp_(){
+int CANBase::ifaceUp_(){
     if(ifaceIsUp() == 1){
         printf("iface %s is up\n", device);
         return 0;
@@ -372,7 +580,7 @@ int CAN::ifaceUp_(){
     return 0;
 }
 
-int CAN::ifaceDown(){
+int CANBase::ifaceDown(){
     if(canhal == 1 || device[0] == '/'){
         return 0;
     }
@@ -401,9 +609,9 @@ int CAN::ifaceDown(){
     return 0;
 }
 
-int CAN::open(int const masterID){
+int CANBase::open(int const masterID){
     int sock;
-    if(device[0] == '/'){
+    if(device[0] == '/'){   // iMotion Unix Domain Sockets CAN
         sock = socket(AF_UNIX, SOCK_STREAM, 0);
         if(sock == -1){
             printf("creating socket failed\n");
@@ -485,7 +693,7 @@ int CAN::open(int const masterID){
     return sock;
 }
 
-int CAN::send(int const slaveID, unsigned char const* data, int length){
+int CANBase::send(int const slaveID, unsigned char const* data, int length){
     int ret;
     struct can_frame frame;
     if(length > sizeof(frame.data)){
@@ -509,7 +717,7 @@ int CAN::send(int const slaveID, unsigned char const* data, int length){
     return frame.can_id;
 }
 
-int CAN::recv(unsigned char* const data, int const length, int* const masterID){
+int CANBase::recv(unsigned char* const data, int const length, int* const masterID){
     int ret;
     struct can_frame frame;
     ret = read(sock, &frame, sizeof(frame));
@@ -530,7 +738,7 @@ int CAN::recv(unsigned char* const data, int const length, int* const masterID){
     return frame.can_dlc;
 }
 
-int CAN::sendfd(int const slaveID, unsigned char const* data, int const length){
+int CANBase::sendfd(int const slaveID, unsigned char const* data, int const length){
     int ret;
     struct canfd_frame frame;
     if(length > sizeof(frame.data)){
@@ -564,7 +772,7 @@ int CAN::sendfd(int const slaveID, unsigned char const* data, int const length){
     return frame.can_id;
 }
 
-int CAN::recvfd(unsigned char* const data, int const length, int* const masterID){
+int CANBase::recvfd(unsigned char* const data, int const length, int* const masterID){
     int ret;
     struct canfd_frame frame;
     ret = read(sock, &frame, sizeof(frame));
@@ -585,7 +793,7 @@ int CAN::recvfd(unsigned char* const data, int const length, int* const masterID
     return frame.len;
 }
 
-CAN::~CAN(){
+CANBase::~CANBase(){
     if(CANHAL == 0){
         return;
     }
@@ -599,17 +807,17 @@ CAN::~CAN(){
     }
 }
 
-pthread_t CANDriver::rxPth, CANDriver::txPth, CANDriver::txPth_;
-int CANDriver::rxCPU, CANDriver::txCPU, CANDriver::txCPU_;
-std::map<std::string, DriverParameters*> CANDriver::type2parameters;
-int* CANDriver::alias2masterID_;
-unsigned short* CANDriver::alias2status;
-DriverParameters** CANDriver::alias2parameters;
-int CANDriver::orderSlaveID2alias[8][16];
-canDriverRXFunction CANDriver::rxFuncs[2048][8];
-canDriverTXFunction CANDriver::txFuncs[2048][8];
+pthread_t CAN::rxPth, CAN::txPth, CAN::txPth_;
+int CAN::rxCPU, CAN::txCPU, CAN::txCPU_;
+std::map<std::string, DriverParameters*> CAN::type2parameters;
+unsigned short* CAN::alias2status;
+DriverParameters** CAN::alias2parameters;
+int CAN::orderSlaveID2alias[8][16];
+int CAN::orderMasterID2slaveID[8][2048];
+canRXFunction CAN::rxFuncs[8][16];
+canTXFunction CAN::txFuncs[8][2048];
 
-CANDriver::CANDriver(int const order, char const* device) : CAN(order, device){
+CAN::CAN(int const order, char const* device) : CANBase(order, device){
     static bool initialized = false;
     if(!initialized){
         rxPth = txPth = txPth_ = 0;
@@ -620,21 +828,46 @@ CANDriver::CANDriver(int const order, char const* device) : CAN(order, device){
         adjustCPU(&txCPU,  processorsCAN[1]);
         adjustCPU(&txCPU_, processorsCAN[2]);
         type2parameters.clear();
-        alias2masterID_ = new int[dofAll + 1];
         alias2status = new unsigned short[dofAll + 1];
         alias2parameters = new DriverParameters*[dofAll + 1];
-        int i = 0;
+        int i = 0, j;
         while(i <= dofAll){
-            alias2masterID_[i] = -1;
             alias2status[i] = 65535;
             alias2parameters[i] = nullptr;
             i++;
         }
         i = 0;
         while(i < 8){
-            int j = 0;
+            j = 0;
+            while(j < 2048){
+                orderMasterID2slaveID[i][j] = -1;
+                j++;
+            }
+            i++;
+        }
+        i = 0;
+        while(i < 8){
+            j = 0;
             while(j < 16){
-                orderSlaveID2alias[i][j] = -1;
+                orderSlaveID2alias[i][j] = 0;
+                j++;
+            }
+            i++;
+        }
+        i = 0;
+        while(i < 8){
+            j = 0;
+            while(j < 16){
+                rxFuncs[i][j] = nullRX;
+                j++;
+            }
+            i++;
+        }
+        i = 0;
+        while(i < 8){
+            j = 0;
+            while(j < 2048){
+                txFuncs[i][j] = nullTX;
                 j++;
             }
             i++;
@@ -648,7 +881,7 @@ CANDriver::CANDriver(int const order, char const* device) : CAN(order, device){
     mask = 0;
     rollingCounter = 0xff;
     alias2type = canAlias2type[order];
-    alias2masterID = canAlias2masterID[order];
+    alias2masterIDs = canAlias2masterIDs[order];
     alias2slaveID = canAlias2slaveID[order];
     auto itr = alias2type.begin();
     while(itr != alias2type.end()){
@@ -666,25 +899,57 @@ CANDriver::CANDriver(int const order, char const* device) : CAN(order, device){
     printf("cans[%d]\n", order);
     itr = alias2type.begin();
     while(itr != alias2type.end()){
-        int alias = itr->first, masterID = alias2masterID.find(alias)->second, slaveID = alias2slaveID.find(alias)->second;
-        alias2masterID_[alias] = masterID;
-        alias2status[alias] = 0x0031;
+        int alias = itr->first, slaveID = alias2slaveID.find(alias)->second;
+        std::vector<int> masterIDs = alias2masterIDs.find(alias)->second;
         std::string const& type = itr->second;
+        if(type.starts_with("RealMan") && (slaveID < 1 || slaveID > 7)){
+            printf("slave_id of RealMan driver with alias %d must be within [1, 7]\n", alias);
+            exit(-1);
+        }
+        alias2status[alias] = 0x0000;
         auto itr_ = type2parameters.find(type);
         if(itr_ == type2parameters.end()){
             std::tie(itr_, std::ignore) = type2parameters.insert(std::make_pair(type, new DriverParameters()));
             itr_->second->load(itr_->first);
         }
         alias2parameters[alias] = itr_->second;
+        printf("\talias %d, type %s, master_ids", alias, type.c_str());
+        int i = 0;
+        while(i < masterIDs.size()){
+            printf(" %d", masterIDs[i]);
+            orderMasterID2slaveID[order][masterIDs[i]] = slaveID;
+            if(txFuncs[order][masterIDs[i]] != nullTX){
+                printf("\ninvalid can bus configuration\n");
+                exit(-1);
+            }
+            if(type.starts_with("Encos")){
+                txFuncs[order][masterIDs[i]] = encosTX;
+            }else if(type.starts_with("Damiao")){
+                txFuncs[order][masterIDs[i]] = damiaoTX;
+            }else if(type.starts_with("RealMan")){
+                txFuncs[order][masterIDs[i]] = realManTX;
+            }
+            i++;
+        }
+        printf(", slave_id %d\n", slaveID);
         orderSlaveID2alias[order][slaveID] = alias;
-        printf("\talias %d, type %s, master_id %d, slave_id %d\n\t\t", alias, type.c_str(), masterID, slaveID);
-        alias2parameters[alias]->print();
+        if(rxFuncs[order][slaveID] != nullRX){
+            printf("invalid can bus configuration\n");
+            exit(-1);
+        }
+        if(type.starts_with("Encos")){
+            rxFuncs[order][slaveID] = encosRX;
+        }else if(type.starts_with("Damiao")){
+            rxFuncs[order][slaveID] = damiaoRX;
+        }else if(type.starts_with("RealMan")){
+            rxFuncs[order][slaveID] = realManRX;
+        }
         itr++;
     }
     slaveCount = alias2type.size();
 }
 
-int CANDriver::config(){
+int CAN::config(){
     if(alias2type.size() == 0){
         return 0;
     }
@@ -694,7 +959,7 @@ int CANDriver::config(){
     if(ifaceUp() == -1){
         return -1;
     }
-    if(canhal == 0){
+    if(canhal == 0){    // Non D-Robotics CANHAL
         while(true){
             sock = open(0);
             if(sock == -1){
@@ -742,7 +1007,7 @@ int CANDriver::config(){
     return 0;
 }
 
-void CANDriver::cleanup(void* arg){
+void CAN::cleanup(void* arg){
     int* epfd = (int*)arg;
     if(*epfd > -1){
         close(*epfd);
@@ -750,13 +1015,13 @@ void CANDriver::cleanup(void* arg){
     }
 }
 
-void* CANDriver::rx(void* arg){
-    std::vector<CANDriver>& cans = *(std::vector<CANDriver>*)arg;
+void* CAN::rx(void* arg){
+    std::vector<CAN>& cans = *(std::vector<CAN>*)arg;
     unsigned int count = 0xffffffff;
-    unsigned char data[64];
-    struct canframe frames[32];
+    unsigned char data[128], * data_;
+    struct canframe frames[64];
     struct pack_info packInfo;
-    packInfo.length = 32;
+    packInfo.length = 64;
     struct timespec currentTime, wakeupTime, step{0, 6 * period / 100};
     while(step.tv_nsec >= NSEC_PER_SEC){
         step.tv_nsec -= NSEC_PER_SEC;
@@ -768,29 +1033,40 @@ void* CANDriver::rx(void* arg){
         int i = 0;
         while(i < cans.size()){
             if(cans[i].rxSwap != nullptr && count % cans[i].division == 0){
-                auto itr = cans[i].alias2slaveID.begin();
-                if(cans[i].canhal == 0){
-                    while(itr != cans[i].alias2slaveID.end()){
-                        int alias = itr->first, slaveID = itr->second, length = rxFuncs[alias2masterID_[alias]][i](alias, data);
-                        if(cans[i].device[0] == '/' || cans[i].canfd == 1){
-                            cans[i].sendfd(slaveID, data, length);
-                        }else{
-                            cans[i].send(slaveID, data, length);
-                        }
-                        itr++;
-                    }
-                }else if(cans[i].canhal == 1){
+                if(cans[i].canhal == 1){
                     packInfo.data_num = 0;
-                    while(itr != cans[i].alias2slaveID.end()){
-                        int alias = itr->first, slaveID = itr->second, nr = packInfo.data_num;
+                }
+                auto itr = cans[i].alias2slaveID.begin();
+                while(itr != cans[i].alias2slaveID.end()){
+                    int alias = itr->first, slaveID = itr->second, length = rxFuncs[i][slaveID](i, alias, &slaveID, data);
+                    if(length >= 0){
+                        data_ = data;
+                    }else if(length == std::numeric_limits<int>::min()){
+                        itr++;
+                        continue;
+                    }else{
+                        data_ = data + 64;
+                        length = -length;
+                    }
+                    if(cans[i].canhal == 0){
+                        if(cans[i].canfd == 1 || cans[i].device[0] == '/'){
+                            cans[i].sendfd(slaveID, data_, length);
+                        }else{
+                            cans[i].send(slaveID, data_, length);
+                        }
+                    }else{
+                        int nr = packInfo.data_num;
                         frames[nr].canid = BSWAP(slaveID);
                         frames[nr].count = cans[i].rollingCounter++;
-                        frames[nr].can_type = cans[i].canfd;
+                        frames[nr].can_type = cans[i].canfd == 1 ? 2 : 0;
                         frames[nr].can_channel = cans[i].device[3] - '0';
-                        frames[nr].len = rxFuncs[alias2masterID_[alias]][i](alias, frames[nr].data);
+                        frames[nr].len = length;
+                        memcpy(frames[nr].data, data_, length);
                         packInfo.data_num++;
-                        itr++;
                     }
+                    itr++;
+                }
+                if(cans[i].canhal == 1){
                     int ret = canSendMsgFrame(cans[i].device, frames, &packInfo);
                     if(ret <= 0){
                         printf("canSendMsgFrame: cans[%d] write ret = %d\n", i, ret);
@@ -824,8 +1100,8 @@ void* CANDriver::rx(void* arg){
     return nullptr;
 }
 
-void* CANDriver::tx(void* arg){
-    std::vector<CANDriver>& cans = *(std::vector<CANDriver>*)arg;
+void* CAN::tx(void* arg){
+    std::vector<CAN>& cans = *(std::vector<CAN>*)arg;
     int epfd = epoll_create1(EPOLL_CLOEXEC);
     if(epfd == -1){
         printf("epoll_create1() error\n");
@@ -862,9 +1138,9 @@ void* CANDriver::tx(void* arg){
         }
         i = 0;
         while(i < count){
-            int order = sock2order[events[i].data.fd], masterID = 0, length = 0;
-            CANDriver& can = cans[order];
-            if(can.device[0] == '/' || can.canfd == 1){
+            int order = sock2order[events[i].data.fd], masterID, length;
+            CAN& can = cans[order];
+            if(can.canfd == 1 || can.device[0] == '/'){
                 length = can.recvfd(data, 64, &masterID);
             }else{
                 length = can.recv(data, 64, &masterID);
@@ -873,7 +1149,7 @@ void* CANDriver::tx(void* arg){
                 i++;
                 continue;
             }
-            txFuncs[masterID][order](order, masterID, data, length, &cans[order]);
+            txFuncs[order][masterID](order, masterID, data, length, &cans[order]);
             i++;
         }
     }
@@ -881,7 +1157,7 @@ void* CANDriver::tx(void* arg){
     return nullptr;
 }
 
-void CANDriver::cleanup_(void* arg){
+void CAN::cleanup_(void* arg){
     std::vector<pthread_t> pths = *(std::vector<pthread_t>*)arg;
     int i = 0;
     while(i < pths.size()){
@@ -893,8 +1169,8 @@ void CANDriver::cleanup_(void* arg){
     }
 }
 
-void* CANDriver::tx__(void* arg){
-    CANDriver& can = *(CANDriver*)arg;
+void* CAN::tx__(void* arg){
+    CAN& can = *(CAN*)arg;
     struct canframe frames[32];
     struct pack_info packInfo;
     packInfo.length = 32;
@@ -911,15 +1187,15 @@ void* CANDriver::tx__(void* arg){
                 i++;
                 continue;
             }
-            txFuncs[masterID][can.order](can.order, masterID, frames[i].data, length, &can);
+            txFuncs[can.order][masterID](can.order, masterID, frames[i].data, length, &can);
             i++;
         }
     }
     return nullptr;
 }
 
-void* CANDriver::tx_(void* arg){
-    std::vector<CANDriver>& cans = *(std::vector<CANDriver>*)arg;
+void* CAN::tx_(void* arg){
+    std::vector<CAN>& cans = *(std::vector<CAN>*)arg;
     std::vector<pthread_t> pths;
     pthread_cleanup_push(cleanup_, &pths);
     int i = 0;
@@ -945,7 +1221,7 @@ void* CANDriver::tx_(void* arg){
     return nullptr;
 }
 
-int CANDriver::run(std::vector<CANDriver>& cans){
+int CAN::run(std::vector<CAN>& cans){
     int i = 0, j = 0;
     while(i < cans.size()){
         if(cans[i].alias2type.size() > 0){
@@ -968,11 +1244,6 @@ int CANDriver::run(std::vector<CANDriver>& cans){
     if(j > CANHAL){
         socketCAN = true;
     }
-    i = 1;
-    while(i <= dofAll){
-        printf("alias %2d, master_id %2d, status %d\n", i, alias2masterID_[i], alias2status[i]);
-        i++;
-    }
     i = 0;
     while(i < cans.size()){
         printf("cans[%d]:\t", i);
@@ -985,43 +1256,6 @@ int CANDriver::run(std::vector<CANDriver>& cans){
             j++;
         }
         printf(" mask: 0x%04x\n", cans[i].MASK);
-        i++;
-    }
-    i = 0;
-    while(i < 2048){
-        j = 0;
-        while(j < 8){
-            rxFuncs[i][j] = nullRX;
-            txFuncs[i][j] = nullTX;
-            j++;
-        }
-        i++;
-    }
-    std::vector<std::tuple<int, std::vector<int>, std::string>> canBus = configXML->canBus();
-    i = 0;
-    while(i < canBus.size()){
-        std::string type;
-        int masterID;
-        std::vector<int> masters;
-        std::tie(masterID, masters, type) = canBus[i];
-        printf("master_id %2d, masters", masterID);
-        j = 0;
-        while(j < masters.size()){
-            if(rxFuncs[masterID][masters[j]] != nullRX || txFuncs[masterID][masters[j]] != nullTX){
-                printf("\ninvalid can bus configuration\n");
-                return -1;
-            }
-            if(type.starts_with("Encos")){
-                rxFuncs[masterID][masters[j]] = encosRX;
-                txFuncs[masterID][masters[j]] = encosTX;
-            }else if(type.starts_with("Damiao")){
-                rxFuncs[masterID][masters[j]] = damiaoRX;
-                txFuncs[masterID][masters[j]] = damiaoTX;
-            }
-            printf(" %d", masters[j]);
-            j++;
-        }
-        printf(", type %s\n", type.c_str());
         i++;
     }
     cpu_set_t cpuset;
@@ -1077,7 +1311,7 @@ int CANDriver::run(std::vector<CANDriver>& cans){
     return 0;
 }
 
-CANDriver::~CANDriver(){
+CAN::~CAN(){
     if(rxPth > 0){
         pthread_cancel(rxPth);
         rxPth = 0;
@@ -1089,10 +1323,6 @@ CANDriver::~CANDriver(){
     if(txPth_ > 0){
         pthread_cancel(txPth_);
         txPth_ = 0;
-    }
-    if(alias2masterID_ != nullptr){
-        delete[] alias2masterID_;
-        alias2masterID_ = nullptr;
     }
     if(alias2status != nullptr){
         delete[] alias2status;

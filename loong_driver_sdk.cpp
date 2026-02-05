@@ -34,7 +34,8 @@
 namespace DriverSDK{
 ConfigXML* configXML;
 std::vector<std::map<int, std::string>> rs485alias2type, canAlias2type, ecatAlias2type, rs485emuAlias2type;
-std::vector<std::map<int, int>> canAlias2masterID, canAlias2slaveID, ecatAlias2domain;
+std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs;
+std::vector<std::map<int, int>> canAlias2slaveID, ecatAlias2domain;
 std::vector<std::vector<int>> ecatDomainDivisions;
 int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector, batteryCount;
 WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
@@ -66,8 +67,7 @@ class DriverSDK::impClass{
 public:
     RS232* imu;
     std::vector<RS485> rs485s;
-    std::vector<CANDriver> cans;
-    std::vector<Battery> bats;
+    std::vector<CAN> cans;
     std::vector<ECAT> ecats;
     impClass();
     int effectorCheck(std::vector<std::map<int, std::string>> const& alias2type, char const* bus);
@@ -90,7 +90,6 @@ DriverSDK::impClass::impClass(){
     drivers = nullptr;
     legs[0] = legs[1] = arms[0] = arms[1] = waist = neck = nullptr;
     digits = nullptr;
-    CANDriver::alias2masterID_ = nullptr;
     imu = nullptr;
     int i = 0;
     while(i < 6){
@@ -272,7 +271,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
     if(dofEffector > 0){
         digits = new WrapperPair<DigitRxData, DigitTxData, EffectorParameters>[dofEffector];
     }
-    canAlias2masterID   = configXML->alias2attribute("CAN", "master_id");
+    canAlias2masterIDs  = configXML->alias2attribute_("CAN", "master_ids");
     canAlias2slaveID    = configXML->alias2attribute("CAN", "slave_id");
     ecatAlias2domain    = configXML->alias2attribute("ECAT", "domain");
     ecatDomainDivisions = configXML->domainDivisions("ECAT");
@@ -413,7 +412,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
         }
         i++;
     }
-    if(CANDriver::run(cans) < 0){
+    if(CAN::run(cans) < 0){
         printf("can run failed\n");
         return -1;
     }
@@ -886,6 +885,7 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
             float velocity = data[i].vel;
             velocity = drivers[i].parameters.polarity * velocity;
             *(float*)&drivers[i].rx->TargetVelocity = velocity;
+            *(float*)&drivers[i].rx->VelocityOffset = velocity;
             float torque = data[i].tor;
             if(torque > drivers[i].parameters.maximumTorque){
                 torque = drivers[i].parameters.maximumTorque;
