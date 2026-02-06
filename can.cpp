@@ -337,7 +337,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
     if(*slaveID == 1){
         memset(data_, 0x00, 56);
         memset(data_ + 56, 0xff, 7);
-        data_[63] = 0x5f;
+        data_[63] = 0xaf;
     }else if(*slaveID == 7){
         if(enabled[order]){
             *slaveID = 0x02f;

@@ -4,9 +4,9 @@
     "channels": [{
         "id": 0,
         "channel": {
-            "name": "can5_ins0ch4",
+            "name": "can1_ins0ch1",
             "instance": 0,
-            "channel": 4,
+            "channel": 1,
             "fifo_size": 64000,
             "fifo_type": 0,
             "pkg_size_max": 4096,
@@ -17,9 +17,9 @@
     },{
         "id" : 1,
         "channel": {
-            "name": "can6_ins0ch6",
+            "name": "can2_ins0ch2",
             "instance": 0,
-            "channel": 6,
+            "channel": 2,
             "fifo_size": 64000,
             "fifo_type": 0,
             "pkg_size_max": 4096,
@@ -30,9 +30,9 @@
     },{
         "id": 2,
         "channel": {
-            "name": "can7_ins4ch7",
-            "instance": 4,
-            "channel": 7,
+            "name": "can3_ins0ch3",
+            "instance": 0,
+            "channel": 3,
             "fifo_size": 64000,
             "fifo_type": 0,
             "pkg_size_max": 4096,
@@ -43,9 +43,22 @@
     },{
         "id": 3,
         "channel": {
-            "name": "can8_ins4ch2",
+            "name": "can4_ins4ch4",
             "instance": 4,
-            "channel": 2,
+            "channel": 4,
+            "fifo_size": 64000,
+            "fifo_type": 0,
+            "pkg_size_max": 4096,
+            "dev_path": "/dev/ipcdrv",
+            "dev_name": "ipcdrv",
+            "recv_timeout": 4000
+        }
+    },{
+        "id": 4,
+        "channel": {
+            "name": "can10_ins4ch5",
+            "instance": 4,
+            "channel": 5,
             "fifo_size": 64000,
             "fifo_type": 0,
             "pkg_size_max": 4096,

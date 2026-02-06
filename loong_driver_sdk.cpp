@@ -559,6 +559,7 @@ void DriverSDK::impClass::sdoRequestableUpdate(){
         int i = 0;
         while(i < dofAll){
             if(drivers[i].busCode == 0 && drivers[i].tx->StatusWord == 0){
+                drivers[i].enabled = 0;
                 initialized = false;
             }
             i++;
@@ -846,6 +847,66 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
             continue;
         }
         if(drivers[i].busCode == 0){
+            switch(drivers[i].enabled){
+            case 1:
+                switch(drivers[i].tx->StatusWord & 0x007f){
+                case 0x0031:
+                    drivers[i].rx->Mode = operatingMode[i];
+                    drivers[i].rx->ControlWord = 0x07;
+                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                    drivers[i].rx->Mode = operatingMode[i];
+                    drivers[i].rx->ControlWord = 0x07;
+                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                    drivers[i].rx->Mode = operatingMode[i];
+                    drivers[i].rx->ControlWord = 0x07;
+                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                    break;
+                case 0x0033:
+                    drivers[i].rx->ControlWord = 0x0f;
+                    drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
+                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                    drivers[i].rx->ControlWord = 0x0f;
+                    drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
+                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                    drivers[i].rx->ControlWord = 0x0f;
+                    drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
+                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                    break;
+                case 0x0037:
+                    drivers[i].rx->Mode = operatingMode[i];
+                    break;
+                default:
+                    drivers[i].rx->ControlWord = 0x06;
+                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                    drivers[i].rx->ControlWord = 0x06;
+                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                    drivers[i].rx->ControlWord = 0x06;
+                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
+                }
+                break;
+            case 0:
+                drivers[i].rx->ControlWord = 0x06;
+                break;
+            case -1:
+                drivers[i].rx->ControlWord = 0x86;
+                imp.putDriverSDORequest(drivers[i].parameters.clearErrorSDO);
+                if(imp.getDriverSDOResponse(drivers[i].parameters.clearErrorSDO) == 0){
+                    if(drivers[i].parameters.clearErrorSDO.state < 0){
+                        printf("requesting drivers[%d] clearError failed\n", i);
+                    }
+                }
+                break;
+            }
+        }
+        i++;
+    }
+    i = 0;
+    while(i < dofAll){
+        if(drivers[i].order < 0){
+            i++;
+            continue;
+        }
+        if(drivers[i].busCode == 0){
             float position = data[i].pos;
             if(position < drivers[i].parameters.minimumPosition){
                 position = drivers[i].parameters.minimumPosition;
@@ -898,66 +959,6 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
             drivers[i].rx->TargetTorque = single2half(data[i].kd);
             drivers[i].rx->Undefined = data[i].enabled;
             drivers[i].enabled = data[i].enabled;
-        }
-        i++;
-    }
-    i = 0;
-    while(i < dofAll){
-        if(drivers[i].order < 0){
-            i++;
-            continue;
-        }
-        if(drivers[i].busCode == 0){
-            switch(drivers[i].enabled){
-            case 1:
-                switch(drivers[i].tx->StatusWord & 0x007f){
-                case 0x0031:
-                    drivers[i].rx->Mode = operatingMode[i];
-                    drivers[i].rx->ControlWord = 0x07;
-                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
-                    drivers[i].rx->Mode = operatingMode[i];
-                    drivers[i].rx->ControlWord = 0x07;
-                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
-                    drivers[i].rx->Mode = operatingMode[i];
-                    drivers[i].rx->ControlWord = 0x07;
-                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
-                    break;
-                case 0x0033:
-                    drivers[i].rx->ControlWord = 0x0f;
-                    drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
-                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
-                    drivers[i].rx->ControlWord = 0x0f;
-                    drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
-                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
-                    drivers[i].rx->ControlWord = 0x0f;
-                    drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
-                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
-                    break;
-                case 0x0037:
-                    drivers[i].rx->Mode = operatingMode[i];
-                    break;
-                default:
-                    drivers[i].rx->ControlWord = 0x06;
-                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
-                    drivers[i].rx->ControlWord = 0x06;
-                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
-                    drivers[i].rx->ControlWord = 0x06;
-                    imp.ecats[drivers[i].order].rxPDOSwaps[drivers[i].domain]->advanceNodePtr();
-                }
-                break;
-            case 0:
-                drivers[i].rx->ControlWord = 0x06;
-                break;
-            case -1:
-                drivers[i].rx->ControlWord = 0x86;
-                imp.putDriverSDORequest(drivers[i].parameters.clearErrorSDO);
-                if(imp.getDriverSDOResponse(drivers[i].parameters.clearErrorSDO) == 0){
-                    if(drivers[i].parameters.clearErrorSDO.state < 0){
-                        printf("requesting drivers[%d] clearError failed\n", i);
-                    }
-                }
-                break;
-            }
         }
         i++;
     }

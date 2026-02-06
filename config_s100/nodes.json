@@ -51,5 +51,18 @@
             "channel_id": 3
         },
         "raw_protocol": "built_1.0"
+    },{
+        "id": 4,
+        "enable": true,
+        "mode_comment": "value_table: R, W, RW",
+        "mode": "RW",
+        "target": "can9_ins0ch3",
+        "clk_source": "/dev/hrtc0",
+        "io_channel": {
+            "device_type_comment": "value_table: can, eth, ipcf, spi",
+            "device_type": "ipcf",
+            "channel_id": 4
+        },
+        "raw_protocol": "built_1.0"
     }]
 }

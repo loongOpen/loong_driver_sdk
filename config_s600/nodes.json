@@ -1,0 +1,68 @@
+{
+    "nodes": [{
+        "id": 0,
+        "enable": true,
+        "mode_comment": "value_table: R, W, RW",
+        "mode": "RW",
+        "target": "can1_ins0ch1",
+        "clk_source": "/dev/hrtc0",
+        "io_channel": {
+            "device_type_comment": "value_table: can, eth, ipcf, spi",
+            "device_type": "ipcf",
+            "channel_id": 0
+        },
+        "raw_protocol": "built_1.0"
+    },{
+        "id": 1,
+        "enable": true,
+        "mode_comment": "value_table: R, W, RW",
+        "mode": "RW",
+        "target": "can2_ins0ch2",
+        "clk_source": "/dev/hrtc0",
+        "io_channel": {
+            "device_type_comment": "value_table: can, eth, ipcf, spi",
+            "device_type": "ipcf",
+            "channel_id" : 1
+        },
+        "raw_protocol" : "built_1.0"
+    },{
+        "id": 2,
+        "enable": true,
+        "mode_comment": "value_table: R, W, RW",
+        "mode": "RW",
+        "target": "can3_ins0ch3",
+        "clk_source": "/dev/hrtc0",
+        "io_channel": {
+            "device_type_comment": "value_table: can, eth, ipcf, spi",
+            "device_type": "ipcf",
+            "channel_id": 2
+        },
+        "raw_protocol": "built_1.0"
+    },{
+        "id": 3,
+        "enable": true,
+        "mode_comment": "value_table: R, W, RW",
+        "mode": "RW",
+        "target": "can4_ins4ch4",
+        "clk_source": "/dev/hrtc0",
+        "io_channel": {
+            "device_type_comment": "value_table: can, eth, ipcf, spi",
+            "device_type": "ipcf",
+            "channel_id": 3
+        },
+        "raw_protocol": "built_1.0"
+    },{
+        "id": 4,
+        "enable": true,
+        "mode_comment": "value_table: R, W, RW",
+        "mode": "RW",
+        "target": "can10_ins4ch5",
+        "clk_source": "/dev/hrtc0",
+        "io_channel": {
+            "device_type_comment": "value_table: can, eth, ipcf, spi",
+            "device_type": "ipcf",
+            "channel_id": 4
+        },
+        "raw_protocol": "built_1.0"
+    }]
+}
