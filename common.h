@@ -28,17 +28,20 @@
 
 namespace DriverSDK{
 #define NSEC_PER_SEC 1000000000L
+#define USEC_PER_SEC 1000000L
 #define TIMESPEC2NS(T) (T.tv_sec * NSEC_PER_SEC + T.tv_nsec)
+#define TIMEVAL2US(T) (T.tv_sec * USEC_PER_SEC + T.tv_usec)
 
 float const Pi = std::acos(-1);
 
-unsigned short single2half(float f);
-float half2single(unsigned short u);
+void print(unsigned char const* data, int const length);
+unsigned short single2half(float const f);
+float half2single(unsigned short const u);
 int quadchar2int(unsigned char const* qc);
 int quadchar2int_(unsigned char const* qc);
 float quadchar2float(unsigned char const* qc);
 float quadchar2float_(unsigned char const* qc);
-void adjustCPU(int* cpu, int processor);
+void adjustCPU(int* const cpu, int const processor);
 
 class SwapNode{
 public:
@@ -53,7 +56,7 @@ public:
     std::atomic<SwapNode*> nodePtr;
     SwapList(int const size);
     void advanceNodePtr();
-    void copyTo(unsigned char* domainPtr, int const domainSize);
+    void copyTo(unsigned char* const domainPtr, int const domainSize);
     void copyFrom(unsigned char const* domainPtr, int const domainSize);
     ~SwapList();
 };
@@ -107,6 +110,14 @@ struct DriverTxData{
     unsigned short ErrorCode;
 };
 
+class DriverParameters{
+public:
+    float minP, maxP, minV, maxV, minKp, maxKp, minKd, maxKd, minT, maxT, pUnit, targetVUnit, actualVUnit, vOffsetUnit, targetCUnit, actualCUnit, cOffsetUnit, tConstant;
+    DriverParameters();
+    int load(std::string const& type);
+    ~DriverParameters();
+};
+
 class MotorParameters{
 public:
     float polarity, countBias, encoderResolution, gearRatioTor, gearRatioPosVel, ratedCurrent, torqueConstant, ratedTorque, maximumTorque, minimumPosition, maximumPosition;
@@ -118,6 +129,14 @@ public:
     int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
 #endif
     ~MotorParameters();
+};
+
+struct DigitRxData{
+    unsigned short TargetPosition;
+};
+
+struct DigitTxData{
+    unsigned short ActualPosition;
 };
 
 struct HandRxData{
@@ -161,14 +180,6 @@ struct HandTxData{
     unsigned short ActualCurrentMiddle;
     unsigned short ActualCurrentRing;
     unsigned short ActualCurrentLittle;
-};
-
-struct DigitRxData{
-    unsigned short TargetPosition;
-};
-
-struct DigitTxData{
-    unsigned short ActualPosition;
 };
 
 struct ConverterDatum{
@@ -231,6 +242,36 @@ public:
     ~SensorParameters();
 };
 
+struct __attribute__((__packed__)) TransferrerDatum{
+    unsigned int ID;
+    unsigned char RTR;
+    unsigned char DLC;
+    unsigned char Byte[8];
+};
+
+struct __attribute__((__packed__)) TransferrerRxData{
+    unsigned char Count;
+    unsigned char IDE;
+    TransferrerDatum channels[6];
+};
+
+struct __attribute__((__packed__)) TransferrerTxData{
+    unsigned char Count;
+    unsigned char IDE;
+    TransferrerDatum channels[6];
+};
+
+class TransferrerParameters{
+public:
+    TransferrerParameters();
+#ifndef NIIC
+    int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
+#else
+    int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
+#endif
+    ~TransferrerParameters();
+};
+
 template<typename Data>
 class DataWrapper
 {
@@ -250,13 +291,19 @@ public:
     void config(SwapList* const swap){
         this->swap = swap;
     }
+    Data* operator->(){
+        if(swap != nullptr){
+            return (Data*)(swap->nodePtr.load()->memPtr + offset);
+        }
+        return data;
+    }
     Data* previous(){
         if(swap != nullptr){
             return (Data*)(swap->nodePtr.load()->previous->memPtr + offset);
         }
         return data;
     }
-    Data* operator->(){
+    Data* current(){
         if(swap != nullptr){
             return (Data*)(swap->nodePtr.load()->memPtr + offset);
         }
@@ -288,7 +335,7 @@ public:
 #endif
     Parameters parameters;
     WrapperPair(){
-        busCode = -1;
+        busCode = -1;   // 0: ECAT; 1: CAN; 2: RS485; 3: CANEmu
         order = -1;
         domain = -1;
         slave = -1;
@@ -304,7 +351,7 @@ public:
 #ifndef NIIC
     int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ec_sdo_request_t* const sdoHandler, ec_reg_request_t* const regHandler){
 #else
-    int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset, ecat::sdo_request* const sdoHandler){
+    int init(std::string const& bus, int const busCode, int const order, int const domain, int const slave, int const alias, std::string const& type, int const rxOffset, int const txOffset){
 #endif
         if(this->order != -1){
             printf("trying to re-init %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
@@ -319,8 +366,8 @@ public:
         this->type = type;
         rx.init(rxOffset);
         tx.init(txOffset);
-        this->sdoHandler = sdoHandler;
 #ifndef NIIC
+        this->sdoHandler = sdoHandler;
         this->regHandler = regHandler;
 #endif
         return 0;
@@ -334,7 +381,7 @@ public:
         }
         rx.config(rxSwap);
         tx.config(txSwap);
-        if(parameters.load(bus, alias, type, sdoHandler) < 0){
+        if(parameters.load(bus, alias, type, sdoHandler) != 0){
             printf("loading parameters failed for %s slave %d:%d with alias %d\n", bus.c_str(), order, slave, alias);
             return -1;
         }

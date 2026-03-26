@@ -24,7 +24,21 @@
 namespace DriverSDK{
 extern ConfigXML* configXML;
 
-unsigned short single2half(float f){
+void print(unsigned char const* data, int const length){
+    int i = 0;
+    while(i < length){
+        printf("%02X ", data[i]);
+        if((i + 1) % 32 == 0){
+            printf("\n");
+        }else if((i + 1) % 8 == 0){
+            printf(" ");
+        }
+        i++;
+    }
+    printf("\n");
+}
+
+unsigned short single2half(float const f){
     unsigned int u = *(unsigned int*)&f;
     unsigned int sign = u & 0x80000000;
     int exp = u & 0x7f800000;
@@ -60,7 +74,7 @@ unsigned short single2half(float f){
     }
 }
 
-float half2single(unsigned short u){
+float half2single(unsigned short const u){
     if(u & 0x7fff == 0){
         unsigned int result = (unsigned int)u << 16;
         float f = *(float*)&result;
@@ -118,7 +132,7 @@ float quadchar2float_(unsigned char const* qc){
     return *(float*)qc;
 }
 
-void adjustCPU(int* cpu, int processor){
+void adjustCPU(int* const cpu, int const processor){
     if(*cpu <= 0 || *cpu >= sysconf(_SC_NPROCESSORS_ONLN)){
         *cpu = sysconf(_SC_NPROCESSORS_ONLN) - 1;
         if(*cpu > processor && processor > 0){
@@ -156,7 +170,7 @@ void SwapList::advanceNodePtr(){
     nodePtr.store(nodePtr.load()->next);
 }
 
-void SwapList::copyTo(unsigned char* domainPtr, int const domainSize){
+void SwapList::copyTo(unsigned char* const domainPtr, int const domainSize){
     memcpy(domainPtr, nodePtr.load()->previous->memPtr, domainSize);
 }
 
@@ -174,6 +188,55 @@ SwapList::~SwapList(){
         node->previous->next = nullptr;
         delete node;
     }
+}
+
+DriverParameters::DriverParameters(){
+}
+
+int DriverParameters::load(std::string const& type){
+    minP  = configXML->readDeviceParameter("CAN", type.c_str(),  "MinP");
+    maxP  = configXML->readDeviceParameter("CAN", type.c_str(),  "MaxP");
+    minV  = configXML->readDeviceParameter("CAN", type.c_str(),  "MinV");
+    maxV  = configXML->readDeviceParameter("CAN", type.c_str(),  "MaxV");
+    minKp = configXML->readDeviceParameter("CAN", type.c_str(), "MinKp");
+    maxKp = configXML->readDeviceParameter("CAN", type.c_str(), "MaxKp");
+    minKd = configXML->readDeviceParameter("CAN", type.c_str(), "MinKd");
+    maxKd = configXML->readDeviceParameter("CAN", type.c_str(), "MaxKd");
+    minT  = configXML->readDeviceParameter("CAN", type.c_str(),  "MinT");
+    maxT  = configXML->readDeviceParameter("CAN", type.c_str(),  "MaxT");
+    pUnit       = configXML->readDeviceParameter("CAN", type.c_str(),       "PUnit");
+    targetVUnit = configXML->readDeviceParameter("CAN", type.c_str(), "TargetVUnit");
+    actualVUnit = configXML->readDeviceParameter("CAN", type.c_str(), "ActualVUnit");
+    vOffsetUnit = configXML->readDeviceParameter("CAN", type.c_str(), "VOffsetUnit");
+    targetCUnit = configXML->readDeviceParameter("CAN", type.c_str(), "TargetCUnit");
+    actualCUnit = configXML->readDeviceParameter("CAN", type.c_str(), "ActualCUnit");
+    cOffsetUnit = configXML->readDeviceParameter("CAN", type.c_str(), "COffsetUnit");
+    tConstant   = configXML->readDeviceParameter("CAN", type.c_str(),   "TConstant");
+    if( minP  == std::numeric_limits<float>::min() ||
+        maxP  == std::numeric_limits<float>::min() ||
+        minV  == std::numeric_limits<float>::min() ||
+        maxV  == std::numeric_limits<float>::min() ||
+        minKp == std::numeric_limits<float>::min() ||
+        maxKp == std::numeric_limits<float>::min() ||
+        minKd == std::numeric_limits<float>::min() ||
+        maxKd == std::numeric_limits<float>::min() ||
+        minT  == std::numeric_limits<float>::min() ||
+        maxT  == std::numeric_limits<float>::min() ||
+        pUnit       == std::numeric_limits<float>::min() ||
+        targetVUnit == std::numeric_limits<float>::min() ||
+        actualVUnit == std::numeric_limits<float>::min() ||
+        vOffsetUnit == std::numeric_limits<float>::min() ||
+        targetCUnit == std::numeric_limits<float>::min() ||
+        actualCUnit == std::numeric_limits<float>::min() ||
+        cOffsetUnit == std::numeric_limits<float>::min() ||
+        tConstant   == std::numeric_limits<float>::min()){
+        printf("no parameter of driver with type %s is set in xml\n", type.c_str());
+        return -1;
+    }
+    return 0;
+}
+
+DriverParameters::~DriverParameters(){
 }
 
 MotorParameters::MotorParameters(){
@@ -284,5 +347,19 @@ int SensorParameters::load(std::string const& bus, int const alias, std::string 
 }
 
 SensorParameters::~SensorParameters(){
+}
+
+TransferrerParameters::TransferrerParameters(){
+}
+
+#ifndef NIIC
+int TransferrerParameters::load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler){
+#else
+int TransferrerParameters::load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler){
+#endif
+    return 0;
+}
+
+TransferrerParameters::~TransferrerParameters(){
 }
 }

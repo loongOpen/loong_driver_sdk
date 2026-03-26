@@ -20,7 +20,7 @@
 #include "config_xml.h"
 #include "rs232.h"
 #include "rs485.h"
-#include "can.h"
+#include "canbase.h"
 #ifndef NIIC
 #include "ecat.h"
 #else
@@ -33,9 +33,10 @@
 
 namespace DriverSDK{
 ConfigXML* configXML;
-std::vector<std::map<int, std::string>> rs485alias2type, canAlias2type, ecatAlias2type, rs485emuAlias2type;
-std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs;
-std::vector<std::map<int, int>> canAlias2slaveID, ecatAlias2domain;
+std::vector<std::map<int, std::string>> rs485alias2type, rs485emuAlias2type, canAlias2type, canEmuAlias2type, ecatAlias2type;
+std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> ecatAliases2domainType;
+std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs, canEmuAlias2masterIDs;
+std::vector<std::map<int, int>> canAlias2slaveID, canEmuAlias2slaveID, ecatAlias2domain;
 std::vector<std::vector<int>> ecatDomainDivisions;
 int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector, batteryCount;
 WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
@@ -43,11 +44,13 @@ WrapperPair<DriverRxData, DriverTxData, MotorParameters>** legs[2], ** arms[2], 
 WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
 WrapperPair<ConverterRxData, ConverterTxData, EffectorParameters> converters[2];
 WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
+WrapperPair<TransferrerRxData, TransferrerTxData, TransferrerParameters> transferrers[8];
 std::vector<unsigned short> processorsECAT, processorsCAN;
 std::vector<char> operatingMode;
 std::vector<unsigned short> maxCurrent;
 std::atomic<int> ecatStalled;
 std::vector<RS485>* rs485sPtr;
+std::vector<CANEmu>* canemusPtr;
 
 motorSDOClass::motorSDOClass(int i){
     this->i = i;
@@ -68,10 +71,11 @@ public:
     RS232* imu;
     std::vector<RS485> rs485s;
     std::vector<CAN> cans;
+    std::vector<CANEmu> canemus;
     std::vector<ECAT> ecats;
     impClass();
     int effectorCheck(std::vector<std::map<int, std::string>> const& alias2type, char const* bus);
-    int driverCheck(std::vector<std::map<int, std::string>> const& canAlias2type, std::vector<std::map<int, std::string>> const& ecatAlias2type);
+    int driverCheck();
     int init(char const* xmlFile);
     int putDriverSDORequest(SDOMsg const& msg, int const priority = QUE_PRI_LOW);
     int getDriverSDOResponse(SDOMsg& msg);
@@ -79,6 +83,9 @@ public:
     int getDriverREGResponse(REGMsg& msg);
     void rs485Update();
     void canUpdate();
+    void canUpdate_();
+    void canEmuUpdate();
+    void canEmuUpdate_();
     void ecatUpdate();
     void sdoRequestableUpdate();
     ~impClass();
@@ -103,8 +110,10 @@ DriverSDK::impClass::impClass(){
     }
     ecatStalled.store(0);
     rs485sPtr = &rs485s;
-    rs485s.reserve(8);
+    rs485s.reserve(4);
     cans.reserve(8);
+    canemusPtr = &canemus;
+    canemus.reserve(8);
     ecats.reserve(6);
 }
 
@@ -115,7 +124,7 @@ int DriverSDK::impClass::effectorCheck(std::vector<std::map<int, std::string>> c
         while(itr != alias2type[i].end()){
             if(itr->first == 200 || itr->first == 201){
                 int dof = atoi(configXML->typeAttribute(bus, itr->second.c_str(), "dof").c_str());
-                if(dof <= 0){
+                if(dof < 1){
                      printf("invalid effector dof\n");
                      return -1;
                 }
@@ -143,10 +152,10 @@ int DriverSDK::impClass::effectorCheck(std::vector<std::map<int, std::string>> c
     return 0;
 }
 
-int DriverSDK::impClass::driverCheck(std::vector<std::map<int, std::string>> const& canAlias2type, std::vector<std::map<int, std::string>> const& ecatAlias2type){
-    bool existing[dofAll];
-    int i = 0;
-    while(i < dofAll){
+int DriverSDK::impClass::driverCheck(){
+    bool existing[256];
+    int i = 0, count = 0;
+    while(i < 256){
         existing[i] = false;
         i++;
     }
@@ -154,7 +163,10 @@ int DriverSDK::impClass::driverCheck(std::vector<std::map<int, std::string>> con
     while(i < canAlias2type.size()){
         auto itr = canAlias2type[i].begin();
         while(itr != canAlias2type[i].end()){
-            existing[itr->first - 1] = true;
+            if(existing[itr->first]){
+                return -1;
+            }
+            existing[itr->first] = true;
             itr++;
         }
         i++;
@@ -163,12 +175,53 @@ int DriverSDK::impClass::driverCheck(std::vector<std::map<int, std::string>> con
     while(i < ecatAlias2type.size()){
         auto itr = ecatAlias2type[i].begin();
         while(itr != ecatAlias2type[i].end()){
-            if(existing[itr->first - 1]){
+            if(existing[itr->first]){
                 return -1;
             }
+            existing[itr->first] = true;
             itr++;
         }
         i++;
+    }
+    i = 0;
+    while(i < ecatAliases2domainType.size()){
+        int j = 0, count_ = 0;
+        while(j < ecatAliases2domainType[i].size()){
+            std::vector<int> aliases;
+            std::string type;
+            std::tie(aliases, std::ignore, type) = ecatAliases2domainType[i][j];
+            if(aliases.size() != atoi(configXML->typeAttribute("ECAT", type.c_str(), "dof").c_str())){
+                return -2;
+            }
+            int k = 0;
+            while(k < aliases.size()){
+                if(aliases[k] == 0){
+                    k++;
+                    continue;
+                }
+                if(canEmuAlias2type.size() <= count_ || canEmuAlias2type[count_].find(aliases[k]) == canEmuAlias2type[count_].end()){
+                    return -3;
+                }
+                if(existing[aliases[k]]){
+                    return -1;
+                }
+                existing[aliases[k]] = true;
+                CANEmu::alias2channel[aliases[k]] = k;
+                count++;
+                k++;
+            }
+            count_++;
+            j++;
+        }
+        i++;
+    }
+    i = 0;
+    while(i < canEmuAlias2type.size()){
+        count -= canEmuAlias2type[i].size();
+        i++;
+    }
+    if(count != 0){
+        return -3;
     }
     return 0;
 }
@@ -210,32 +263,47 @@ int DriverSDK::impClass::init(char const* xmlFile){
     if(dofNeck > 0){
         neck    = new WrapperPair<DriverRxData, DriverTxData, MotorParameters>*[ dofNeck];
     }
-    rs485alias2type    = configXML->alias2type("RS485");
-    rs485emuAlias2type = configXML->alias2type("RS485Emu");
-    canAlias2type      = configXML->alias2type("CAN");
-    ecatAlias2type     = configXML->alias2type("ECAT");
-    if(rs485alias2type.size() > 4){
-        printf("4 rs485 masters at most\n");
+    ecatAlias2type     = configXML->alias2type("ECAT", &ecatAliases2domainType);
+    canEmuAlias2type   = configXML->alias2type("CANEmu", &ecatAliases2domainType, true);
+    canAlias2type      = configXML->alias2type("CAN", nullptr);
+    rs485emuAlias2type = configXML->alias2type("RS485Emu", nullptr);
+    rs485alias2type    = configXML->alias2type("RS485", nullptr);
+    if(rs485alias2type.size() > 2){
+        printf("2 rs485 masters at most\n");
         return -1;
     }
-    if(rs485emuAlias2type.size() > 4){
-        printf("4 rs485emu masters at most\n");
+    if(rs485emuAlias2type.size() > 2){
+        printf("2 rs485emu masters at most\n");
         return -1;
     }
     if(canAlias2type.size() > 8){
         printf("8 can masters at most\n");
         return -1;
     }
+    if(canEmuAlias2type.size() > 8){
+        printf("8 canemu masters at most\n");
+        return -1;
+    }
     if(ecatAlias2type.size() > 6){
         printf("6 ecat masters at most\n");
         return -1;
     }
-    if(effectorCheck(rs485alias2type, "RS485") != 0 || effectorCheck(ecatAlias2type, "ECAT") != 0){
+    if( effectorCheck( rs485alias2type, "RS485") != 0 ||
+        effectorCheck(   canAlias2type, "CAN"  ) != 0 ||
+        effectorCheck(canEmuAlias2type, "CAN"  ) != 0 ||
+        effectorCheck(  ecatAlias2type, "ECAT" ) != 0){
         printf("invalid effector configuration\n");
         return -1;
     }
-    if(driverCheck(canAlias2type, ecatAlias2type) != 0){
-        printf("invalid driver configuration\n");
+    switch(driverCheck()){
+    case -1:
+        printf("duplicate driver alias\n");
+        return -1;
+    case -2:
+        printf("the number of aliases does not equal transferrer dof\n");
+        return -1;
+    case -3:
+        printf("canemu aliases do not match that of ecat transferrer\n");
         return -1;
     }
     int i = 0;
@@ -245,16 +313,16 @@ int DriverSDK::impClass::init(char const* xmlFile){
             continue;
         }
         if(rs485emuAlias2type[i].size() > 1){
-            printf("there should not be more than one slave belonging to a rs485emu master %d\n", i);
+            printf("there should be only one slave belonging to a rs485emu master %d\n", i);
             return -1;
         }
         bool found = false;
-        int j = 0, alias = rs485emuAlias2type[i].begin()->first, dof = atoi(configXML->typeAttribute("RS485Emu", rs485emuAlias2type[i].begin()->second.c_str(), "dof").c_str());
+        int j = 0, alias = rs485emuAlias2type[i].begin()->first, dof = atoi(configXML->typeAttribute("RS485", rs485emuAlias2type[i].begin()->second.c_str(), "dof").c_str());
         while(j < ecatAlias2type.size()){
             auto itr = ecatAlias2type[j].find(alias);
             if(itr != ecatAlias2type[j].end()){
                 if(atoi(configXML->typeAttribute("ECAT", itr->second.c_str(), "dof").c_str()) != dof){
-                    printf("the dof of ecat converter device with alias %d should match that(%d) of the corresponding rs485emu device\n", alias, dof);
+                    printf("the dof of ecat converter with alias %d should match that(%d) of the corresponding rs485emu device\n", alias, dof);
                     return -1;
                 }
                 found = true;
@@ -262,7 +330,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
             j++;
         }
         if(found == false){
-            printf("rs485emu device with alias %d should be used together with a ecat to rs485 converter device with the same alias\n", alias);
+            printf("rs485emu device with alias %d should be used together with a ecat to rs485 converter with the same alias\n", alias);
             return -1;
         }
         i++;
@@ -271,10 +339,12 @@ int DriverSDK::impClass::init(char const* xmlFile){
     if(dofEffector > 0){
         digits = new WrapperPair<DigitRxData, DigitTxData, EffectorParameters>[dofEffector];
     }
-    canAlias2masterIDs  = configXML->alias2attribute_("CAN", "master_ids");
-    canAlias2slaveID    = configXML->alias2attribute("CAN", "slave_id");
-    ecatAlias2domain    = configXML->alias2attribute("ECAT", "domain");
-    ecatDomainDivisions = configXML->domainDivisions("ECAT");
+    ecatDomainDivisions   = configXML->domainDivisions("ECAT");
+    ecatAlias2domain      = configXML->alias2attribute("ECAT", "domain", nullptr);
+    canEmuAlias2masterIDs = configXML->alias2attribute_("CANEmu", "master_ids", &ecatAliases2domainType);
+    canEmuAlias2slaveID   = configXML->alias2attribute("CANEmu", "slave_id", &ecatAliases2domainType);
+    canAlias2masterIDs    = configXML->alias2attribute_("CAN", "master_ids", nullptr);
+    canAlias2slaveID      = configXML->alias2attribute("CAN", "slave_id", nullptr);
     i = 0;
     if(operatingMode.size() == 0){
         while(i < dofAll){
@@ -311,7 +381,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
     while(i < rs485emuAlias2type.size()){
         rs485alias2type.push_back(rs485emuAlias2type[i]);
         rs485s.emplace_back(i + rs485masterCount, configXML->masterDevice("RS485Emu", i, "deviceR").c_str(), configXML->masterDevice("RS485Emu", i, "deviceS").c_str());
-        printf("rs485s[%d] (rs485emus[%d]) created\n", i, i - rs485masterCount);
+        printf("rs485s[%d] (rs485emus[%d]) created\n", i + rs485masterCount, i);
         i++;
     }
     i = 0;
@@ -337,6 +407,20 @@ int DriverSDK::impClass::init(char const* xmlFile){
     while(i < cans.size()){
         if(cans[i].config() < 0){
             printf("cans[%d] config failed\n", i);
+            return -1;
+        }
+        i++;
+    }
+    i = 0;
+    while(i < canEmuAlias2type.size()){
+        canemus.emplace_back(i);
+        printf("canemus[%d] created\n", i);
+        i++;
+    }
+    i = 0;
+    while(i < canemus.size()){
+        if(canemus[i].config() < 0){
+            printf("canemus[%d] config failed\n", i);
             return -1;
         }
         i++;
@@ -370,11 +454,11 @@ int DriverSDK::impClass::init(char const* xmlFile){
     }
     i = 0;
     while(i < motorAlias.size()){
-        printf("limb %d\n", i);
+        // printf("limb %d\n", i);
         int j = 0;
         while(j < motorAlias[i].size()){
             int alias = motorAlias[i][j];
-            printf("\tjoint %d, alias %d\n", j, alias);
+            // printf("\tmotor %d, alias %d\n", j, alias);
             if(i == 0 || i == 1){
                 if(drivers[alias - 1].order == -1){
                     legs[i][j] = nullptr;
@@ -411,6 +495,10 @@ int DriverSDK::impClass::init(char const* xmlFile){
             return -1;
         }
         i++;
+    }
+    if(CANEmu::run(canemus) < 0){
+        printf("canemu run failed\n");
+        return -1;
     }
     if(CAN::run(cans) < 0){
         printf("can run failed\n");
@@ -466,6 +554,16 @@ int DriverSDK::impClass::getDriverREGResponse(REGMsg& msg){
     return -1;
 }
 
+void DriverSDK::impClass::rs485Update(){
+    int i = 0;
+    while(i < rs485s.size()){
+        if(rs485s[i].rxSwap != nullptr){
+            rs485s[i].rxSwap->advanceNodePtr();
+        }
+        i++;
+    }
+}
+
 void DriverSDK::impClass::canUpdate(){
     int i = 0;
     while(i < cans.size()){
@@ -476,11 +574,31 @@ void DriverSDK::impClass::canUpdate(){
     }
 }
 
-void DriverSDK::impClass::rs485Update(){
+void DriverSDK::impClass::canUpdate_(){
     int i = 0;
-    while(i < rs485s.size()){
-        if(rs485s[i].rxSwap != nullptr){
-            rs485s[i].rxSwap->advanceNodePtr();
+    while(i < cans.size()){
+        if(cans[i].rxSwap_ != nullptr){
+            cans[i].rxSwap_->advanceNodePtr();
+        }
+        i++;
+    }
+}
+
+void DriverSDK::impClass::canEmuUpdate(){
+    int i = 0;
+    while(i < canemus.size()){
+        if(canemus[i].rxSwap != nullptr){
+            canemus[i].rxSwap->advanceNodePtr();
+        }
+        i++;
+    }
+}
+
+void DriverSDK::impClass::canEmuUpdate_(){
+    int i = 0;
+    while(i < canemus.size()){
+        if(canemus[i].rxSwap_ != nullptr){
+            canemus[i].rxSwap_->advanceNodePtr();
         }
         i++;
     }
@@ -527,6 +645,27 @@ void DriverSDK::impClass::ecatUpdate(){
             j++;
         }
         printf("\b\n");
+        i++;
+    }
+    i = 0;
+    while(i < canemus.size()){
+        static unsigned char data[128];
+        if(canemus[i].rxSwap != nullptr){
+            TransferrerRxData* const transferrerRxData = transferrers[i].rx.current();
+            TransferrerDatum* const channels = transferrerRxData->channels;
+            transferrerRxData->Count = 0;
+            transferrerRxData->IDE = 0;
+            auto itr = canemus[i].alias2slaveID.begin();
+            while(itr != canemus[i].alias2slaveID.end()){
+                int alias = itr->first, slaveID = itr->second, length = CANEmu::rxFuncs[i][slaveID](i, alias, &slaveID, data), channel = CANEmu::alias2channel[alias];
+                channels[channel].ID = slaveID;
+                channels[channel].RTR = 0;
+                channels[channel].DLC = length;
+                memcpy(channels[channel].Byte, data, length);
+                transferrerRxData->Count++;
+                itr++;
+            }
+        }
         i++;
     }
     i = 0;
@@ -756,27 +895,27 @@ int DriverSDK::fillSDO(motorSDOClass& data, char const* object){
 
 void DriverSDK::getIMU(imuStruct& data){
     float f = imp.imu->rpy0(imp.imu->txSwap);
-    if(f > -4.0 && f < 4.0){
+    if(f >= -Pi && f <= Pi){
         data.rpy[0] = f;
     }
     f = imp.imu->rpy1(imp.imu->txSwap);
-    if(f > -4.0 && f < 4.0){
+    if(f >= -Pi && f <= Pi){
         data.rpy[1] = f;
     }
     f = imp.imu->rpy2(imp.imu->txSwap);
-    if(f > -4.0 && f < 4.0){
+    if(f >= -2.0 * Pi && f <= 2.0 * Pi){
         data.rpy[2] = f;
     }
     f = imp.imu->gyr0(imp.imu->txSwap);
-    if(f > -40.0 && f < 40.0){
+    if(f >= -10.0 * Pi && f <= 10.0 * Pi){
         data.gyr[0] = f;
     }
     f = imp.imu->gyr1(imp.imu->txSwap);
-    if(f > -40.0 && f < 40.0){
+    if(f >= -10.0 * Pi && f <= 10.0 * Pi){
         data.gyr[1] = f;
     }
     f = imp.imu->gyr2(imp.imu->txSwap);
-    if(f > -40.0 && f < 40.0){
+    if(f >= -10.0 * Pi && f <= 10.0 * Pi){
         data.gyr[2] = f;
     }
     data.acc[0] = imp.imu->acc0(imp.imu->txSwap);
@@ -821,6 +960,8 @@ int DriverSDK::setDigitTarget(std::vector<digitTargetStruct> const& data){
         i++;
     }
     imp.rs485Update();
+    imp.canUpdate_();
+    imp.canEmuUpdate_();
     return 0;
 }
 
@@ -934,7 +1075,7 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
                 drivers[i].rx->TorqueOffset = 0;
             }
             drivers[i].enabled = data[i].enabled;
-        }else if(drivers[i].busCode == 1){
+        }else if(drivers[i].busCode == 1 || drivers[i].busCode == 3){
             float position = data[i].pos;
             if(position < drivers[i].parameters.minimumPosition){
                 position = drivers[i].parameters.minimumPosition;
@@ -962,8 +1103,9 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
         }
         i++;
     }
-    imp.ecatUpdate();
     imp.canUpdate();
+    imp.canEmuUpdate();
+    imp.ecatUpdate();
     return 0;
 }
 
@@ -992,7 +1134,7 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
             data[i].tor        = drivers[i].parameters.polarity * drivers[i].tx->ActualTorque / 1000.0 * drivers[i].parameters.ratedCurrent * drivers[i].parameters.torqueConstant * drivers[i].parameters.gearRatioTor;
             data[i].statusWord = drivers[i].tx->StatusWord;
             data[i].errorCode  = drivers[i].tx->ErrorCode;
-        }else if(drivers[i].busCode == 1){
+        }else if(drivers[i].busCode == 1 || drivers[i].busCode == 3){
             data[i].pos        = drivers[i].parameters.polarity *  (*(float*)&drivers[i].tx->ActualPosition - drivers[i].parameters.countBias);
             data[i].vel        = drivers[i].parameters.polarity *   *(float*)&drivers[i].tx->ActualVelocity;
             data[i].tor        = drivers[i].parameters.polarity * half2single(drivers[i].tx->ActualTorque);
@@ -1125,8 +1267,9 @@ int DriverSDK::calibrate_(int const i){
 }
 
 void DriverSDK::advance(){
-    imp.ecatUpdate();
     imp.canUpdate();
+    imp.canEmuUpdate();
+    imp.ecatUpdate();
 }
 
 std::string DriverSDK::version(){

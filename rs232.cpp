@@ -65,14 +65,14 @@ void crcUpdate(unsigned short* currentCRC, unsigned char const* buff, int const 
     *currentCRC = crc;
 }
 
-bool validHiPNUC(unsigned char const* buff){
+bool validHipnuc(unsigned char const* buff){
     unsigned short crc = 0;
     crcUpdate(&crc, buff, 4);
     crcUpdate(&crc, buff + 6, 76);
     return crc == (buff[5] << 8 | buff[4]);
 }
 
-unsigned int const table[] = {
+unsigned int const Table[] = {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
     0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91,
     0x1db71064, 0x6ab020f2, 0xf3b97148, 0x84be41de, 0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7,
@@ -110,7 +110,7 @@ unsigned int const table[] = {
 unsigned int crc32(unsigned int crc, unsigned char const* buff, unsigned int const length){
     int i = 0;
     while(i < length){
-        crc = table[(crc ^ buff[i]) & 0xff] ^ crc >> 8;
+        crc = Table[(crc ^ buff[i]) & 0xff] ^ crc >> 8;
         i++;
     }
     return crc;
@@ -132,7 +132,22 @@ unsigned short checksum(unsigned char const* buff, int length){
 }
 
 bool validYesense(unsigned char const* buff){
-    return checksum(buff + 2, 63) == *(unsigned int*)(buff + 65);
+    return checksum(buff + 2, 63) == *(unsigned short*)(buff + 65);
+}
+
+bool validYesense_(unsigned char const* buff){
+    return checksum(buff + 2, 45) == *(unsigned short*)(buff + 47);
+}
+
+bool validLinstech(unsigned char const* buff){
+    int i = 2, sum = 0;
+    while(i < 40){
+        sum += buff[i];
+        i++;
+    }
+    sum = ~sum;
+    sum &= 0xff;
+    return sum == buff[40];
 }
 
 float rpy0xsens(SwapList const* txSwap){
@@ -279,6 +294,42 @@ float acc2yesense(SwapList const* txSwap){
     return quadchar2int_(txSwap->nodePtr.load()->memPtr + 15) / 1000000.0;
 }
 
+float rpy0linstech(SwapList const* txSwap){
+    return quadchar2int(txSwap->nodePtr.load()->memPtr + 26) / 10000.0 * Pi / 180.0;
+}
+
+float rpy1linstech(SwapList const* txSwap){
+    return quadchar2int(txSwap->nodePtr.load()->memPtr + 30) / 10000.0 * Pi / 180.0;
+}
+
+float rpy2linstech(SwapList const* txSwap){
+    return quadchar2int(txSwap->nodePtr.load()->memPtr + 34) / 10000.0 * Pi / 180.0;
+}
+
+float gyr0linstech(SwapList const* txSwap){
+    return quadchar2int(txSwap->nodePtr.load()->memPtr + 14) / 10000.0 * Pi / 180.0;
+}
+
+float gyr1linstech(SwapList const* txSwap){
+    return quadchar2int(txSwap->nodePtr.load()->memPtr + 18) / 10000.0 * Pi / 180.0;
+}
+
+float gyr2linstech(SwapList const* txSwap){
+    return quadchar2int(txSwap->nodePtr.load()->memPtr + 22) / 10000.0 * Pi / 180.0;
+}
+
+float acc0linstech(SwapList const* txSwap){
+    return quadchar2int(txSwap->nodePtr.load()->memPtr +  2) / 10000.0 * 9.81;
+}
+
+float acc1linstech(SwapList const* txSwap){
+    return quadchar2int(txSwap->nodePtr.load()->memPtr +  6) / 10000.0 * 9.81;
+}
+
+float acc2linstech(SwapList const* txSwap){
+    return quadchar2int(txSwap->nodePtr.load()->memPtr + 10) / 10000.0 * 9.81;
+}
+
 RS232::RS232(char const* device, int const baudrate, char const* type){
     fd = -1;
     pth = 0;
@@ -303,7 +354,7 @@ RS232::RS232(char const* device, int const baudrate, char const* type){
         frameLength = 82;
         header0 = 0x5a;
         header1 = 0xa5;
-        valid = validHiPNUC;
+        valid = validHipnuc;
         rpy0 = rpy0hipnuc;
         rpy1 = rpy1hipnuc;
         rpy2 = rpy2hipnuc;
@@ -341,6 +392,34 @@ RS232::RS232(char const* device, int const baudrate, char const* type){
         acc0 = acc0yesense;
         acc1 = acc1yesense;
         acc2 = acc2yesense;
+    }else if(strcmp(type, "YESENSE_") == 0){
+        frameLength = 49;
+        header0 = 0x59;
+        header1 = 0x53;
+        valid = validYesense_;
+        rpy0 = rpy0yesense;
+        rpy1 = rpy1yesense;
+        rpy2 = rpy2yesense;
+        gyr0 = gyr0yesense;
+        gyr1 = gyr1yesense;
+        gyr2 = gyr2yesense;
+        acc0 = acc0yesense;
+        acc1 = acc1yesense;
+        acc2 = acc2yesense;
+    }else if(strcmp(type, "Lins-Tech") == 0){
+        frameLength = 41;
+        header0 = 0x7f;
+        header1 = 0x94;
+        valid = validLinstech;
+        rpy0 = rpy0linstech;
+        rpy1 = rpy1linstech;
+        rpy2 = rpy2linstech;
+        gyr0 = gyr0linstech;
+        gyr1 = gyr1linstech;
+        gyr2 = gyr2linstech;
+        acc0 = acc0linstech;
+        acc1 = acc1linstech;
+        acc2 = acc2linstech;
     }else{
         printf("invalid imu type %s\n", type);
         exit(-1);

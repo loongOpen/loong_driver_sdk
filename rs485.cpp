@@ -27,7 +27,7 @@
 namespace DriverSDK{
 extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> rs485alias2type;
-extern int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector;
+extern int dofLeftEffector, dofEffector;
 extern WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
 
 void nullRX(modbus_t* const ctx, int const alias){
@@ -433,7 +433,7 @@ int RS485::config(){
 #ifndef NIIC
             if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
 #else
-            if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
+            if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData)) != 0){
 #endif
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
@@ -475,7 +475,7 @@ int RS485::config(){
 #ifndef NIIC
             if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
 #else
-            if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr) != 0){
+            if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData)) != 0){
 #endif
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;

@@ -21,36 +21,37 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <tuple>
 
 namespace DriverSDK{
 class ConfigXML{
 public:
-    char* file;
+    char* name;
     tinyxml2::XMLDocument xmlDoc;
-    ConfigXML(char const* file);
+    ConfigXML(char const* name);
     int writeMotorParameter(int const alias, char const* parameter, float const value);
     float readMotorParameter(int const alias, char const* parameter);
     float readDeviceParameter(char const* bus, char const* type, char const* parameter);
     std::vector<std::vector<int>> motorAlias();
-    std::vector<std::vector<int>> domainDivisions(char const* bus);
-    std::string typeAttribute(char const* bus, char const* type, char const* name);
     std::string imuAttribute(char const* name);
     int imuBaudrate();
     int canAttribute(char const* name);
     std::string masterDevice(char const* bus, int const order, char const* name);
     int masterAttribute(char const* bus, int const order, char const* name);
     bool masterFeature(char const* bus, int const order, char const* name);
+    std::vector<std::vector<int>> domainDivisions(char const* bus);
     tinyxml2::XMLElement* device(char const* bus, char const* VendorID, char const* ProductCode);
     tinyxml2::XMLElement* device(char const* bus, char const* type);
     std::string deviceType(tinyxml2::XMLElement const* deviceElement);
     std::string typeCategory(char const* bus, char const* type);
+    std::string typeAttribute(char const* bus, char const* type, char const* name);
     unsigned int vendorID(tinyxml2::XMLElement const* deviceElement);
     unsigned int productCode(tinyxml2::XMLElement const* deviceElement);
     std::vector<std::vector<std::string>> pdos(tinyxml2::XMLElement* const deviceElement, char const* rxtx);
     std::vector<std::string> entry(tinyxml2::XMLElement* const deviceElement, char const* object);
-    std::vector<std::map<int, std::string>> alias2type(char const* bus);
-    std::vector<std::map<int, int>> alias2attribute(char const* bus, char const* name);
-    std::vector<std::map<int, std::vector<int>>> alias2attribute_(char const* bus, char const* name);
+    std::vector<std::map<int, std::string>> alias2type(char const* bus, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>>* const aliases2domainType, bool emu = false);
+    std::vector<std::map<int, int>> alias2attribute(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domainType);
+    std::vector<std::map<int, std::vector<int>>> alias2attribute_(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domainType);
     tinyxml2::XMLError save();
     ~ConfigXML();
 };

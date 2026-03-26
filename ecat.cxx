@@ -30,16 +30,11 @@ extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> ecatAlias2type;
 extern std::vector<std::map<int, int>> ecatAlias2domain;
 extern std::vector<std::vector<int>> ecatDomainDivisions;
-extern int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector;
+extern int dofAll;
 extern WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
-extern WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
-extern WrapperPair<ConverterRxData, ConverterTxData, EffectorParameters> converters[2];
-extern WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
 extern std::vector<unsigned short> processorsECAT;
 extern std::vector<unsigned short> maxCurrent;
 extern std::atomic<int> ecatStalled;
-extern std::vector<RS485>* rs485sPtr;
-WrapperPair<HandRxData, HandTxData, EffectorParameters> hands[2];
 
 ECAT::ECAT(int const order){
     domainSizes = nullptr;
@@ -63,10 +58,9 @@ ECAT::ECAT(int const order){
         printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
         itr++;
     }
-    eni    = configXML->masterDevice("ECAT", order, "eni");
-    dc     = configXML->masterFeature("ECAT", order, "dc");
-    period = configXML->masterAttribute("ECAT", order, "period");
-    cpu    = configXML->masterAttribute("ECAT", order, "cpu");
+    eni      = configXML->masterDevice("ECAT", order, "eni");
+    period   = configXML->masterAttribute("ECAT", order, "period");
+    cpu      = configXML->masterAttribute("ECAT", order, "cpu");
     adjustCPU(&cpu, processorsECAT[order]);
     alias2domain = ecatAlias2domain[order];
     domainDivisions = ecatDomainDivisions[order];
@@ -98,8 +92,6 @@ int ECAT::init(){
         txPDOSwaps[i] = nullptr;
         i++;
     }
-    effectorAlias = 199;
-    sensorAlias = 219;
     return 0;
 }
 
@@ -127,22 +119,6 @@ int ECAT::readAlias(unsigned short const slave, std::string const& category, uns
             }catch(std::exception const& e){
                 sleep(1);
             }
-        }
-    }else if(bitLength == 0){
-        if(category == "effector"){
-            auto itr = alias2type.end();
-            do{
-                effectorAlias++;
-                itr = alias2type.find(effectorAlias);
-            }while(itr == alias2type.end() && effectorAlias < 201);
-            return effectorAlias;
-        }else if(category == "sensor"){
-            auto itr = alias2type.end();
-            do{
-                sensorAlias++;
-                itr = alias2type.find(sensorAlias);
-            }while(itr == alias2type.end() && sensorAlias < 221);
-            return sensorAlias;
         }
     }
     return 0;
@@ -430,22 +406,13 @@ int ECAT::config(){
     while(itr != alias2slave.end()){
         int alias = itr->first, slave = itr->second;
         std::string type = alias2type.find(alias)->second;
-        if(drivers[alias - 1].init("ECAT", 0, order, 0, slave, alias, type, rxPDOOffsets[count], txPDOOffsets[count], nullptr) != 0){
+        if(drivers[alias - 1].init("ECAT", 0, order, 0, slave, alias, type, rxPDOOffsets[count], txPDOOffsets[count]) != 0){
             printf("\tdrivers[%d] init failed\n", alias - 1);
             return -1;
         }
-        switch(drivers[alias - 1].config("ECAT", order, 0, rxPDOSwaps[0], txPDOSwaps[0])){
-        case 2:
-            drivers[alias - 1].tx->StatusWord = 0xffff;
-            break;
-        case 1:
-            break;
-        case 0:
-            break;
-        case -1:
+        if(drivers[alias - 1].config("ECAT", order, 0, rxPDOSwaps[0], txPDOSwaps[0]) != 0){
             printf("\tdrivers[%d] config failed\n", alias - 1);
             return -1;
-            break;
         }
         count++;
         itr++;

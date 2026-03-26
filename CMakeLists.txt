@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(driver_test VERSION 4.0.0 LANGUAGES C CXX)
+project(driver_test VERSION 4.2.5 LANGUAGES C CXX)
 option(AARCH64 "aarch64" OFF)
 option(RISCV64 "riscv64" OFF)
 option(NIIC "necro" OFF)
@@ -36,9 +36,9 @@ link_directories(
 add_library(hbcanhal_${march} SHARED hobot_can_hal.c)
 set_target_properties(hbcanhal_${march} PROPERTIES NO_SONAME ON)
 if(NIIC)
-    add_library(loong_driver_sdk_${arch} SHARED common.cpp config_xml.cpp rs232.cpp rs485.cpp can.cpp ecat.cxx loong_driver_sdk.cpp)
+    add_library(loong_driver_sdk_${arch} SHARED common.cpp config_xml.cpp rs232.cpp rs485.cpp canbase.cpp can.cpp canemu.cpp ecat.cxx loong_driver_sdk.cpp)
 else(NIIC)
-    add_library(loong_driver_sdk_${arch} SHARED common.cpp config_xml.cpp rs232.cpp rs485.cpp can.cpp ecat.cpp loong_driver_sdk.cpp)
+    add_library(loong_driver_sdk_${arch} SHARED common.cpp config_xml.cpp rs232.cpp rs485.cpp canbase.cpp can.cpp canemu.cpp ecat.cpp loong_driver_sdk.cpp)
 endif(NIIC)
 set_target_properties(loong_driver_sdk_${arch} PROPERTIES NO_SONAME ON)
 target_include_directories(loong_driver_sdk_${arch} PUBLIC

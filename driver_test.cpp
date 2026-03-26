@@ -29,7 +29,7 @@ int main(int argc, char** argv){
         count = atoi(argv[2]);
     }
     DriverSDK::DriverSDK& driverSDK = DriverSDK::DriverSDK::instance();
-    printf("loong_driver_sdk version: %s\n", driverSDK.version().c_str());
+    printf("loong_driver_sdk %s\n", driverSDK.version().c_str());
     std::vector<unsigned short> cpusECAT = {2, 3, 3, 3, 3, 3};
     driverSDK.setCPUs(cpusECAT, "ECAT");
     std::vector<unsigned short> cpusCAN = {4, 4, 4};
@@ -52,12 +52,12 @@ int main(int argc, char** argv){
         8, 8
     };
     driverSDK.setMode(mode);
-    driverSDK.init("configuration.xml");
+    driverSDK.init("configuration_lite.xml");
     std::vector<int> activeMotors = driverSDK.getActiveMotors();
     int i = 0, j = 0, motorNr = driverSDK.getTotalMotorNr(), digitNr = driverSDK.getLeftDigitNr() + driverSDK.getRightDigitNr();
     printf("digitNr %d\nmotorNr %ld/%d:\t", digitNr, activeMotors.size(), motorNr);
     while(i < activeMotors.size()){
-        printf("%d ", activeMotors[i]);
+        printf("%d ", activeMotors[i] + 1);
         i++;
     }
     printf("\n");
@@ -112,7 +112,7 @@ int main(int argc, char** argv){
         driverSDK.getMotorActual(motorActualData);
         j = 0;
         while(j < motorNr){
-            printf("motor%02d:\t%8.3f %8d %8d %8d\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
+            printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
             j++;
         }
         driverSDK.advance();
@@ -145,7 +145,7 @@ int main(int argc, char** argv){
                 motorTargetData[j].pos = motorPositions[j] * std::cos(Pi / 2.0 * (double)i / 3200.0);
                 motorTargetData[j].kp = 50.0;
                 motorTargetData[j].kd = 0.85;
-                printf("motor%02d:\t%8.3f %8d %8d %8d\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
+                printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
                 j++;
             }
             driverSDK.setMotorTarget(motorTargetData);
@@ -168,7 +168,7 @@ int main(int argc, char** argv){
                 motorTargetData[j].pos = motorPositions[j] * std::cos(Pi / 2.0 * (double)i / 3200.0);
                 motorTargetData[j].kp = 50.0;
                 motorTargetData[j].kd = 0.85;
-                printf("motor%02d:\t%8.3f %8d %8d %8d\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
+                printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
                 j++;
             }
             driverSDK.setMotorTarget(motorTargetData);
@@ -196,7 +196,7 @@ int main(int argc, char** argv){
         j = 0;
         while(j < motorNr){
             motorTargetData[j].pos = motorActualData[j].pos;
-            printf("motor%02d:\t%8.3f %8d %8d %8d\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
+            printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
             j++;
         }
         driverSDK.setMotorTarget(motorTargetData);
@@ -219,7 +219,7 @@ int main(int argc, char** argv){
             driverSDK.sendMotorSDORequest(sdoData[j]);
             driverSDK.recvMotorSDOResponse(sdoData[j]);
             motorTargetData[j].pos = motorActualData[j].pos;
-            printf("motor%02d:\t%8ld %8d %8d %8d\n", j + 1, sdoData[j].value, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
+            printf("motor%02d:\t%8ld %8d 0x%04x 0x%04x\n", j + 1, sdoData[j].value, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
             j++;
         }
         driverSDK.setMotorTarget(motorTargetData);

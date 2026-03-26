@@ -17,6 +17,7 @@
 
 #include "config_xml.h"
 #include "rs485.h"
+#include "canbase.h"
 #include "ecat.h"
 #include <unistd.h>
 #include <fcntl.h>
@@ -37,17 +38,20 @@ struct ec_ioctl_slave_state_t{
 
 extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> ecatAlias2type;
+extern std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> ecatAliases2domainType;
 extern std::vector<std::map<int, int>> ecatAlias2domain;
 extern std::vector<std::vector<int>> ecatDomainDivisions;
-extern int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector;
+extern int dofAll, dofLeftEffector, dofEffector;
 extern WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
 extern WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
 extern WrapperPair<ConverterRxData, ConverterTxData, EffectorParameters> converters[2];
 extern WrapperPair<SensorRxData, SensorTxData, SensorParameters> sensors[2];
+extern WrapperPair<TransferrerRxData, TransferrerTxData, TransferrerParameters> transferrers[8];
 extern std::vector<unsigned short> processorsECAT;
 extern std::vector<unsigned short> maxCurrent;
 extern std::atomic<int> ecatStalled;
 extern std::vector<RS485>* rs485sPtr;
+extern std::vector<CANEmu>* canemusPtr;
 WrapperPair<HandRxData, HandTxData, EffectorParameters> hands[2];
 
 ECAT::ECAT(int const order){
@@ -63,7 +67,8 @@ ECAT::ECAT(int const order){
     pth = 0;
     this->order = order;
     alias2type = ecatAlias2type[order];
-    if(alias2type.size() == 0){
+    aliases2domainType = ecatAliases2domainType[order];
+    if(alias2type.size() == 0 && aliases2domainType.size() == 0){
         return;
     }
     printf("ecats[%d]\n", order);
@@ -72,9 +77,24 @@ ECAT::ECAT(int const order){
         printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
         itr++;
     }
-    dc     = configXML->masterFeature("ECAT", order, "dc");
-    period = configXML->masterAttribute("ECAT", order, "period");
-    cpu    = configXML->masterAttribute("ECAT", order, "cpu");
+    int i = 0;
+    while(i < aliases2domainType.size()){
+        std::vector<int> aliases;
+        std::string type;
+        std::tie(aliases, std::ignore, type) = aliases2domainType[i];
+        printf("\taliases");
+        int j = 0;
+        while(j < aliases.size()){
+            printf(" %d", aliases[j]);
+            j++;
+        }
+        printf(", type %s\n", type.c_str());
+        i++;
+    }
+    dc       = configXML->masterFeature("ECAT", order, "dc");
+    refSlave = configXML->masterFeature("ECAT", order, "ref_slave");
+    period   = configXML->masterAttribute("ECAT", order, "period");
+    cpu      = configXML->masterAttribute("ECAT", order, "cpu");
     adjustCPU(&cpu, processorsECAT[order]);
     alias2domain = ecatAlias2domain[order];
     domainDivisions = ecatDomainDivisions[order];
@@ -111,6 +131,7 @@ int ECAT::init(){
     }
     effectorAlias = 199;
     sensorAlias = 219;
+    transferrerCount = 0;
     return 0;
 }
 
@@ -149,6 +170,8 @@ int ECAT::readAlias(unsigned short const slave, std::string const& category, uns
                 itr = alias2type.find(sensorAlias);
             }while(itr == alias2type.end() && sensorAlias < 221);
             return sensorAlias;
+        }else if(category == "transferrer"){
+            return -++transferrerCount;
         }
     }
     return 0;
@@ -182,7 +205,7 @@ int ECAT::requestState(unsigned short const slave, char const* stateString){
 }
 
 int ECAT::check(){
-    if(alias2type.size() == 0){
+    if(alias2type.size() == 0 && aliases2domainType.size() == 0){
         return 0;
     }
     auto itr = alias2domain.begin();
@@ -192,6 +215,23 @@ int ECAT::check(){
             return -1;
         }
         itr++;
+    }
+    int i = 0;
+    while(i < aliases2domainType.size()){
+        std::vector<int> aliases;
+        int domain;
+        std::tie(aliases, domain, std::ignore) = aliases2domainType[i];
+        if(domain >= domainDivisions.size()){
+            printf("master %d devices with aliases", order);
+            int j = 0;
+            while(j < aliases.size()){
+                printf(" %d", aliases[j]);
+                j++;
+            }
+            printf(" are assigned to an unspecified domain\n");
+            return -1;
+        }
+        i++;
     }
     ec_master_info_t masterInfo;
     if(ecrt_master(master, &masterInfo) < 0){
@@ -206,9 +246,9 @@ int ECAT::check(){
         printf("master %d is scanning\n", order);
         return -2;
     }
-    printf("master %d, %ld device(s) in xml, %d slave(s) on bus\n", order, alias2type.size(), masterInfo.slave_count);
+    printf("master %d, %ld device(s) and %ld transferrer(s) in xml, %d slave(s) on bus\n", order, alias2type.size(), aliases2domainType.size(), masterInfo.slave_count);
     alias2slave.clear();
-    int i = 0;
+    i = 0;
     while(i < masterInfo.slave_count){
         printf("slave %d:%d", order, i);
         ec_slave_info_t slaveInfo;
@@ -239,21 +279,29 @@ int ECAT::check(){
             strtoul(aliasEntry[2].c_str(), nullptr, 16),
             strtoul(aliasEntry[4].c_str(), nullptr, 10));
         printf(", category %s, alias %d\n", category.c_str(), alias);
-        auto itr = alias2type.find(alias);
-        if(itr == alias2type.end()){
-            printf("\tdevice with the alias not found/enabled in xml\n");
-            i++;
-            continue;
-        }
-        if(type != itr->second){
-            printf("\tdevice type contradicts that(%s) in xml\n", itr->second.c_str());
-            return -1;
+        if(alias > 0){
+            auto itr = alias2type.find(alias);
+            if(itr == alias2type.end()){
+                printf("\tdevice with the alias not found/enabled in xml\n");
+                i++;
+                continue;
+            }
+            if(type != itr->second){
+                printf("\tdevice type contradicts that(%s) in xml\n", itr->second.c_str());
+                return -1;
+            }
         }
         alias2slave.insert(std::make_pair(alias, i));
         i++;
     }
-    if(alias2slave.size() != alias2type.size()){
-        printf("master %d the number of devices %ld contradicts that(%ld) in xml\n", order, alias2slave.size(), alias2type.size());
+    if(alias2slave.size() - transferrerCount != alias2type.size()){
+        printf("master %d the count of devices %ld contradicts that(%ld) in xml\n", order, alias2slave.size(), alias2type.size());
+        clean();
+        init();
+        return -2;
+    }
+    if(transferrerCount != aliases2domainType.size()){
+        printf("master %d the count of transferrers %d contradicts that(%ld) in xml\n", order, transferrerCount, aliases2domainType.size());
         clean();
         init();
         return -2;
@@ -262,7 +310,7 @@ int ECAT::check(){
 }
 
 int ECAT::config(){
-    if(alias2type.size() == 0){
+    if(alias2type.size() == 0 && aliases2domainType.size() == 0){
         return 0;
     }
     int i = 0;
@@ -274,12 +322,30 @@ int ECAT::config(){
         }
         i++;
     }
-    // ec_slave_config_t* refClockSlaveConfig = nullptr;
+    ec_slave_config_t* refClockSlaveConfig = nullptr;
     auto itr = alias2slave.begin();
     while(itr != alias2slave.end()){
-        int alias = itr->first, slave = itr->second, domain = alias2domain.find(alias)->second;
-        std::string type = alias2type.find(alias)->second, category = configXML->typeCategory("ECAT", type.c_str());
-        printf("master %d, domain %d, slave %d, alias %d, category %s, type %s\n", order, domain, slave, alias, category.c_str(), type.c_str());
+        int alias = itr->first, slave = itr->second, domain;
+        std::vector<int> aliases;
+        std::string type;
+        if(alias < 0){
+            std::tie(aliases, domain, type) = aliases2domainType[-alias - 1];
+        }else{
+            domain = alias2domain.find(alias)->second;
+            type = alias2type.find(alias)->second;
+        }
+        std::string category = configXML->typeCategory("ECAT", type.c_str());
+        if(alias < 0){
+            printf("master %d, domain %d, slave %d, aliases", order, domain, slave);
+            i = 0;
+            while(i < aliases.size()){
+                printf(" %d", aliases[i]);
+                i++;
+            }
+            printf(", category %s, type %s\n", category.c_str(), type.c_str());
+        }else{
+            printf("master %d, domain %d, slave %d, alias %d, category %s, type %s\n", order, domain, slave, alias, category.c_str(), type.c_str());
+        }
         while(requestState(slave, "PREOP") < 0);
         tinyxml2::XMLElement* deviceXML = configXML->device("ECAT", type.c_str());
         std::vector<std::vector<std::string>> rxPDOs = configXML->pdos(deviceXML, "RxPDOs"), txPDOs = configXML->pdos(deviceXML, "TxPDOs");
@@ -462,8 +528,8 @@ int ECAT::config(){
         printf("\trxPDOOffset %d, txPDOOffset %d\n", rxPDOOffset, txPDOOffset);
         ec_sdo_request_t* sdoHandler = ecrt_slave_config_create_sdo_request(slaveConfig, 0x0000, 0x00, 4);
         ec_reg_request_t* regHandler = ecrt_slave_config_create_reg_request(slaveConfig, 4);
-        if(sdoHandler == nullptr){
-            printf("\tcreating sdo request failed\n");
+        if(sdoHandler == nullptr || regHandler == nullptr){
+            printf("\tcreating sdo or reg request failed\n");
             return -1;
         }
         ecrt_sdo_request_timeout(sdoHandler, 500);
@@ -512,14 +578,21 @@ int ECAT::config(){
                     return -1;
                 }
             }
+        }else if(category == "transferrer"){
+            if(type == "Encos_6dof"){
+                if(transferrers[-alias - 1].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler, regHandler) != 0){
+                    printf("\transferrers[%d] init failed\n", -alias - 1);
+                    return -1;
+                }
+            }
         }
         if(dc){
             ecrt_slave_config_dc(slaveConfig, 0x0300, domainDivisions[domain] * period, domainDivisions[domain] * period / 2, 0, 0);
-            /* if(refClockSlaveConfig == nullptr){
+            if(refSlave && refClockSlaveConfig == nullptr){
                 refClockSlaveConfig = slaveConfig;
                 ecrt_master_select_reference_clock(master, refClockSlaveConfig);
-                printf("\tslave %d:%d was selected to provide the reference clock\n", order, slave);
-            } */
+                printf("\tslave %d:%d is selected to provide the reference clock\n", order, slave);
+            }
         }
         itr++;
     }
@@ -656,6 +729,22 @@ int ECAT::config(){
             }
             j++;
         }
+        j = 0;
+        while(j < 8){
+            switch(transferrers[j].config("ECAT", order, i, rxPDOSwaps[i], txPDOSwaps[i])){
+            case 2:
+                break;
+            case 1:
+                break;
+            case 0:
+                break;
+            case -1:
+                printf("\ttransferrers[%d] config failed\n", j);
+                return -1;
+                break;
+            }
+            j++;
+        }
         i++;
     }
     return 0;
@@ -786,10 +875,13 @@ void* ECAT::rxtx(void* arg){
             }
         }
         if(ecat->dc){
-            clock_gettime(CLOCK_MONOTONIC, &currentTime);
-            ecrt_master_sync_reference_clock_to(ecat->master, TIMESPEC2NS(currentTime));
-            /* unsigned int time = 0;
-            ecrt_master_reference_clock_time(ecat->master, &time); */
+            if(ecat->refSlave){
+                unsigned int time = 0;
+                ecrt_master_reference_clock_time(ecat->master, &time);
+            }else{
+                clock_gettime(CLOCK_MONOTONIC, &currentTime);
+                ecrt_master_sync_reference_clock_to(ecat->master, TIMESPEC2NS(currentTime));
+            }
             ecrt_master_sync_slave_clocks(ecat->master);
         }
         count++;
@@ -897,6 +989,23 @@ void* ECAT::rxtx(void* arg){
                     }
                     j++;
                 }
+                j = 0;
+                while(j < 8){
+                    if(transferrers[j].order != ecat->order || transferrers[j].domain != i){
+                        j++;
+                        continue;
+                    }
+                    TransferrerDatum* const channels = transferrers[j].tx->channels;
+                    std::vector<CANEmu>& canemus = *canemusPtr;
+                    int k = 0;
+                    while(k < 6){
+                        if(channels[k].ID > 0){
+                            CANEmu::txFuncs[j][channels[k].ID](j, channels[k].ID, channels[k].Byte, channels[k].DLC, &canemus[j]);
+                        }
+                        k++;
+                    }
+                    j++;
+                }
             }else if(ecat->order == 0){
                 incompleteness++;
             }
@@ -911,7 +1020,7 @@ void* ECAT::rxtx(void* arg){
 }
 
 int ECAT::run(){
-    if(alias2type.size() == 0){
+    if(alias2type.size() == 0 && aliases2domainType.size() == 0){
         return 0;
     }
     cpu_set_t cpuset;

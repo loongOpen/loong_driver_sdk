@@ -23,9 +23,10 @@
 namespace DriverSDK{
 class ECAT{
 public:
-    bool dc, sdoRequestable, regRequestable;
-    int order, fd, effectorAlias, sensorAlias, * domainSizes, cpu;
+    bool dc, refSlave, sdoRequestable, regRequestable;
+    int order, fd, effectorAlias, sensorAlias, transferrerCount, * domainSizes, cpu;
     std::map<int, std::string> alias2type;
+    std::vector<std::tuple<std::vector<int>, int, std::string>> aliases2domainType;
     long period;
     std::map<int, int> alias2slave, alias2domain;
     std::vector<int> domainDivisions;

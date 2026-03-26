@@ -2,6 +2,94 @@
 <Config>
 <ECAT>
     <Devices>
+        <Device type="Xien">
+            <VendorID>0x00803804</VendorID>
+            <ProductCode>0x00109252</ProductCode>
+            <RxPDOs index="0x1600">
+                <Object>TargetPosition</Object>
+                <Object>TargetVelocity</Object>
+                <Object>TargetTorque</Object>
+                <Object>ControlWord</Object>
+                <Object>Mode</Object>
+                <Object>RxPDOPadding</Object>
+                <Object>TorqueOffset</Object>
+                <Object>VelocityOffset</Object>
+            </RxPDOs>
+            <TxPDOs index="0x1a00">
+                <Object>ActualPosition</Object>
+                <Object>ActualVelocity</Object>
+                <Object>ActualTorque</Object>
+                <Object>StatusWord</Object>
+                <Object>ModeDisplay</Object>
+                <Object>TxPDOPadding</Object>
+                <Object>ErrorCode</Object>
+            </TxPDOs>
+            <Dictionary>
+                <Object index="0x21b2" subindex="0x00" signed="0" bit_length="32" operation="1">Alias</Object>
+                <Object index="0x607a" subindex="0x00" signed="1" bit_length="32" operation="0">TargetPosition</Object>
+                <Object index="0x60ff" subindex="0x00" signed="1" bit_length="32" operation="0">TargetVelocity</Object>
+                <Object index="0x6071" subindex="0x00" signed="1" bit_length="16" operation="0">TargetTorque</Object>
+                <Object index="0x6040" subindex="0x00" signed="0" bit_length="16" operation="0">ControlWord</Object>
+                <Object index="0x6060" subindex="0x00" signed="1" bit_length="8"  operation="0">Mode</Object>
+                <Object index="0x5ffe" subindex="0x00" signed="1" bit_length="8"  operation="0">RxPDOPadding</Object>
+                <Object index="0x60b2" subindex="0x00" signed="1" bit_length="16" operation="0">TorqueOffset</Object>
+                <Object index="0x60b1" subindex="0x00" signed="1" bit_length="32" operation="0">VelocityOffset</Object>
+                <Object index="0x6064" subindex="0x00" signed="1" bit_length="32" operation="1">ActualPosition</Object>
+                <Object index="0x606c" subindex="0x00" signed="1" bit_length="32" operation="1">ActualVelocity</Object>
+                <Object index="0x6077" subindex="0x00" signed="1" bit_length="16" operation="1">ActualTorque</Object>
+                <Object index="0x6041" subindex="0x00" signed="0" bit_length="16" operation="1">StatusWord</Object>
+                <Object index="0x6061" subindex="0x00" signed="1" bit_length="8"  operation="1">ModeDisplay</Object>
+                <Object index="0x5fff" subindex="0x00" signed="1" bit_length="8"  operation="1">TxPDOPadding</Object>
+                <Object index="0x603f" subindex="0x00" signed="0" bit_length="16" operation="1">ErrorCode</Object>
+                <Object index="0x22a3" subindex="0x01" signed="1" bit_length="16" operation="1">Temperature</Object>
+                <Object index="0x20fc" subindex="0x02" signed="0" bit_length="16" operation="0">ClearError</Object>
+                <Object index="0x6066" subindex="0x00" signed="0" bit_length="16" operation="0">Timeout</Object>
+            </Dictionary>
+        </Device>
+        <Device type="Eyou">
+            <VendorID>0x00001097</VendorID>
+            <ProductCode>0x00002406</ProductCode>
+            <RxPDOs index="0x1600">
+                <Object>TargetPosition</Object>
+                <Object>TargetVelocity</Object>
+                <Object>TargetTorque</Object>
+                <Object>ControlWord</Object>
+                <Object>Mode</Object>
+                <Object>RxPDOPadding</Object>
+                <Object>TorqueOffset</Object>
+                <Object>VelocityOffset</Object>
+            </RxPDOs>
+            <TxPDOs index="0x1a00">
+                <Object>ActualPosition</Object>
+                <Object>ActualVelocity</Object>
+                <Object>ActualTorque</Object>
+                <Object>StatusWord</Object>
+                <Object>ModeDisplay</Object>
+                <Object>TxPDOPadding</Object>
+                <Object>ErrorCode</Object>
+            </TxPDOs>
+            <Dictionary>
+                <Object index="0x2001" subindex="0x01" signed="0" bit_length="32" operation="1">Alias</Object>
+                <Object index="0x607a" subindex="0x00" signed="1" bit_length="32" operation="0">TargetPosition</Object>
+                <Object index="0x60ff" subindex="0x00" signed="1" bit_length="32" operation="0">TargetVelocity</Object>
+                <Object index="0x6071" subindex="0x00" signed="1" bit_length="16" operation="0">TargetTorque</Object>
+                <Object index="0x6040" subindex="0x00" signed="0" bit_length="16" operation="0">ControlWord</Object>
+                <Object index="0x6060" subindex="0x00" signed="1" bit_length="8"  operation="0">Mode</Object>
+                <Object index="0x0000" subindex="0x00" signed="1" bit_length="8"  operation="0">RxPDOPadding</Object>
+                <Object index="0x60b2" subindex="0x00" signed="1" bit_length="16" operation="0">TorqueOffset</Object>
+                <Object index="0x60b1" subindex="0x00" signed="1" bit_length="32" operation="0">VelocityOffset</Object>
+                <Object index="0x6064" subindex="0x00" signed="1" bit_length="32" operation="1">ActualPosition</Object>
+                <Object index="0x606c" subindex="0x00" signed="1" bit_length="32" operation="1">ActualVelocity</Object>
+                <Object index="0x6077" subindex="0x00" signed="1" bit_length="16" operation="1">ActualTorque</Object>
+                <Object index="0x6041" subindex="0x00" signed="0" bit_length="16" operation="1">StatusWord</Object>
+                <Object index="0x6061" subindex="0x00" signed="1" bit_length="8"  operation="1">ModeDisplay</Object>
+                <Object index="0x0000" subindex="0x00" signed="1" bit_length="8"  operation="1">TxPDOPadding</Object>
+                <Object index="0x603f" subindex="0x00" signed="0" bit_length="16" operation="1">ErrorCode</Object>
+                <Object index="0x2016" subindex="0x01" signed="1" bit_length="8"  operation="1">Temperature</Object>
+                <Object index="0x20fc" subindex="0x02" signed="0" bit_length="16" operation="0">ClearError</Object>
+                <Object index="0x2f75" subindex="0x00" signed="0" bit_length="16" operation="0">Timeout</Object>
+            </Dictionary>
+        </Device>
         <Device type="TsinoDynatron">
             <VendorID>0x00000748</VendorID>
             <ProductCode>0x00000028</ProductCode>
@@ -132,6 +220,309 @@
                 <Object index="0x22a3" subindex="0x01" signed="1" bit_length="16" operation="1">Temperature</Object>
                 <Object index="0x20fc" subindex="0x02" signed="0" bit_length="16" operation="0">ClearError</Object>
                 <Object index="0x2f75" subindex="0x00" signed="0" bit_length="16" operation="0">Timeout</Object>
+            </Dictionary>
+        </Device>
+        <Device type="Encos_6dof">
+            <VendorID>0x00000009</VendorID>
+            <ProductCode>0x26483052</ProductCode>
+            <RxPDOs index="0x1601">
+                <Object>RxCount</Object>
+                <Object>RxIDE</Object>
+                <Object>RxID_0</Object>
+                <Object>RxRTR_0</Object>
+                <Object>RxDLC_0</Object>
+                <Object>RxByte0_0</Object>
+                <Object>RxByte1_0</Object>
+                <Object>RxByte2_0</Object>
+                <Object>RxByte3_0</Object>
+                <Object>RxByte4_0</Object>
+                <Object>RxByte5_0</Object>
+                <Object>RxByte6_0</Object>
+                <Object>RxByte7_0</Object>
+                <Object>RxID_1</Object>
+                <Object>RxRTR_1</Object>
+                <Object>RxDLC_1</Object>
+                <Object>RxByte0_1</Object>
+                <Object>RxByte1_1</Object>
+                <Object>RxByte2_1</Object>
+                <Object>RxByte3_1</Object>
+                <Object>RxByte4_1</Object>
+                <Object>RxByte5_1</Object>
+                <Object>RxByte6_1</Object>
+                <Object>RxByte7_1</Object>
+                <Object>RxID_2</Object>
+                <Object>RxRTR_2</Object>
+                <Object>RxDLC_2</Object>
+                <Object>RxByte0_2</Object>
+                <Object>RxByte1_2</Object>
+                <Object>RxByte2_2</Object>
+                <Object>RxByte3_2</Object>
+                <Object>RxByte4_2</Object>
+                <Object>RxByte5_2</Object>
+                <Object>RxByte6_2</Object>
+                <Object>RxByte7_2</Object>
+                <Object>RxID_3</Object>
+                <Object>RxRTR_3</Object>
+                <Object>RxDLC_3</Object>
+                <Object>RxByte0_3</Object>
+                <Object>RxByte1_3</Object>
+                <Object>RxByte2_3</Object>
+                <Object>RxByte3_3</Object>
+                <Object>RxByte4_3</Object>
+                <Object>RxByte5_3</Object>
+                <Object>RxByte6_3</Object>
+                <Object>RxByte7_3</Object>
+                <Object>RxID_4</Object>
+                <Object>RxRTR_4</Object>
+                <Object>RxDLC_4</Object>
+                <Object>RxByte0_4</Object>
+                <Object>RxByte1_4</Object>
+                <Object>RxByte2_4</Object>
+                <Object>RxByte3_4</Object>
+                <Object>RxByte4_4</Object>
+                <Object>RxByte5_4</Object>
+                <Object>RxByte6_4</Object>
+                <Object>RxByte7_4</Object>
+                <Object>RxID_5</Object>
+                <Object>RxRTR_5</Object>
+                <Object>RxDLC_5</Object>
+                <Object>RxByte0_5</Object>
+                <Object>RxByte1_5</Object>
+                <Object>RxByte2_5</Object>
+                <Object>RxByte3_5</Object>
+                <Object>RxByte4_5</Object>
+                <Object>RxByte5_5</Object>
+                <Object>RxByte6_5</Object>
+                <Object>RxByte7_5</Object>
+            </RxPDOs>
+            <TxPDOs index="0x1a00">
+                <Object>TxCount</Object>
+                <Object>TxIDE</Object>
+                <Object>TxID_0</Object>
+                <Object>TxRTR_0</Object>
+                <Object>TxDLC_0</Object>
+                <Object>TxByte0_0</Object>
+                <Object>TxByte1_0</Object>
+                <Object>TxByte2_0</Object>
+                <Object>TxByte3_0</Object>
+                <Object>TxByte4_0</Object>
+                <Object>TxByte5_0</Object>
+                <Object>TxByte6_0</Object>
+                <Object>TxByte7_0</Object>
+                <Object>TxID_1</Object>
+                <Object>TxRTR_1</Object>
+                <Object>TxDLC_1</Object>
+                <Object>TxByte0_1</Object>
+                <Object>TxByte1_1</Object>
+                <Object>TxByte2_1</Object>
+                <Object>TxByte3_1</Object>
+                <Object>TxByte4_1</Object>
+                <Object>TxByte5_1</Object>
+                <Object>TxByte6_1</Object>
+                <Object>TxByte7_1</Object>
+                <Object>TxID_2</Object>
+                <Object>TxRTR_2</Object>
+                <Object>TxDLC_2</Object>
+                <Object>TxByte0_2</Object>
+                <Object>TxByte1_2</Object>
+                <Object>TxByte2_2</Object>
+                <Object>TxByte3_2</Object>
+                <Object>TxByte4_2</Object>
+                <Object>TxByte5_2</Object>
+                <Object>TxByte6_2</Object>
+                <Object>TxByte7_2</Object>
+                <Object>TxID_3</Object>
+                <Object>TxRTR_3</Object>
+                <Object>TxDLC_3</Object>
+                <Object>TxByte0_3</Object>
+                <Object>TxByte1_3</Object>
+                <Object>TxByte2_3</Object>
+                <Object>TxByte3_3</Object>
+                <Object>TxByte4_3</Object>
+                <Object>TxByte5_3</Object>
+                <Object>TxByte6_3</Object>
+                <Object>TxByte7_3</Object>
+                <Object>TxID_4</Object>
+                <Object>TxRTR_4</Object>
+                <Object>TxDLC_4</Object>
+                <Object>TxByte0_4</Object>
+                <Object>TxByte1_4</Object>
+                <Object>TxByte2_4</Object>
+                <Object>TxByte3_4</Object>
+                <Object>TxByte4_4</Object>
+                <Object>TxByte5_4</Object>
+                <Object>TxByte6_4</Object>
+                <Object>TxByte7_4</Object>
+                <Object>TxID_5</Object>
+                <Object>TxRTR_5</Object>
+                <Object>TxDLC_5</Object>
+                <Object>TxByte0_5</Object>
+                <Object>TxByte1_5</Object>
+                <Object>TxByte2_5</Object>
+                <Object>TxByte3_5</Object>
+                <Object>TxByte4_5</Object>
+                <Object>TxByte5_5</Object>
+                <Object>TxByte6_5</Object>
+                <Object>TxByte7_5</Object>
+            </TxPDOs>
+            <TxPDOs index="0x1a02">
+                <Object>A</Object>
+                <Object>B</Object>
+                <Object>C</Object>
+                <Object>D</Object>
+                <Object>TxPDOPadding</Object>
+                <Object>E</Object>
+                <Object>F</Object>
+                <Object>G</Object>
+                <Object>H</Object>
+            </TxPDOs>
+            <Dictionary>
+                <Object index="0x0000" subindex="0x00" signed="0" bit_length="0"  operation="1">Alias</Object>
+                <Object index="0x7010" subindex="0x01" signed="0" bit_length="8"  operation="0">RxCount</Object>
+                <Object index="0x7010" subindex="0x02" signed="0" bit_length="8"  operation="0">RxIDE</Object>
+                <Object index="0x7010" subindex="0x03" signed="0" bit_length="32" operation="0">RxID_0</Object>
+                <Object index="0x7010" subindex="0x04" signed="0" bit_length="8"  operation="0">RxRTR_0</Object>
+                <Object index="0x7010" subindex="0x05" signed="0" bit_length="8"  operation="0">RxDLC_0</Object>
+                <Object index="0x7010" subindex="0x06" signed="0" bit_length="8"  operation="0">RxByte0_0</Object>
+                <Object index="0x7010" subindex="0x07" signed="0" bit_length="8"  operation="0">RxByte1_0</Object>
+                <Object index="0x7010" subindex="0x08" signed="0" bit_length="8"  operation="0">RxByte2_0</Object>
+                <Object index="0x7010" subindex="0x09" signed="0" bit_length="8"  operation="0">RxByte3_0</Object>
+                <Object index="0x7010" subindex="0x0a" signed="0" bit_length="8"  operation="0">RxByte4_0</Object>
+                <Object index="0x7010" subindex="0x0b" signed="0" bit_length="8"  operation="0">RxByte5_0</Object>
+                <Object index="0x7010" subindex="0x0c" signed="0" bit_length="8"  operation="0">RxByte6_0</Object>
+                <Object index="0x7010" subindex="0x0d" signed="0" bit_length="8"  operation="0">RxByte7_0</Object>
+                <Object index="0x7010" subindex="0x0e" signed="0" bit_length="32" operation="0">RxID_1</Object>
+                <Object index="0x7010" subindex="0x0f" signed="0" bit_length="8"  operation="0">RxRTR_1</Object>
+                <Object index="0x7010" subindex="0x10" signed="0" bit_length="8"  operation="0">RxDLC_1</Object>
+                <Object index="0x7010" subindex="0x11" signed="0" bit_length="8"  operation="0">RxByte0_1</Object>
+                <Object index="0x7010" subindex="0x12" signed="0" bit_length="8"  operation="0">RxByte1_1</Object>
+                <Object index="0x7010" subindex="0x13" signed="0" bit_length="8"  operation="0">RxByte2_1</Object>
+                <Object index="0x7010" subindex="0x14" signed="0" bit_length="8"  operation="0">RxByte3_1</Object>
+                <Object index="0x7010" subindex="0x15" signed="0" bit_length="8"  operation="0">RxByte4_1</Object>
+                <Object index="0x7010" subindex="0x16" signed="0" bit_length="8"  operation="0">RxByte5_1</Object>
+                <Object index="0x7010" subindex="0x17" signed="0" bit_length="8"  operation="0">RxByte6_1</Object>
+                <Object index="0x7010" subindex="0x18" signed="0" bit_length="8"  operation="0">RxByte7_1</Object>
+                <Object index="0x7010" subindex="0x19" signed="0" bit_length="32" operation="0">RxID_2</Object>
+                <Object index="0x7010" subindex="0x1a" signed="0" bit_length="8"  operation="0">RxRTR_2</Object>
+                <Object index="0x7010" subindex="0x1b" signed="0" bit_length="8"  operation="0">RxDLC_2</Object>
+                <Object index="0x7010" subindex="0x1c" signed="0" bit_length="8"  operation="0">RxByte0_2</Object>
+                <Object index="0x7010" subindex="0x1d" signed="0" bit_length="8"  operation="0">RxByte1_2</Object>
+                <Object index="0x7010" subindex="0x1e" signed="0" bit_length="8"  operation="0">RxByte2_2</Object>
+                <Object index="0x7010" subindex="0x1f" signed="0" bit_length="8"  operation="0">RxByte3_2</Object>
+                <Object index="0x7010" subindex="0x20" signed="0" bit_length="8"  operation="0">RxByte4_2</Object>
+                <Object index="0x7010" subindex="0x21" signed="0" bit_length="8"  operation="0">RxByte5_2</Object>
+                <Object index="0x7010" subindex="0x22" signed="0" bit_length="8"  operation="0">RxByte6_2</Object>
+                <Object index="0x7010" subindex="0x23" signed="0" bit_length="8"  operation="0">RxByte7_2</Object>
+                <Object index="0x7010" subindex="0x24" signed="0" bit_length="32" operation="0">RxID_3</Object>
+                <Object index="0x7010" subindex="0x25" signed="0" bit_length="8"  operation="0">RxRTR_3</Object>
+                <Object index="0x7010" subindex="0x26" signed="0" bit_length="8"  operation="0">RxDLC_3</Object>
+                <Object index="0x7010" subindex="0x27" signed="0" bit_length="8"  operation="0">RxByte0_3</Object>
+                <Object index="0x7010" subindex="0x28" signed="0" bit_length="8"  operation="0">RxByte1_3</Object>
+                <Object index="0x7010" subindex="0x29" signed="0" bit_length="8"  operation="0">RxByte2_3</Object>
+                <Object index="0x7010" subindex="0x2a" signed="0" bit_length="8"  operation="0">RxByte3_3</Object>
+                <Object index="0x7010" subindex="0x2b" signed="0" bit_length="8"  operation="0">RxByte4_3</Object>
+                <Object index="0x7010" subindex="0x2c" signed="0" bit_length="8"  operation="0">RxByte5_3</Object>
+                <Object index="0x7010" subindex="0x2d" signed="0" bit_length="8"  operation="0">RxByte6_3</Object>
+                <Object index="0x7010" subindex="0x2e" signed="0" bit_length="8"  operation="0">RxByte7_3</Object>
+                <Object index="0x7010" subindex="0x2f" signed="0" bit_length="32" operation="0">RxID_4</Object>
+                <Object index="0x7010" subindex="0x30" signed="0" bit_length="8"  operation="0">RxRTR_4</Object>
+                <Object index="0x7010" subindex="0x31" signed="0" bit_length="8"  operation="0">RxDLC_4</Object>
+                <Object index="0x7010" subindex="0x32" signed="0" bit_length="8"  operation="0">RxByte0_4</Object>
+                <Object index="0x7010" subindex="0x33" signed="0" bit_length="8"  operation="0">RxByte1_4</Object>
+                <Object index="0x7010" subindex="0x34" signed="0" bit_length="8"  operation="0">RxByte2_4</Object>
+                <Object index="0x7010" subindex="0x35" signed="0" bit_length="8"  operation="0">RxByte3_4</Object>
+                <Object index="0x7010" subindex="0x36" signed="0" bit_length="8"  operation="0">RxByte4_4</Object>
+                <Object index="0x7010" subindex="0x37" signed="0" bit_length="8"  operation="0">RxByte5_4</Object>
+                <Object index="0x7010" subindex="0x38" signed="0" bit_length="8"  operation="0">RxByte6_4</Object>
+                <Object index="0x7010" subindex="0x39" signed="0" bit_length="8"  operation="0">RxByte7_4</Object>
+                <Object index="0x7010" subindex="0x3a" signed="0" bit_length="32" operation="0">RxID_5</Object>
+                <Object index="0x7010" subindex="0x3b" signed="0" bit_length="8"  operation="0">RxRTR_5</Object>
+                <Object index="0x7010" subindex="0x3c" signed="0" bit_length="8"  operation="0">RxDLC_5</Object>
+                <Object index="0x7010" subindex="0x3d" signed="0" bit_length="8"  operation="0">RxByte0_5</Object>
+                <Object index="0x7010" subindex="0x3e" signed="0" bit_length="8"  operation="0">RxByte1_5</Object>
+                <Object index="0x7010" subindex="0x3f" signed="0" bit_length="8"  operation="0">RxByte2_5</Object>
+                <Object index="0x7010" subindex="0x40" signed="0" bit_length="8"  operation="0">RxByte3_5</Object>
+                <Object index="0x7010" subindex="0x41" signed="0" bit_length="8"  operation="0">RxByte4_5</Object>
+                <Object index="0x7010" subindex="0x42" signed="0" bit_length="8"  operation="0">RxByte5_5</Object>
+                <Object index="0x7010" subindex="0x43" signed="0" bit_length="8"  operation="0">RxByte6_5</Object>
+                <Object index="0x7010" subindex="0x44" signed="0" bit_length="8"  operation="0">RxByte7_5</Object>
+                <Object index="0x6000" subindex="0x01" signed="0" bit_length="8"  operation="0">TxCount</Object>
+                <Object index="0x6000" subindex="0x02" signed="0" bit_length="8"  operation="0">TxIDE</Object>
+                <Object index="0x6000" subindex="0x03" signed="0" bit_length="32" operation="0">TxID_0</Object>
+                <Object index="0x6000" subindex="0x04" signed="0" bit_length="8"  operation="0">TxRTR_0</Object>
+                <Object index="0x6000" subindex="0x05" signed="0" bit_length="8"  operation="0">TxDLC_0</Object>
+                <Object index="0x6000" subindex="0x06" signed="0" bit_length="8"  operation="0">TxByte0_0</Object>
+                <Object index="0x6000" subindex="0x07" signed="0" bit_length="8"  operation="0">TxByte1_0</Object>
+                <Object index="0x6000" subindex="0x08" signed="0" bit_length="8"  operation="0">TxByte2_0</Object>
+                <Object index="0x6000" subindex="0x09" signed="0" bit_length="8"  operation="0">TxByte3_0</Object>
+                <Object index="0x6000" subindex="0x0a" signed="0" bit_length="8"  operation="0">TxByte4_0</Object>
+                <Object index="0x6000" subindex="0x0b" signed="0" bit_length="8"  operation="0">TxByte5_0</Object>
+                <Object index="0x6000" subindex="0x0c" signed="0" bit_length="8"  operation="0">TxByte6_0</Object>
+                <Object index="0x6000" subindex="0x0d" signed="0" bit_length="8"  operation="0">TxByte7_0</Object>
+                <Object index="0x6000" subindex="0x0e" signed="0" bit_length="32" operation="0">TxID_1</Object>
+                <Object index="0x6000" subindex="0x0f" signed="0" bit_length="8"  operation="0">TxRTR_1</Object>
+                <Object index="0x6000" subindex="0x10" signed="0" bit_length="8"  operation="0">TxDLC_1</Object>
+                <Object index="0x6000" subindex="0x11" signed="0" bit_length="8"  operation="0">TxByte0_1</Object>
+                <Object index="0x6000" subindex="0x12" signed="0" bit_length="8"  operation="0">TxByte1_1</Object>
+                <Object index="0x6000" subindex="0x13" signed="0" bit_length="8"  operation="0">TxByte2_1</Object>
+                <Object index="0x6000" subindex="0x14" signed="0" bit_length="8"  operation="0">TxByte3_1</Object>
+                <Object index="0x6000" subindex="0x15" signed="0" bit_length="8"  operation="0">TxByte4_1</Object>
+                <Object index="0x6000" subindex="0x16" signed="0" bit_length="8"  operation="0">TxByte5_1</Object>
+                <Object index="0x6000" subindex="0x17" signed="0" bit_length="8"  operation="0">TxByte6_1</Object>
+                <Object index="0x6000" subindex="0x18" signed="0" bit_length="8"  operation="0">TxByte7_1</Object>
+                <Object index="0x6000" subindex="0x19" signed="0" bit_length="32" operation="0">TxID_2</Object>
+                <Object index="0x6000" subindex="0x1a" signed="0" bit_length="8"  operation="0">TxRTR_2</Object>
+                <Object index="0x6000" subindex="0x1b" signed="0" bit_length="8"  operation="0">TxDLC_2</Object>
+                <Object index="0x6000" subindex="0x1c" signed="0" bit_length="8"  operation="0">TxByte0_2</Object>
+                <Object index="0x6000" subindex="0x1d" signed="0" bit_length="8"  operation="0">TxByte1_2</Object>
+                <Object index="0x6000" subindex="0x1e" signed="0" bit_length="8"  operation="0">TxByte2_2</Object>
+                <Object index="0x6000" subindex="0x1f" signed="0" bit_length="8"  operation="0">TxByte3_2</Object>
+                <Object index="0x6000" subindex="0x20" signed="0" bit_length="8"  operation="0">TxByte4_2</Object>
+                <Object index="0x6000" subindex="0x21" signed="0" bit_length="8"  operation="0">TxByte5_2</Object>
+                <Object index="0x6000" subindex="0x22" signed="0" bit_length="8"  operation="0">TxByte6_2</Object>
+                <Object index="0x6000" subindex="0x23" signed="0" bit_length="8"  operation="0">TxByte7_2</Object>
+                <Object index="0x6000" subindex="0x24" signed="0" bit_length="32" operation="0">TxID_3</Object>
+                <Object index="0x6000" subindex="0x25" signed="0" bit_length="8"  operation="0">TxRTR_3</Object>
+                <Object index="0x6000" subindex="0x26" signed="0" bit_length="8"  operation="0">TxDLC_3</Object>
+                <Object index="0x6000" subindex="0x27" signed="0" bit_length="8"  operation="0">TxByte0_3</Object>
+                <Object index="0x6000" subindex="0x28" signed="0" bit_length="8"  operation="0">TxByte1_3</Object>
+                <Object index="0x6000" subindex="0x29" signed="0" bit_length="8"  operation="0">TxByte2_3</Object>
+                <Object index="0x6000" subindex="0x2a" signed="0" bit_length="8"  operation="0">TxByte3_3</Object>
+                <Object index="0x6000" subindex="0x2b" signed="0" bit_length="8"  operation="0">TxByte4_3</Object>
+                <Object index="0x6000" subindex="0x2c" signed="0" bit_length="8"  operation="0">TxByte5_3</Object>
+                <Object index="0x6000" subindex="0x2d" signed="0" bit_length="8"  operation="0">TxByte6_3</Object>
+                <Object index="0x6000" subindex="0x2e" signed="0" bit_length="8"  operation="0">TxByte7_3</Object>
+                <Object index="0x6000" subindex="0x2f" signed="0" bit_length="32" operation="0">TxID_4</Object>
+                <Object index="0x6000" subindex="0x30" signed="0" bit_length="8"  operation="0">TxRTR_4</Object>
+                <Object index="0x6000" subindex="0x31" signed="0" bit_length="8"  operation="0">TxDLC_4</Object>
+                <Object index="0x6000" subindex="0x32" signed="0" bit_length="8"  operation="0">TxByte0_4</Object>
+                <Object index="0x6000" subindex="0x33" signed="0" bit_length="8"  operation="0">TxByte1_4</Object>
+                <Object index="0x6000" subindex="0x34" signed="0" bit_length="8"  operation="0">TxByte2_4</Object>
+                <Object index="0x6000" subindex="0x35" signed="0" bit_length="8"  operation="0">TxByte3_4</Object>
+                <Object index="0x6000" subindex="0x36" signed="0" bit_length="8"  operation="0">TxByte4_4</Object>
+                <Object index="0x6000" subindex="0x37" signed="0" bit_length="8"  operation="0">TxByte5_4</Object>
+                <Object index="0x6000" subindex="0x38" signed="0" bit_length="8"  operation="0">TxByte6_4</Object>
+                <Object index="0x6000" subindex="0x39" signed="0" bit_length="8"  operation="0">TxByte7_4</Object>
+                <Object index="0x6000" subindex="0x3a" signed="0" bit_length="32" operation="0">TxID_5</Object>
+                <Object index="0x6000" subindex="0x3b" signed="0" bit_length="8"  operation="0">TxRTR_5</Object>
+                <Object index="0x6000" subindex="0x3c" signed="0" bit_length="8"  operation="0">TxDLC_5</Object>
+                <Object index="0x6000" subindex="0x3d" signed="0" bit_length="8"  operation="0">TxByte0_5</Object>
+                <Object index="0x6000" subindex="0x3e" signed="0" bit_length="8"  operation="0">TxByte1_5</Object>
+                <Object index="0x6000" subindex="0x3f" signed="0" bit_length="8"  operation="0">TxByte2_5</Object>
+                <Object index="0x6000" subindex="0x40" signed="0" bit_length="8"  operation="0">TxByte3_5</Object>
+                <Object index="0x6000" subindex="0x41" signed="0" bit_length="8"  operation="0">TxByte4_5</Object>
+                <Object index="0x6000" subindex="0x42" signed="0" bit_length="8"  operation="0">TxByte5_5</Object>
+                <Object index="0x6000" subindex="0x43" signed="0" bit_length="8"  operation="0">TxByte6_5</Object>
+                <Object index="0x6000" subindex="0x44" signed="0" bit_length="8"  operation="0">TxByte7_5</Object>
+                <Object index="0x6020" subindex="0x01" signed="0" bit_length="1"  operation="1">A</Object>
+                <Object index="0x6020" subindex="0x02" signed="0" bit_length="1"  operation="1">B</Object>
+                <Object index="0x6020" subindex="0x03" signed="0" bit_length="2"  operation="1">C</Object>
+                <Object index="0x6020" subindex="0x05" signed="0" bit_length="2"  operation="1">D</Object>
+                <Object index="0x0000" subindex="0x00" signed="0" bit_length="8"  operation="1">TxPDOPadding</Object>
+                <Object index="0x1802" subindex="0x07" signed="0" bit_length="1"  operation="1">E</Object>
+                <Object index="0x1802" subindex="0x09" signed="0" bit_length="1"  operation="1">F</Object>
+                <Object index="0x6020" subindex="0x0b" signed="0" bit_length="16" operation="1">G</Object>
+                <Object index="0x6020" subindex="0x0c" signed="0" bit_length="16" operation="1">H</Object>
             </Dictionary>
         </Device>
         <Device type="Tsinghua">
@@ -719,9 +1110,14 @@
         <Category name="battery">
         </Category>
         <Category name="driver">
+            <Type>Xien</Type>
+            <Type>Eyou</Type>
             <Type>TsinoDynatron</Type>
             <Type>JohnsonElectric</Type>
             <Type>Elmo</Type>
+        </Category>
+        <Category name="transferrer">
+            <Type dof="6">Encos_6dof</Type>
         </Category>
         <Category name="effector">
             <Type dof="6">Tsinghua</Type>
@@ -733,12 +1129,12 @@
         </Category>
     </Categories>
     <Masters>
-        <Master order="0" eni="NIIC_ENI_M0.xml" dc="true" period="1000000" cpu="-1"/>
-        <Master order="1" eni="NIIC_ENI_M1.xml" dc="true" period="4000000" cpu="-1"/>
-        <Master order="2" eni="NIIC_ENI_M2.xml" dc="true" period="4000000" cpu="-1"/>
-        <Master order="3" eni="NIIC_ENI_M3.xml" dc="true" period="4000000" cpu="-1"/>
-        <Master order="4" eni="NIIC_ENI_M4.xml" dc="true" period="4000000" cpu="-1"/>
-        <Master order="5" eni="NIIC_ENI_M5.xml" dc="true" period="4000000" cpu="-1"/>
+        <Master order="0" eni="NIIC_ENI_M0.xml" dc="true" ref_slave="false" period="1000000" cpu="-1"/>
+        <Master order="1" eni="NIIC_ENI_M1.xml" dc="true" ref_slave="false" period="4000000" cpu="-1"/>
+        <Master order="2" eni="NIIC_ENI_M2.xml" dc="true" ref_slave="false" period="4000000" cpu="-1"/>
+        <Master order="3" eni="NIIC_ENI_M3.xml" dc="true" ref_slave="false" period="4000000" cpu="-1"/>
+        <Master order="4" eni="NIIC_ENI_M4.xml" dc="true" ref_slave="false" period="4000000" cpu="-1"/>
+        <Master order="5" eni="NIIC_ENI_M5.xml" dc="true" ref_slave="false" period="4000000" cpu="-1"/>
     </Masters>
     <Domains>
         <Domain master="0" order="0"  division="1"/>
@@ -769,49 +1165,97 @@
         <Domain master="5" order="0"  division="1"/>
     </Domains>
     <Slaves>
-        <Slave master="0" domain="0"  alias="1"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="1"  alias="2"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="2"  alias="3"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="3"  alias="4"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="4"  alias="5"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="5"  alias="6"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="6"  alias="7"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="7"  alias="8"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="8"  alias="9"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="9"  alias="10"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="10" alias="11"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="11" alias="12"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="13"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="14"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="15"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="16"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="17"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="18"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="19"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="2"  alias="220" type="LinkTouch"  >0</Slave>
-        <Slave master="1" domain="3"  alias="200" type="Tsinghua"   >0</Slave>
-        <Slave master="1" domain="4"  alias="200" type="Ruiyan_1dof">0</Slave>
-        <Slave master="1" domain="4"  alias="200" type="Ruiyan_6dof">0</Slave>
-        <Slave master="1" domain="1"  alias="20"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="21"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="22"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="23"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="24"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="25"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="26"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="2"  alias="221" type="LinkTouch"  >0</Slave>
-        <Slave master="1" domain="3"  alias="201" type="Tsinghua"   >0</Slave>
-        <Slave master="1" domain="4"  alias="201" type="Ruiyan_1dof">0</Slave>
-        <Slave master="1" domain="4"  alias="201" type="Ruiyan_6dof">0</Slave>
-        <Slave master="0" domain="12" alias="27"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="13" alias="28"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="14" alias="29"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="15" alias="30"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="16" alias="31"  type="Elmo"       >0</Slave>
+        <!-- Left Leg -->
+        <Slave master="0" domain="0"  alias  ="1"               type="Elmo"       >0</Slave>
+        <Slave master="0" domain="1"  alias  ="2"               type="Elmo"       >0</Slave>
+        <Slave master="0" domain="2"  alias  ="3"               type="Elmo"       >0</Slave>
+        <Slave master="0" domain="3"  alias  ="4"               type="Elmo"       >0</Slave>
+        <Slave master="0" domain="4"  alias  ="5"               type="Elmo"       >0</Slave>
+        <Slave master="0" domain="5"  alias  ="6"               type="Elmo"       >0</Slave>
+        <Slave master="0" domain="0"  aliases="1 2 0 3 4 5"     type="Encos_6dof" >0</Slave>
+        <!-- Right Leg -->
+        <Slave master="0" domain="6"  alias  ="7"               type="Elmo"       >0</Slave>
+        <Slave master="0" domain="7"  alias  ="8"               type="Elmo"       >0</Slave>
+        <Slave master="0" domain="8"  alias  ="9"               type="Elmo"       >0</Slave>
+        <Slave master="0" domain="9"  alias  ="10"              type="Elmo"       >0</Slave>
+        <Slave master="0" domain="10" alias  ="11"              type="Elmo"       >0</Slave>
+        <Slave master="0" domain="11" alias  ="12"              type="Elmo"       >0</Slave>
+        <Slave master="0" domain="0"  aliases="7 8 0 9 10 11"   type="Encos_6dof" >0</Slave>
+        <!-- Left Arm -->
+        <Slave master="1" domain="0"  alias  ="13"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias  ="14"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias  ="15"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias  ="16"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias  ="17"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias  ="18"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0"  alias  ="19"              type="Elmo"       >0</Slave>
+        <Slave master="0" domain="1"  aliases="13 14 0 15 16 0" type="Encos_6dof" >0</Slave>
+        <Slave master="1" domain="2"  alias  ="220"             type="LinkTouch"  >0</Slave>
+        <Slave master="1" domain="3"  alias  ="200"             type="Tsinghua"   >0</Slave>
+        <Slave master="1" domain="4"  alias  ="200"             type="Ruiyan_1dof">0</Slave>
+        <Slave master="1" domain="4"  alias  ="200"             type="Ruiyan_6dof">0</Slave>
+        <!-- Right Arm -->
+        <Slave master="1" domain="1"  alias  ="20"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias  ="21"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias  ="22"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias  ="23"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias  ="24"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias  ="25"              type="Elmo"       >0</Slave>
+        <Slave master="1" domain="1"  alias  ="26"              type="Elmo"       >0</Slave>
+        <Slave master="0" domain="1"  aliases="20 21 0 22 23 0" type="Encos_6dof" >0</Slave>
+        <Slave master="1" domain="2"  alias  ="221"             type="LinkTouch"  >0</Slave>
+        <Slave master="1" domain="3"  alias  ="201"             type="Tsinghua"   >0</Slave>
+        <Slave master="1" domain="4"  alias  ="201"             type="Ruiyan_1dof">0</Slave>
+        <Slave master="1" domain="4"  alias  ="201"             type="Ruiyan_6dof">0</Slave>
+        <!-- Waist -->
+        <Slave master="0" domain="12" alias  ="27"              type="Elmo"       >0</Slave>
+        <Slave master="0" domain="13" alias  ="28"              type="Elmo"       >0</Slave>
+        <Slave master="0" domain="14" alias  ="29"              type="Elmo"       >0</Slave>
+        <!-- Neck -->
+        <Slave master="0" domain="15" alias  ="30"              type="Elmo"       >0</Slave>
+        <Slave master="0" domain="16" alias  ="31"              type="Elmo"       >0</Slave>
     </Slaves>
 </ECAT>
+<CANEmu>
+    <Slaves>
+        <!-- Left Leg -->
+        <Slave master_ids="1"  slave_id="1"  alias="1"  type="Encos EC-A10020-P2-24"  >0</Slave>
+        <Slave master_ids="2"  slave_id="2"  alias="2"  type="Encos EC-A10020-P2-24"  >0</Slave>
+        <Slave master_ids="3"  slave_id="3"  alias="3"  type="Encos EC-A10010-P2-24"  >0</Slave>
+        <Slave master_ids="4"  slave_id="4"  alias="4"  type="Encos EC-A10020-P2-24"  >0</Slave>
+        <Slave master_ids="5"  slave_id="5"  alias="5"  type="Encos EC-A6416-P2-30.25">0</Slave>
+        <!-- Right Leg -->
+        <Slave master_ids="6"  slave_id="6"  alias="7"  type="Encos EC-A10020-P2-24"  >0</Slave>
+        <Slave master_ids="7"  slave_id="7"  alias="8"  type="Encos EC-A10020-P2-24"  >0</Slave>
+        <Slave master_ids="8"  slave_id="8"  alias="9"  type="Encos EC-A10010-P2-24"  >0</Slave>
+        <Slave master_ids="9"  slave_id="9"  alias="10" type="Encos EC-A10020-P2-24"  >0</Slave>
+        <Slave master_ids="10" slave_id="10" alias="11" type="Encos EC-A6416-P2-30.25">0</Slave>
+        <!-- Left Arm -->
+        <Slave master_ids="11" slave_id="11" alias="13" type="Encos EC-A4310-P2-36"   >0</Slave>
+        <Slave master_ids="12" slave_id="12" alias="14" type="Encos EC-A4310-P2-36"   >0</Slave>
+        <Slave master_ids="13" slave_id="13" alias="15" type="Encos EC-A4310-P2-36"   >0</Slave>
+        <Slave master_ids="14" slave_id="14" alias="16" type="Encos EC-A4310-P2-36"   >0</Slave>
+        <!-- Right Arm -->
+        <Slave master_ids="15" slave_id="15" alias="20" type="Encos EC-A4310-P2-36"   >0</Slave>
+        <Slave master_ids="16" slave_id="16" alias="21" type="Encos EC-A4310-P2-36"   >0</Slave>
+        <Slave master_ids="17" slave_id="17" alias="22" type="Encos EC-A4310-P2-36"   >0</Slave>
+        <Slave master_ids="18" slave_id="18" alias="23" type="Encos EC-A4310-P2-36"   >0</Slave>
+    </Slaves>
+</CANEmu>
 <CAN>
     <Devices>
+        <Device type="Encos EC-A13720-P1-11.4">
+            <MinP>-12.5</MinP>
+            <MaxP>12.5</MaxP>
+            <MinV>-18.0</MinV>
+            <MaxV>18.0</MaxV>
+            <MinKp>0.0</MinKp>
+            <MaxKp>500.0</MaxKp>
+            <MinKd>0.0</MinKd>
+            <MaxKd>50.0</MaxKd>
+            <MinT>-400.0</MinT>
+            <MaxT>400.0</MaxT>
+        </Device>
         <Device type="Encos EC-A10020-P2-24">
             <MinP>-12.5</MinP>
             <MaxP>12.5</MaxP>
@@ -835,6 +1279,18 @@
             <MaxKd>50.0</MaxKd>
             <MinT>-150.0</MinT>
             <MaxT>150.0</MaxT>
+        </Device>
+        <Device type="Encos EC-A10010-P2-24">
+            <MinP>-12.5</MinP>
+            <MaxP>12.5</MaxP>
+            <MinV>-18.0</MinV>
+            <MaxV>18.0</MaxV>
+            <MinKp>0.0</MinKp>
+            <MaxKp>500.0</MaxKp>
+            <MinKd>0.0</MinKd>
+            <MaxKd>50.0</MaxKd>
+            <MinT>-300.0</MinT>
+            <MaxT>300.0</MaxT>
         </Device>
         <Device type="Encos EC-A8116-P1-18">
             <MinP>-12.5</MinP>
@@ -860,7 +1316,7 @@
             <MinT>-90.0</MinT>
             <MaxT>90.0</MaxT>
         </Device>
-        <Device type="Encos EC-A6408-P2-25">
+        <Device type="Encos EC-A6416-P2-30.25">
             <MinP>-12.5</MinP>
             <MaxP>12.5</MaxP>
             <MinV>-18.0</MinV>
@@ -869,8 +1325,8 @@
             <MaxKp>500.0</MaxKp>
             <MinKd>0.0</MinKd>
             <MaxKd>5.0</MaxKd>
-            <MinT>-60.0</MinT>
-            <MaxT>60.0</MaxT>
+            <MinT>-120.0</MinT>
+            <MaxT>120.0</MaxT>
         </Device>
         <Device type="Encos EC-A4315-P2-36">
             <MinP>-12.5</MinP>
@@ -937,8 +1393,8 @@
             <TargetVUnit>0.002</TargetVUnit>
             <ActualVUnit>0.02</ActualVUnit>
             <VOffsetUnit>0.002</VOffsetUnit>
-            <TargetCUnit>0.001</TargetCUnit>
-            <ActualCUnit>0.001</ActualCUnit>
+            <TargetCUnit>0.002</TargetCUnit>
+            <ActualCUnit>0.002</ActualCUnit>
             <COffsetUnit>0.002</COffsetUnit>
             <TConstant>7.0</TConstant>
         </Device>
@@ -967,126 +1423,120 @@
         <Category name="battery">
         </Category>
         <Category name="driver">
-            <Type master_ids="1"            masters="0 1">Encos EC-A10020-P2-24</Type>
-            <Type master_ids="2"            masters="0 1">Encos EC-A8116-P1-18</Type>
-            <Type master_ids="3"            masters="0 1">Encos EC-A10020-P1-12</Type>
-            <Type master_ids="4"            masters="0 1">Encos EC-A10020-P1-12</Type>
-            <Type master_ids="5"            masters="0 1">Encos EC-A8112-P1-18</Type>
-            <Type master_ids="6"            masters="0 1">Encos EC-A8112-P1-18</Type>
-            <Type master_ids="1"            masters="2 3">Encos EC-A4315-P2-36</Type>
-            <Type master_ids="17"           masters="2 3">Damiao DM-J6248P-2EC</Type>
-            <Type master_ids="18"           masters="2 3">Damiao DM-J6248P-2EC</Type>
-            <Type master_ids="19"           masters="2 3">Damiao DM-J4340P-2EC</Type>
-            <Type master_ids="20"           masters="2 3">Damiao DM-J4340P-2EC</Type>
-            <Type master_ids="21"           masters="2 3">Damiao DM-J4310-2EC</Type>
-            <Type master_ids="22"           masters="2 3">Damiao DM-J4310-2EC</Type>
-            <Type master_ids="23"           masters="2 3">Damiao DM-J4310-2EC</Type>
-            <Type master_ids="130 257 1793" masters="2 3">RealMan WHJ60-S-D70-100-B</Type>
-            <Type master_ids="131 258 1794" masters="2 3">RealMan WHJ60-S-D70-100-B</Type>
-            <Type master_ids="132 259 1795" masters="2 3">RealMan WHJ30-S-D60-80-B</Type>
-            <Type master_ids="133 260 1796" masters="2 3">RealMan WHJ30-S-D60-80-B</Type>
-            <Type master_ids="134 261 1797" masters="2 3">RealMan WHJ10-M-D50-80-B</Type>
-            <Type master_ids="135 262 1798" masters="2 3">RealMan WHJ10-M-D50-80-B</Type>
-            <Type master_ids="136 263 1799" masters="2 3">RealMan WHJ10-M-D50-80-B</Type>
-            <Type master_ids="20"           masters="4"  >Damiao DM-J4310-2EC</Type>
-            <Type master_ids="21"           masters="4"  >Damiao DM-J4310-2EC</Type>
+            <Type>Encos EC-A13720-P1-11.4</Type>
+            <Type>Encos EC-A10020-P2-24</Type>
+            <Type>Encos EC-A10020-P1-12</Type>
+            <Type>Encos EC-A10010-P2-24</Type>
+            <Type>Encos EC-A8116-P1-18</Type>
+            <Type>Encos EC-A8112-P1-18</Type>
+            <Type>Encos EC-A6416-P2-30.25</Type>
+            <Type>Encos EC-A4315-P2-36</Type>
+            <Type>Encos EC-A4310-P2-36</Type>
+            <Type>Damiao DM-J6248P-2EC</Type>
+            <Type>Damiao DM-J4340P-2EC</Type>
+            <Type>Damiao DM-J4310-2EC</Type>
+            <Type>RealMan WHJ60-S-D70-100-B</Type>
+            <Type>RealMan WHJ30-S-D60-80-B</Type>
+            <Type>RealMan WHJ10-M-D50-80-B</Type>
         </Category>
         <Category name="effector">
+            <Type dof="1">AGIBOT</Type>
+            <Type dof="6">LinkerBot</Type>
         </Category>
         <Category name="sensor">
         </Category>
     </Categories>
     <Masters period="2000000" rx_cpu="-1" tx_cpu="-1" tx_cpu_="-1">
-        <Master order="0" device="can0" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="1" device="can1" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="2" device="can2" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="3" device="can3" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="4" device="can4" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="5" device="can5" canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="0" device="can0" canhal="false" auto_restart="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="1" device="can1" canhal="false" auto_restart="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="2" device="can2" canhal="false" auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="3" device="can3" canhal="false" auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="4" device="can4" canhal="false" auto_restart="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="5" device="can5" canhal="false" auto_restart="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
     </Masters>
     <!--<Masters period="2000000" rx_cpu="-1" tx_cpu="-1" tx_cpu_="-1">
-        <Master order="0" device="can5_ins0ch4" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="1" device="can6_ins0ch6" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="2" device="can7_ins4ch7" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="3" device="can8_ins4ch2" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="4" device="can9_ins0ch3" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="5" device="can0"         canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="0" device="can5_ins0ch4" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="1" device="can6_ins0ch6" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="2" device="can7_ins4ch7" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="3" device="can8_ins4ch2" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="4" device="can9_ins0ch3" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="5" device="can0"         canhal="false" auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
     </Masters>--><!-- D-Robotics S100 -->
     <!--<Masters period="2000000" rx_cpu="-1" tx_cpu="-1" tx_cpu_="-1">
-        <Master order="0" device="can1_ins0ch1"  canhal="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="1" device="can2_ins0ch2"  canhal="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="2" device="can3_ins0ch3"  canhal="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="3" device="can4_ins4ch4"  canhal="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="4" device="can10_ins4ch5" canhal="true"  baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="5" device="can0"          canhal="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="0" device="can1_ins0ch1"  canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="1" device="can2_ins0ch2"  canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="2" device="can3_ins0ch3"  canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="3" device="can4_ins4ch4"  canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="4" device="can10_ins4ch5" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="5" device="can0"          canhal="false" auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
     </Masters>--><!-- D-Robotics S600 -->
     <Slaves>
-        <Slave master="0" master_ids="1"            slave_id="1" alias="1"  type="Encos EC-A10020-P2-24"    >1</Slave>
-        <Slave master="0" master_ids="2"            slave_id="2" alias="2"  type="Encos EC-A8116-P1-18"     >1</Slave>
-        <Slave master="0" master_ids="3"            slave_id="3" alias="3"  type="Encos EC-A10020-P1-12"    >1</Slave>
-        <Slave master="0" master_ids="4"            slave_id="4" alias="4"  type="Encos EC-A10020-P1-12"    >1</Slave>
-        <Slave master="0" master_ids="5"            slave_id="5" alias="5"  type="Encos EC-A8112-P1-18"     >1</Slave>
-        <Slave master="0" master_ids="6"            slave_id="6" alias="6"  type="Encos EC-A8112-P1-18"     >1</Slave>
-        <Slave master="1" master_ids="1"            slave_id="1" alias="7"  type="Encos EC-A10020-P2-24"    >1</Slave>
-        <Slave master="1" master_ids="2"            slave_id="2" alias="8"  type="Encos EC-A8116-P1-18"     >1</Slave>
-        <Slave master="1" master_ids="3"            slave_id="3" alias="9"  type="Encos EC-A10020-P1-12"    >1</Slave>
-        <Slave master="1" master_ids="4"            slave_id="4" alias="10" type="Encos EC-A10020-P1-12"    >1</Slave>
-        <Slave master="1" master_ids="5"            slave_id="5" alias="11" type="Encos EC-A8112-P1-18"     >1</Slave>
-        <Slave master="1" master_ids="6"            slave_id="6" alias="12" type="Encos EC-A8112-P1-18"     >1</Slave>
-        <Slave master="2" master_ids="1"            slave_id="1" alias="13" type="Encos EC-A4315-P2-36"     >0</Slave>
-        <Slave master="2" master_ids="17"           slave_id="1" alias="13" type="Damiao DM-J6248P-2EC"     >0</Slave>
-        <Slave master="2" master_ids="18"           slave_id="2" alias="14" type="Damiao DM-J6248P-2EC"     >0</Slave>
-        <Slave master="2" master_ids="19"           slave_id="3" alias="15" type="Damiao DM-J4340P-2EC"     >0</Slave>
-        <Slave master="2" master_ids="20"           slave_id="4" alias="16" type="Damiao DM-J4340P-2EC"     >0</Slave>
-        <Slave master="2" master_ids="21"           slave_id="5" alias="17" type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="2" master_ids="22"           slave_id="6" alias="18" type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="2" master_ids="23"           slave_id="7" alias="19" type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="2" master_ids="130 257 1793" slave_id="1" alias="13" type="RealMan WHJ60-S-D70-100-B">0</Slave>
-        <Slave master="2" master_ids="131 258 1794" slave_id="2" alias="14" type="RealMan WHJ60-S-D70-100-B">0</Slave>
-        <Slave master="2" master_ids="132 259 1795" slave_id="3" alias="15" type="RealMan WHJ30-S-D60-80-B" >0</Slave>
-        <Slave master="2" master_ids="133 260 1796" slave_id="4" alias="16" type="RealMan WHJ30-S-D60-80-B" >0</Slave>
-        <Slave master="2" master_ids="134 261 1797" slave_id="5" alias="17" type="RealMan WHJ10-M-D50-80-B" >0</Slave>
-        <Slave master="2" master_ids="135 262 1798" slave_id="6" alias="18" type="RealMan WHJ10-M-D50-80-B" >0</Slave><!-- master_ids="1534 262 1798" -->
-        <Slave master="2" master_ids="136 263 1799" slave_id="7" alias="19" type="RealMan WHJ10-M-D50-80-B" >0</Slave>
-        <Slave master="3" master_ids="1"            slave_id="1" alias="20" type="Encos EC-A4315-P2-36"     >0</Slave>
-        <Slave master="3" master_ids="17"           slave_id="1" alias="20" type="Damiao DM-J6248P-2EC"     >0</Slave>
-        <Slave master="3" master_ids="18"           slave_id="2" alias="21" type="Damiao DM-J6248P-2EC"     >0</Slave>
-        <Slave master="3" master_ids="19"           slave_id="3" alias="22" type="Damiao DM-J4340P-2EC"     >0</Slave>
-        <Slave master="3" master_ids="20"           slave_id="4" alias="23" type="Damiao DM-J4340P-2EC"     >0</Slave>
-        <Slave master="3" master_ids="21"           slave_id="5" alias="24" type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="3" master_ids="22"           slave_id="6" alias="25" type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="3" master_ids="23"           slave_id="7" alias="26" type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="3" master_ids="130 257 1793" slave_id="1" alias="20" type="RealMan WHJ60-S-D70-100-B">0</Slave>
-        <Slave master="3" master_ids="131 258 1794" slave_id="2" alias="21" type="RealMan WHJ60-S-D70-100-B">0</Slave>
-        <Slave master="3" master_ids="132 259 1795" slave_id="3" alias="22" type="RealMan WHJ30-S-D60-80-B" >0</Slave>
-        <Slave master="3" master_ids="133 260 1796" slave_id="4" alias="23" type="RealMan WHJ30-S-D60-80-B" >0</Slave>
-        <Slave master="3" master_ids="134 261 1797" slave_id="5" alias="24" type="RealMan WHJ10-M-D50-80-B" >0</Slave>
-        <Slave master="3" master_ids="135 262 1798" slave_id="6" alias="25" type="RealMan WHJ10-M-D50-80-B" >0</Slave>
-        <Slave master="3" master_ids="136 263 1799" slave_id="7" alias="26" type="RealMan WHJ10-M-D50-80-B" >0</Slave>
-        <Slave master="4" master_ids="17"           slave_id="1" alias="27" type=""                         >0</Slave>
-        <Slave master="4" master_ids="18"           slave_id="2" alias="28" type=""                         >0</Slave>
-        <Slave master="4" master_ids="19"           slave_id="3" alias="29" type=""                         >0</Slave>
-        <Slave master="4" master_ids="20"           slave_id="4" alias="30" type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="4" master_ids="21"           slave_id="5" alias="31" type="Damiao DM-J4310-2EC"      >0</Slave>
+        <!-- Left Leg -->
+        <Slave master="0" master_ids="1"            slave_id="1"  alias="1"   type="Encos EC-A10020-P2-24"    >0</Slave>
+        <Slave master="0" master_ids="2"            slave_id="2"  alias="2"   type="Encos EC-A8116-P1-18"     >0</Slave>
+        <Slave master="0" master_ids="3"            slave_id="3"  alias="3"   type="Encos EC-A10020-P1-12"    >0</Slave>
+        <Slave master="0" master_ids="4"            slave_id="4"  alias="4"   type="Encos EC-A10020-P1-12"    >0</Slave>
+        <Slave master="0" master_ids="5"            slave_id="5"  alias="5"   type="Encos EC-A8112-P1-18"     >0</Slave>
+        <Slave master="0" master_ids="6"            slave_id="6"  alias="6"   type="Encos EC-A8112-P1-18"     >0</Slave>
+        <!-- Right Leg -->
+        <Slave master="1" master_ids="1"            slave_id="1"  alias="7"   type="Encos EC-A10020-P2-24"    >0</Slave>
+        <Slave master="1" master_ids="2"            slave_id="2"  alias="8"   type="Encos EC-A8116-P1-18"     >0</Slave>
+        <Slave master="1" master_ids="3"            slave_id="3"  alias="9"   type="Encos EC-A10020-P1-12"    >0</Slave>
+        <Slave master="1" master_ids="4"            slave_id="4"  alias="10"  type="Encos EC-A10020-P1-12"    >0</Slave>
+        <Slave master="1" master_ids="5"            slave_id="5"  alias="11"  type="Encos EC-A8112-P1-18"     >0</Slave>
+        <Slave master="1" master_ids="6"            slave_id="6"  alias="12"  type="Encos EC-A8112-P1-18"     >0</Slave>
+        <!-- Left Arm -->
+        <Slave master="2" master_ids="1"            slave_id="1"  alias="13"  type="Encos EC-A4315-P2-36"     >0</Slave>
+
+        <Slave master="2" master_ids="17"           slave_id="1"  alias="13"  type="Damiao DM-J6248P-2EC"     >0</Slave>
+        <Slave master="2" master_ids="18"           slave_id="2"  alias="14"  type="Damiao DM-J6248P-2EC"     >0</Slave>
+        <Slave master="2" master_ids="19"           slave_id="3"  alias="15"  type="Damiao DM-J4340P-2EC"     >0</Slave>
+        <Slave master="2" master_ids="20"           slave_id="4"  alias="16"  type="Damiao DM-J4340P-2EC"     >0</Slave>
+        <Slave master="2" master_ids="21"           slave_id="5"  alias="17"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="2" master_ids="22"           slave_id="6"  alias="18"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="2" master_ids="23"           slave_id="7"  alias="19"  type="Damiao DM-J4310-2EC"      >0</Slave>
+
+        <Slave master="2" master_ids="130 257 1793" slave_id="1"  alias="13"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
+        <Slave master="2" master_ids="131 258 1794" slave_id="2"  alias="14"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
+        <Slave master="2" master_ids="132 259 1795" slave_id="3"  alias="15"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
+        <Slave master="2" master_ids="133 260 1796" slave_id="4"  alias="16"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
+        <Slave master="2" master_ids="134 261 1797" slave_id="5"  alias="17"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
+        <Slave master="2" master_ids="135 262 1798" slave_id="6"  alias="18"  type="RealMan WHJ10-M-D50-80-B" >0</Slave><!-- master_ids="1534 262 1798" -->
+        <Slave master="2" master_ids="136 263 1799" slave_id="7"  alias="19"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
+
+        <Slave master="2" master_ids="8"            slave_id="8"  alias="200" type="AGIBOT"                   >0</Slave>
+        <Slave master="2" master_ids="40"           slave_id="40" alias="200" type="LinkerBot"                >0</Slave>
+        <!-- Right Arm -->
+        <Slave master="3" master_ids="1"            slave_id="1"  alias="20"  type="Encos EC-A4315-P2-36"     >0</Slave>
+
+        <Slave master="3" master_ids="17"           slave_id="1"  alias="20"  type="Damiao DM-J6248P-2EC"     >0</Slave>
+        <Slave master="3" master_ids="18"           slave_id="2"  alias="21"  type="Damiao DM-J6248P-2EC"     >0</Slave>
+        <Slave master="3" master_ids="19"           slave_id="3"  alias="22"  type="Damiao DM-J4340P-2EC"     >0</Slave>
+        <Slave master="3" master_ids="20"           slave_id="4"  alias="23"  type="Damiao DM-J4340P-2EC"     >0</Slave>
+        <Slave master="3" master_ids="21"           slave_id="5"  alias="24"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="3" master_ids="22"           slave_id="6"  alias="25"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="3" master_ids="23"           slave_id="7"  alias="26"  type="Damiao DM-J4310-2EC"      >0</Slave>
+
+        <Slave master="3" master_ids="130 257 1793" slave_id="1"  alias="20"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
+        <Slave master="3" master_ids="131 258 1794" slave_id="2"  alias="21"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
+        <Slave master="3" master_ids="132 259 1795" slave_id="3"  alias="22"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
+        <Slave master="3" master_ids="133 260 1796" slave_id="4"  alias="23"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
+        <Slave master="3" master_ids="134 261 1797" slave_id="5"  alias="24"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
+        <Slave master="3" master_ids="135 262 1798" slave_id="6"  alias="25"  type="RealMan WHJ10-M-D50-80-B" >0</Slave><!-- master_ids="1534 262 1798" -->
+        <Slave master="3" master_ids="136 263 1799" slave_id="7"  alias="26"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
+
+        <Slave master="3" master_ids="8"            slave_id="8"  alias="201" type="AGIBOT"                   >0</Slave>
+        <Slave master="3" master_ids="39"           slave_id="39" alias="201" type="LinkerBot"                >0</Slave>
+        <!-- Waist -->
+        <Slave master="4" master_ids="17"           slave_id="1"  alias="27"  type=""                         >0</Slave>
+        <Slave master="4" master_ids="18"           slave_id="2"  alias="28"  type=""                         >0</Slave>
+        <Slave master="4" master_ids="19"           slave_id="3"  alias="29"  type=""                         >0</Slave>
+        <!-- Neck -->
+        <Slave master="4" master_ids="20"           slave_id="4"  alias="30"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="4" master_ids="21"           slave_id="5"  alias="31"  type="Damiao DM-J4310-2EC"      >0</Slave>
     </Slaves>
 </CAN>
 <RS485Emu>
-    <Categories>
-        <Category name="battery">
-        </Category>
-        <Category name="driver">
-        </Category>
-        <Category name="effector">
-            <Type dof="1">ChangingTek</Type>
-            <Type dof="1">ChangingTek_</Type>
-            <Type dof="6">Inspire</Type>
-            <Type dof="6">Inspire_</Type>
-            <Type dof="6">BrainCo</Type>
-            <Type dof="6">HumanoidShanghai</Type>
-        </Category>
-        <Category name="sensor">
-        </Category>
-    </Categories>
     <Masters>
         <Master order="0" deviceR="/dev/fifo0r" deviceS="/dev/fifo0s" period="96000000"/>
         <Master order="1" deviceR="/dev/fifo1r" deviceS="/dev/fifo1s" period="96000000"/>
@@ -1570,5 +2020,5 @@
         <MaximumPosition>0.69813172</MaximumPosition>
     </Motor>
 </Motors>
-<IMU device="/dev/ttyUSB0" baudrate="115200" type="HiPNUC"/><!-- type="Xsens/HiPNUC/Forsense/YESENSE" -->
+<IMU device="" baudrate="460800" type="Forsense"/><!-- type="Xsens/HiPNUC/Forsense/YESENSE/YESENSE_/Lins-Tech" -->
 </Config>
