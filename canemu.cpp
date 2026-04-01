@@ -252,6 +252,7 @@ int CANEmu::run(std::vector<CANEmu>& canemus){
 }
 
 CANEmu::~CANEmu(){
+    std::lock_guard<std::mutex> guard(resourceMutex);
     if(alias2status != nullptr){
         delete[] alias2status;
         alias2status = nullptr;

@@ -3,6 +3,7 @@ project(driver_test VERSION 4.2.5 LANGUAGES C CXX)
 option(AARCH64 "aarch64" OFF)
 option(RISCV64 "riscv64" OFF)
 option(NIIC "necro" OFF)
+option(IPROUTE2 "iproute2" ON)
 set(march x86_64)
 set(arch x64)
 set(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/../../third_party/lib_lin_x64")
@@ -27,6 +28,9 @@ if(NIIC)
     set(Necro_DIR ${PROJECT_SOURCE_DIR}/../loong_third_party/necro/lib/cmake/necro)
     find_package(Necro REQUIRED)
 endif(NIIC)
+if(IPROUTE2)
+    add_definitions(-DIPROUTE2)
+endif(IPROUTE2)
 link_directories(
     ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat-cpp/lib;
     ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat/lib;

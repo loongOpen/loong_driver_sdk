@@ -35,6 +35,7 @@ struct canframe{
 };
 
 #pragma pack(1)
+
 typedef struct{
     unsigned char can_channel;
     unsigned char verbose;
@@ -50,6 +51,7 @@ typedef struct{
 }Can_Config_Filter_Type;
 
 #pragma pack(0)
+
 struct pack_info{
     unsigned long soc_ts;
     unsigned int data_num;

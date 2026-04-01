@@ -563,6 +563,7 @@ int CAN::run(std::vector<CAN>& cans){
 }
 
 CAN::~CAN(){
+    std::lock_guard<std::mutex> guard(resourceMutex);
     if(rxPth > 0){
         pthread_cancel(rxPth);
         rxPth = 0;

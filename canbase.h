@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common.h"
+#include <mutex>
 #include <limits>
 
 namespace DriverSDK{
@@ -57,41 +58,41 @@ template<typename T>
 int encosRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 2:
-        switch(T::alias2status[alias] & 0x0fff){
-        case 0x0237:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
             memcpy(data, EncosDamp, 3);
             return 3;
             break;
-        case 0x0231:
+        case 0x0001:
             break;
         }
         break;
     case 1:
-        switch(T::alias2status[alias] & 0x0fff){
-        case 0x0237:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
             break;
-        case 0x0231:
+        case 0x0001:
             memcpy(data, EncosEnable, 3);
-            T::alias2status[alias] = 0x0237;
+            T::alias2status[alias] = 0x0007;
             return 3;
             break;
         }
         break;
     case 0:
-        switch(T::alias2status[alias] & 0x0fff){
-        case 0x0237:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
             memcpy(data, EncosDisable, 3);
-            T::alias2status[alias] = 0x0231;
+            T::alias2status[alias] = 0x0001;
             return 3;
             break;
-        case 0x0231:
+        case 0x0001:
             break;
         }
         break;
     }
     DriverParameters const* parameters = T::alias2parameters[alias];
     unsigned short p, v, t, kp, kd;
-    if((T::alias2status[alias] & 0x0fff) != 0x0237){
+    if((T::alias2status[alias] & 0x0f7f) != 0x0007){
          p = float2para(0.0, parameters->minP,  parameters->maxP,  16);
          v = float2para(0.0, parameters->minV,  parameters->maxV,  12);
         kp = float2para(0.0, parameters->minKp, parameters->maxKp, 12);
@@ -140,7 +141,7 @@ void encosTX(int const order, int const masterID, unsigned char* const data, int
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
               drivers[alias - 1].tx.next()->Undefined      = temperature;
-              drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0218 : T::alias2status[alias];
+              drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0x0000;
     struct timeval tv;
     gettimeofday(&tv, nullptr);
@@ -148,12 +149,12 @@ void encosTX(int const order, int const masterID, unsigned char* const data, int
     static long previous[8] = {current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
-        if((T::alias2status[alias] & 0x0fff) == 0x0000){
+        if((T::alias2status[alias] & 0x0f7f) == 0x0000){
             int i = 0;
             while(i < 32){
                 int a = T::orderSlaveID2alias[order][i];
                 if(a > 0 && a <= dofAll){
-                    T::alias2status[a] = 0x0231;
+                    T::alias2status[a] = 0x0001;
                 }
                 i++;
             }
@@ -182,32 +183,32 @@ template<typename T>
 int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 1:
-        switch(T::alias2status[alias] & 0x0fff){
-        case 0x0237:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
             break;
-        case 0x0231:
+        case 0x0001:
             memcpy(data, DamiaoEnable, 8);
-            T::alias2status[alias] = 0x0237;
+            T::alias2status[alias] = 0x0007;
             return 8;
             break;
         }
         break;
     case 0:
-        switch(T::alias2status[alias] & 0x0fff){
-        case 0x0237:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
             memcpy(data, DamiaoDisable, 8);
-            T::alias2status[alias] = 0x0231;
+            T::alias2status[alias] = 0x0001;
             return 8;
             break;
-        case 0x0231:
+        case 0x0001:
             break;
         }
         break;
     case -1:
-        switch(T::alias2status[alias] & 0x0fff){
-        case 0x0237:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
             break;
-        case 0x0231:
+        case 0x0001:
             memcpy(data, DamiaoClrErr, 8);
             return 8;
             break;
@@ -257,7 +258,7 @@ void damiaoTX(int const order, int const masterID, unsigned char* const data, in
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
               drivers[alias - 1].tx.next()->Undefined      = temperature;
-              drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0218 : T::alias2status[alias];
+              drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0x0000;
     struct timeval tv;
     gettimeofday(&tv, nullptr);
@@ -265,12 +266,12 @@ void damiaoTX(int const order, int const masterID, unsigned char* const data, in
     static long previous[8] = {current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
-        if((T::alias2status[alias] & 0x0fff) == 0x0000){
+        if((T::alias2status[alias] & 0x0f7f) == 0x0000){
             int i = 0;
             while(i < 32){
                 int a = T::orderSlaveID2alias[order][i];
                 if(a > 0 && a <= dofAll){
-                    T::alias2status[a] = 0x0231;
+                    T::alias2status[a] = 0x0001;
                 }
                 i++;
             }
@@ -299,12 +300,12 @@ template<typename T>
 int realManRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 1:
-        switch(T::alias2status[alias] & 0x0fff){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0250:
-            T::alias2status[alias] = 0x0237;
-        case 0x0237:
+            T::alias2status[alias] = 0x0007;
+        case 0x0007:
             break;
-        case 0x0231:
+        case 0x0001:
             memcpy(data, RealManEnable, 3);
             return 3;
             break;
@@ -319,13 +320,13 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
         }
         break;
     case 0:
-        switch(T::alias2status[alias] & 0x0fff){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0250:
-        case 0x0237:
+        case 0x0007:
             memcpy(data, RealManDisable, 3);
             return 3;
             break;
-        case 0x0231:
+        case 0x0001:
             break;
         case 0x0050:
             *slaveID += 0x0600;
@@ -338,14 +339,14 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
         }
         break;
     case -1:
-        switch(T::alias2status[alias] & 0x0fff){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0250:
             memcpy(data, RealManDisable, 3);
             return 3;
             break;
-        case 0x0237:
+        case 0x0007:
             break;
-        case 0x0231:
+        case 0x0001:
             memcpy(data, RealManClrErr, 3);
             return 3;
             break;
@@ -366,7 +367,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
     if(*slaveID == 1){
         enabled[order] = true;
     }
-    if((T::alias2status[alias] & 0x0fff) != 0x0237){
+    if((T::alias2status[alias] & 0x0f7f) != 0x0007){
         enabled[order] = false;
     }
     if(*slaveID == 1){
@@ -399,7 +400,7 @@ void realManTX(int const order, int const masterID, unsigned char* const data, i
         if(length != 16){
             return;
         }
-        switch(T::alias2status[alias] & 0x0fff){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0050:
             T::alias2status[alias] = 0x0250;
             signed char temperature = *(short*)(data + 4) * 0.1;
@@ -411,7 +412,7 @@ void realManTX(int const order, int const masterID, unsigned char* const data, i
             *(float*)&drivers[alias - 1].tx->ActualVelocity = 0.0;
                       drivers[alias - 1].tx->ActualTorque   = single2half(*(int*)(data + 12) * parameters->actualCUnit * parameters->tConstant);
                       drivers[alias - 1].tx->Undefined      = temperature;
-                      drivers[alias - 1].tx->StatusWord     = err > 0 ? 0x0218 : T::alias2status[alias];
+                      drivers[alias - 1].tx->StatusWord     = err > 0 ? 0x0008 : T::alias2status[alias];
                       drivers[alias - 1].tx->ErrorCode      = err;
             break;
         }
@@ -420,16 +421,16 @@ void realManTX(int const order, int const masterID, unsigned char* const data, i
         if(length != 3){
             return;
         }
-        switch(T::alias2status[alias] & 0x0fff){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0250:
-        case 0x0237:
+        case 0x0007:
             if(data[1] == 0x0a){
-                T::alias2status[alias] = 0x0231;
+                T::alias2status[alias] = 0x0001;
             }
             break;
-        case 0x0231:
+        case 0x0001:
             if(data[1] == 0x0a){
-                T::alias2status[alias] = 0x0237;
+                T::alias2status[alias] = 0x0007;
             }
             break;
         case 0x0000:
@@ -453,7 +454,7 @@ void realManTX(int const order, int const masterID, unsigned char* const data, i
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity = *(int*)(data + 4) * parameters->actualVUnit * Pi / 30.0;
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(*(int*)(data + 0) * parameters->actualCUnit * parameters->tConstant);
               drivers[alias - 1].tx.next()->Undefined      = temperature;
-              drivers[alias - 1].tx.next()->StatusWord     = err > 0 ? 0x0218 : T::alias2status[alias];
+              drivers[alias - 1].tx.next()->StatusWord     = err > 0 ? 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = err;
     struct timeval tv;
     gettimeofday(&tv, nullptr);
@@ -553,6 +554,7 @@ public:
     char* device;
     static long period;
     static int CANHAL;
+    static std::mutex resourceMutex;
     CANBase(int const order, char const* device);
     int ifaceIsUp();
     int ifaceUp();

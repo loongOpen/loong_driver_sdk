@@ -22,8 +22,11 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <linux/can/raw.h>
+#ifndef IPROUTE2
+#include <libnetlink.h>
+#include <linux/can/netlink.h>
+#endif
 #include <sys/un.h>
-#include <sstream>
 
 namespace DriverSDK{
 #define CANFD_BRS 0x01
@@ -46,6 +49,7 @@ int nullRX(int const order, int const alias, int* const slaveID, unsigned char* 
 
 long CANBase::period;
 int CANBase::CANHAL;
+std::mutex CANBase::resourceMutex;
 
 CANBase::CANBase(int const order, char const* device){
     static bool initialized = false;
@@ -111,6 +115,60 @@ int CANBase::ifaceUp(){
         return -1;
     }
     printf("starting iface %s...\n", device);
+#ifndef IPROUTE2
+    rtnl_handle rtnl;
+    if(rtnl_open(&rtnl, 0) == -1){
+        printf("rtnl_open() failed\n");
+        return -1;
+    }
+    struct{
+        struct nlmsghdr nlh;
+        struct ifinfomsg ifm;
+        char buff[1024];
+    } req = {
+        .nlh = {
+            .nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg)),
+            .nlmsg_type = RTM_NEWLINK,
+            .nlmsg_flags = NLM_F_REQUEST
+        },
+        .ifm = {
+            .ifi_family = AF_UNSPEC,
+            .ifi_index = (int)if_nametoindex(device),
+            .ifi_flags = IFF_UP,
+            .ifi_change = IFF_UP
+        }
+    };
+    addattr32(&req.nlh, sizeof(req), IFLA_TXQLEN, 100);
+    struct rtattr* info = addattr_nest(&req.nlh, sizeof(req), IFLA_LINKINFO);
+    addattr_l(&req.nlh, sizeof(req), IFLA_INFO_KIND, "can", strlen("can") + 1);
+    struct rtattr* data = addattr_nest(&req.nlh, sizeof(req), IFLA_INFO_DATA);
+    addattr32(&req.nlh, 1024, IFLA_CAN_RESTART_MS, 10);
+    struct can_bittiming bt = {
+        .bitrate = (unsigned int)baudrate
+    };
+    addattr_l(&req.nlh, 1024, IFLA_CAN_BITTIMING, &bt, sizeof(bt));
+    struct can_ctrlmode cm = {
+        .mask = 0,
+        .flags = 0
+    };
+    if(canfd == 1){
+        cm.mask |= CAN_CTRLMODE_FD;
+        cm.flags |= CAN_CTRLMODE_FD;
+        struct can_bittiming dbt = {
+            .bitrate = (unsigned int)dbaudrate
+        };
+        addattr_l(&req.nlh, 1024, IFLA_CAN_DATA_BITTIMING, &dbt, sizeof(dbt));
+        addattr_l(&req.nlh, 1024, IFLA_CAN_CTRLMODE, &cm, sizeof(cm));
+    }
+    addattr_nest_end(&req.nlh, data);
+    addattr_nest_end(&req.nlh, info);
+    if(rtnl_talk(&rtnl, &req.nlh, nullptr) == -1){
+        printf("rtnl_talk() failed\n");
+        rtnl_close(&rtnl);
+        return -1;
+    }
+    rtnl_close(&rtnl);
+#else
     char cmd[256];
     int length = snprintf(cmd, sizeof(cmd), "ip link set %s txqueuelen 100 up type can restart-ms 10 bitrate %d", device, baudrate);
     if(canfd == 1){
@@ -121,6 +179,7 @@ int CANBase::ifaceUp(){
         return -1;
     }
     usleep(500000);
+#endif
     printf("iface %s is started\n", device);
     return 0;
 }
@@ -220,15 +279,20 @@ int CANBase::open(int const masterID){
         return -1;
     }else if(sock >= 128){
         printf("too many sockets\n");
+        close(sock);
         return -1;
     }
     struct ifreq ifr;
     strcpy(ifr.ifr_name, device);
-    ioctl(sock, SIOCGIFINDEX, &ifr);
+    if(ioctl(sock, SIOCGIFINDEX, &ifr) == -1){
+        printf("ioctl() failed\n");
+        close(sock);
+        return -1;
+    }
     struct sockaddr_can addr;
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
-    if(bind(sock, (struct sockaddr*)&addr, sizeof(addr)) != 0){
+    if(bind(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1){
         printf("binding to %s failed\n", device);
         close(sock);
         return -1;
@@ -237,34 +301,32 @@ int CANBase::open(int const masterID){
         struct can_filter rfilter[1];
         rfilter[0].can_id = masterID;
         rfilter[0].can_mask = CAN_SFF_MASK;
-        if(setsockopt(sock, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter)) != 0){
+        if(setsockopt(sock, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter)) == -1){
             printf("setsockopt CAN_RAW_FILTER failed\n");
             close(sock);
             return -1;
         }
     }
-    if(canfd == 1){
-        if(setsockopt(sock, SOL_CAN_RAW, CAN_RAW_FD_FRAMES, &canfd, sizeof(canfd)) != 0){
-            printf("setsockopt CAN_RAW_FD_FRAMES failed\n");
-            close(sock);
-            return -1;
-        }
-    }
     int rcvbufSize = 128 * 1024;
-    if(setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &rcvbufSize, sizeof(rcvbufSize)) != 0){
+    if(setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &rcvbufSize, sizeof(rcvbufSize)) == -1){
         printf("setsockopt SO_RCVBUF failed\n");
         close(sock);
         return -1;
     }
     int sndbufSize = 128 * 1024;
-    if(setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &sndbufSize, sizeof(sndbufSize)) != 0){
+    if(setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &sndbufSize, sizeof(sndbufSize)) == -1){
         printf("setsockopt SO_SNDBUF failed\n");
         close(sock);
         return -1;
     }
     int loopback = 0;
-    if(setsockopt(sock, SOL_CAN_RAW, CAN_RAW_LOOPBACK, &loopback, sizeof(loopback)) != 0){
+    if(setsockopt(sock, SOL_CAN_RAW, CAN_RAW_LOOPBACK, &loopback, sizeof(loopback)) == -1){
         printf("setsockopt CAN_RAW_LOOPBACK failed\n");
+        close(sock);
+        return -1;
+    }
+    if(setsockopt(sock, SOL_CAN_RAW, CAN_RAW_FD_FRAMES, &canfd, sizeof(canfd)) == -1){
+        printf("setsockopt CAN_RAW_FD_FRAMES failed\n");
         close(sock);
         return -1;
     }
@@ -288,7 +350,7 @@ int CANBase::send(int const slaveID, unsigned char const* data, int length){
         count[order]++;
         if(count[order] % (2 * slaveCount) == 0){
             if(autoRestart){
-                printf("send: cans[%d] write ret = %d\n", order, ret);
+                printf("send: cans[%d] write() ret = %d\n", order, ret);
                 ifaceDown();
                 ifaceUp_();
             }
@@ -304,7 +366,7 @@ int CANBase::recv(unsigned char* const data, int const length, int* const master
     struct can_frame frame;
     ret = read(sock, &frame, sizeof(frame));
     if(ret < 1){
-        printf("recv: cans[%d] read ret = %d\n", order, ret);
+        printf("recv: cans[%d] read() ret = %d\n", order, ret);
         return ret;
     }
     if(masterID != nullptr){
@@ -346,7 +408,7 @@ int CANBase::sendfd(int const slaveID, unsigned char const* data, int const leng
         count[order]++;
         if(count[order] % (2 * slaveCount) == 0){
             if(autoRestart){
-                printf("sendfd: cans[%d] write ret = %d\n", order, ret);
+                printf("sendfd: cans[%d] write() ret = %d\n", order, ret);
                 ifaceDown();
                 ifaceUp_();
             }
@@ -362,7 +424,7 @@ int CANBase::recvfd(unsigned char* const data, int const length, int* const mast
     struct canfd_frame frame;
     ret = read(sock, &frame, sizeof(frame));
     if(ret < 1){
-        printf("recvfd: cans[%d] read ret = %d\n", order, ret);
+        printf("recvfd: cans[%d] read() ret = %d\n", order, ret);
         return ret;
     }
     if(masterID != nullptr){
@@ -379,6 +441,7 @@ int CANBase::recvfd(unsigned char* const data, int const length, int* const mast
 }
 
 CANBase::~CANBase(){
+    std::lock_guard<std::mutex> guard(resourceMutex);
     if(CANHAL == 0){
         return;
     }
