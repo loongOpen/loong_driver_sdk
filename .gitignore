@@ -5,6 +5,12 @@
 !libtinyxml2_x86_64.so
 !libtinyxml2_aarch64.so
 !libtinyxml2_riscv64.so
+!libutil_x86_64.so
+!libutil_aarch64.so
+!libutil_riscv64.so
+!libnetlink_x86_64.so
+!libnetlink_aarch64.so
+!libnetlink_riscv64.so
 !libmodbus_x86_64.so
 !libmodbus_aarch64.so
 !libmodbus_riscv64.so

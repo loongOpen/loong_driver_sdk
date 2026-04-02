@@ -3,7 +3,7 @@ project(driver_test VERSION 4.2.5 LANGUAGES C CXX)
 option(AARCH64 "aarch64" OFF)
 option(RISCV64 "riscv64" OFF)
 option(NIIC "necro" OFF)
-option(IPROUTE2 "iproute2" ON)
+option(IPROUTE2 "iproute2" OFF)
 set(march x86_64)
 set(arch x64)
 set(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/../../third_party/lib_lin_x64")
@@ -31,12 +31,6 @@ endif(NIIC)
 if(IPROUTE2)
     add_definitions(-DIPROUTE2)
 endif(IPROUTE2)
-link_directories(
-    ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat-cpp/lib;
-    ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat/lib;
-    ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/lib;
-    ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/lib
-)
 add_library(hbcanhal_${march} SHARED hobot_can_hal.c)
 set_target_properties(hbcanhal_${march} PROPERTIES NO_SONAME ON)
 if(NIIC)
@@ -45,20 +39,28 @@ else(NIIC)
     add_library(loong_driver_sdk_${arch} SHARED common.cpp config_xml.cpp rs232.cpp rs485.cpp canbase.cpp can.cpp canemu.cpp ecat.cpp loong_driver_sdk.cpp)
 endif(NIIC)
 set_target_properties(loong_driver_sdk_${arch} PROPERTIES NO_SONAME ON)
-target_include_directories(loong_driver_sdk_${arch} PUBLIC
+target_include_directories(loong_driver_sdk_${arch} PRIVATE
     ${PROJECT_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat-cpp/include
     ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat/include
     ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/include
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/netlink/include
     ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/include
 )
+target_link_directories(loong_driver_sdk_${arch} PRIVATE
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat-cpp/lib;
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat/lib;
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/lib;
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/netlink/lib;
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/lib
+)
 if(NIIC)
-    target_link_libraries(loong_driver_sdk_${arch} PUBLIC Necro::qiuniu ethercat-cpp modbus_${march} tinyxml2_${march} pthread hbcanhal_${march})
+    target_link_libraries(loong_driver_sdk_${arch} PRIVATE Necro::qiuniu ethercat-cpp modbus_${march} netlink_${march} util_${march} tinyxml2_${march} pthread hbcanhal_${march})
 else(NIIC)
-    target_link_libraries(loong_driver_sdk_${arch} PUBLIC ethercat_${march} modbus_${march} tinyxml2_${march} pthread hbcanhal_${march})
+    target_link_libraries(loong_driver_sdk_${arch} PRIVATE ethercat_${march} modbus_${march} netlink_${march} util_${march} tinyxml2_${march} pthread hbcanhal_${march})
 endif(NIIC)
 add_executable(driver_test_${march} driver_test.cpp)
-target_link_libraries(driver_test_${march} PUBLIC loong_driver_sdk_${arch})
+target_link_libraries(driver_test_${march} PRIVATE loong_driver_sdk_${arch})
 install(TARGETS loong_driver_sdk_${arch} hbcanhal_${march} driver_test_${march}
     RUNTIME DESTINATION .
     LIBRARY DESTINATION .
