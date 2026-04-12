@@ -28,7 +28,7 @@ namespace DriverSDK{
 extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> rs485alias2type;
 extern int dofLeftEffector, dofEffector;
-extern WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
+extern WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
 
 void nullRX(modbus_t* const ctx, int const alias){
 }
@@ -150,6 +150,33 @@ void changingTekTX_(modbus_t* const ctx, int const alias){
     }
 }
 
+void dhRX(modbus_t* const ctx, int const alias){
+    unsigned short position = 0;
+    if(alias == 200){
+        position = (90 - digits[0].rx.previous()->TargetPosition) * 1000 / 90;
+    }else{
+        position = (90 - digits[dofLeftEffector].rx.previous()->TargetPosition) * 1000 / 90;
+    }
+    modbus_set_slave(ctx, alias);
+    if(modbus_write_register(ctx, 0x0103, position) != 1){
+        return;
+    }
+}
+
+void dhTX(modbus_t* const ctx, int const alias){
+    unsigned short position = 0;
+    modbus_set_slave(ctx, alias);
+    if(modbus_read_registers(ctx, 0x0202, 1, &position) != 1){
+        return;
+    }
+    position = (1000 - position) * 90 / 1000;
+    if(alias == 200){
+        digits[0].tx.next()->ActualPosition = position;
+    }else{
+        digits[dofLeftEffector].tx.next()->ActualPosition = position;
+    }
+}
+
 unsigned int const TargetPosRegs[] = {0x05d8, 0x05d6, 0x05d4, 0x05d2, 0x05d0, 0x05ce};
 
 void inspireRX(modbus_t* const ctx, int const alias){
@@ -161,14 +188,14 @@ void inspireRX(modbus_t* const ctx, int const alias){
     int j = 0;
     while(j < 6){
         targetPositions[j] = 1000 - digits[i + j].rx.previous()->TargetPosition * 1000 / 90;
-        j++;
+        ++j;
     }
     modbus_set_slave(ctx, alias);
     j = 0;
     while(j < 6){
         modbus_write_register(ctx, TargetPosRegs[j], targetPositions[j]);
         usleep(2000);
-        j++;
+        ++j;
     }
 }
 
@@ -186,14 +213,14 @@ void inspireTX(modbus_t* const ctx, int const alias){
     while(j < 6){
         readResults[j] = modbus_read_registers(ctx, ActualPosRegs[j], 1, actualPositions + j);
         usleep(2000);
-        j++;
+        ++j;
     }
     j = 0;
     while(j < 6){
         if(readResults[j] == 1){
             digits[i + j].tx.next()->ActualPosition = 90 - actualPositions[j] * 90 / 1000;
         }
-        j++;
+        ++j;
     }
 }
 
@@ -208,7 +235,7 @@ void inspireRX_(modbus_t* const ctx, int const alias){
     int j = 0;
     while(j < 4){
         targetPositions[j] = 1750 - digits[i + j].rx.previous()->TargetPosition * (1750 - 900) / 90;
-        j++;
+        ++j;
     }
     targetPositions[4] = 1350 - digits[i + 4].rx.previous()->TargetPosition * (1350 - 1200) / 90;
     targetPositions[5] = 1800 - digits[i + 5].rx.previous()->TargetPosition * (1800 - 600) / 90;
@@ -217,7 +244,7 @@ void inspireRX_(modbus_t* const ctx, int const alias){
     while(j < 6){
         modbus_write_register(ctx, TargetPosRegs_[j], targetPositions[j]);
         usleep(2000);
-        j++;
+        ++j;
     }
 }
 
@@ -235,14 +262,14 @@ void inspireTX_(modbus_t* const ctx, int const alias){
     while(j < 6){
         readResults[j] = modbus_read_registers(ctx, ActualPosRegs_[j], 1, actualPositions + j);
         usleep(2000);
-        j++;
+        ++j;
     }
     j = 0;
     while(j < 4){
         if(readResults[j] == 1){
             digits[i + j].tx.next()->ActualPosition = (1750 - actualPositions[j]) * 90 / (1750 - 900);
         }
-        j++;
+        ++j;
     }
     if(readResults[4] == 1){
         digits[i + 4].tx.next()->ActualPosition = (1350 - actualPositions[4]) * 90 / (1350 - 1200);
@@ -261,7 +288,7 @@ void brainCoRX(modbus_t* const ctx, int const alias){
     int j = 0;
     while(j < 6){
         targetPositions[j] = digits[i + j].rx.previous()->TargetPosition * 100 / 90;
-        j++;
+        ++j;
     }
     modbus_set_slave(ctx, alias);
     modbus_write_registers(ctx, 1010, 6, targetPositions);
@@ -280,7 +307,7 @@ void brainCoTX(modbus_t* const ctx, int const alias){
     int j = 0;
     while(j < 6){
         digits[i + j].tx.next()->ActualPosition = actualPositions[j] * 90 / 100;
-        j++;
+        ++j;
     }
 }
 
@@ -297,18 +324,18 @@ void humanoidShanghaiRX(modbus_t* const ctx, int const alias){
     int j = 2;
     while(j < 6){
         targetPositions[j] = 173.1 - digits[i + j].rx.previous()->TargetPosition * (173.1 - 84.33) / 90.0;
-        j++;
+        ++j;
     }
     unsigned short data[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     j = 0;
     while(j < 6){
         data[j] = single2half(targetPositions[j]);
-        j++;
+        ++j;
     }
     j = 0;
     while(j < 6){
         data[j + 6] = single2half(targetVelocities[j]);
-        j++;
+        ++j;
     }
     modbus_set_slave(ctx, alias);
     modbus_write_registers(ctx, 0x0001, 12, data);
@@ -339,7 +366,7 @@ RS485::RS485(int const order, char const* deviceR, char const* deviceS){
     auto itr = alias2type.begin();
     while(itr != alias2type.end()){
         printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
-        itr++;
+        ++itr;
     }
     this->deviceR = (char*)malloc(strlen(deviceR) + 1);
     this->deviceS = (char*)malloc(strlen(deviceS) + 1);
@@ -368,7 +395,7 @@ RS485::RS485(int const order, char const* device){
     auto itr = alias2type.begin();
     while(itr != alias2type.end()){
         printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
-        itr++;
+        ++itr;
     }
     this->device = (char*)malloc(strlen(device) + 1);
     strcpy(this->device, device);
@@ -423,17 +450,18 @@ int RS485::config(){
         return -2;
     }
     // modbus_rtu_set_serial_mode(ctx, MODBUS_RTU_RS485);
-    rxSwap = new SwapList(dofEffector * sizeof(DigitRxData));
-    txSwap = new SwapList(dofEffector * sizeof(DigitTxData));
+    rxSwap = new SwapList(dofEffector * sizeof(DigitRXData));
+    txSwap = new SwapList(dofEffector * sizeof(DigitTXData));
     int slave = 0;
     auto itr = alias2type.find(200);
     if(itr != alias2type.end()){
+        std::string const& type = itr->second;
         int i = 0;
         while(i < dofLeftEffector){
 #ifndef NIIC
-            if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
+            if(digits[i].init("RS485", 4, order, 0, slave, 200, type, i * sizeof(DigitRXData), i * sizeof(DigitTXData), nullptr, nullptr) != 0){
 #else
-            if(digits[i].init("RS485", 2, order, 0, slave, 200, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData)) != 0){
+            if(digits[i].init("RS485", 4, order, 0, slave, 200, type, i * sizeof(DigitRXData), i * sizeof(DigitTXData)) != 0){
 #endif
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
@@ -442,40 +470,46 @@ int RS485::config(){
                 printf("\tdigits[%d] config failed\n", i);
                 return -1;
             }
-            i++;
+            ++i;
         }
-        if(itr->second == "ChangingTek"){
+        if(type == "ChangingTek"){
             leftRX = changingTekRX;
             leftTX = changingTekTX;
-        }else if(itr->second == "ChangingTek_"){
+        }else if(type == "ChangingTek_"){
             leftRX = changingTekRX_;
             leftTX = changingTekTX_;
-        }else if(itr->second == "Inspire"){
+        }else if(type == "DH-Robotics"){
+            leftRX = dhRX;
+            leftTX = dhTX;
+            modbus_set_slave(ctx, 200);
+            modbus_write_register(ctx, 0x0100, 0x0001);
+        }else if(type == "Inspire"){
             leftRX = inspireRX;
             leftTX = inspireTX;
-        }else if(itr->second == "Inspire_"){
+        }else if(type == "Inspire_"){
             leftRX = inspireRX_;
             leftTX = inspireTX_;
-        }else if(itr->second == "BrainCo"){
+        }else if(type == "BrainCo"){
             leftRX = brainCoRX;
             leftTX = brainCoTX;
-        }else if(itr->second == "HumanoidShanghai"){
+        }else if(type == "HumanoidShanghai"){
             leftRX = humanoidShanghaiRX;
             leftTX = humanoidShanghaiTX;
         }else{
             leftRX = nullRX;
             leftTX = nullTX;
         }
-        slave++;
+        ++slave;
     }
     itr = alias2type.find(201);
     if(itr != alias2type.end()){
+        std::string const& type = itr->second;
         int i = dofLeftEffector;
         while(i < dofEffector){
 #ifndef NIIC
-            if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
+            if(digits[i].init("RS485", 4, order, 0, slave, 201, type, i * sizeof(DigitRXData), i * sizeof(DigitTXData), nullptr, nullptr) != 0){
 #else
-            if(digits[i].init("RS485", 2, order, 0, slave, 201, itr->second, i * sizeof(DigitRxData), i * sizeof(DigitTxData)) != 0){
+            if(digits[i].init("RS485", 4, order, 0, slave, 201, type, i * sizeof(DigitRXData), i * sizeof(DigitTXData)) != 0){
 #endif
                 printf("\tdigits[%d] init failed\n", i);
                 return -1;
@@ -484,31 +518,36 @@ int RS485::config(){
                 printf("\tdigits[%d] config failed\n", i);
                 return -1;
             }
-            i++;
+            ++i;
         }
-        if(itr->second == "ChangingTek"){
+        if(type == "ChangingTek"){
             rightRX = changingTekRX;
             rightTX = changingTekTX;
-        }else if(itr->second == "ChangingTek_"){
+        }else if(type == "ChangingTek_"){
             rightRX = changingTekRX_;
             rightTX = changingTekTX_;
-        }else if(itr->second == "Inspire"){
+        }else if(type == "DH-Robotics"){
+            rightRX = dhRX;
+            rightTX = dhTX;
+            modbus_set_slave(ctx, 201);
+            modbus_write_register(ctx, 0x0100, 0x0001);
+        }else if(type == "Inspire"){
             rightRX = inspireRX;
             rightTX = inspireTX;
-        }else if(itr->second == "Inspire_"){
+        }else if(type == "Inspire_"){
             rightRX = inspireRX_;
             rightTX = inspireTX_;
-        }else if(itr->second == "BrainCo"){
+        }else if(type == "BrainCo"){
             rightRX = brainCoRX;
             rightTX = brainCoTX;
-        }else if(itr->second == "HumanoidShanghai"){
+        }else if(type == "HumanoidShanghai"){
             rightRX = humanoidShanghaiRX;
             rightTX = humanoidShanghaiTX;
         }else{
             rightRX = nullRX;
             rightTX = nullTX;
         }
-        slave++;
+        ++slave;
     }
     if(slave == 0){
         printf("\tinvalid effector alias\n");
@@ -527,7 +566,7 @@ void* RS485::rxtx(void* arg){
     struct timespec currentTime, wakeupTime, step{0, 6 * rs485->period / 100};
     while(step.tv_nsec >= NSEC_PER_SEC){
         step.tv_nsec -= NSEC_PER_SEC;
-        step.tv_sec++;
+        ++step.tv_sec;
     }
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     while(true){
@@ -542,7 +581,7 @@ void* RS485::rxtx(void* arg){
         wakeupTime.tv_nsec += rs485->period;
         while(wakeupTime.tv_nsec >= NSEC_PER_SEC){
             wakeupTime.tv_nsec -= NSEC_PER_SEC;
-            wakeupTime.tv_sec++;
+            ++wakeupTime.tv_sec;
         }
         bool sleep = true;
         long diff = 0;

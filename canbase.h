@@ -19,20 +19,200 @@
 
 #include "common.h"
 #include <mutex>
+#include <unistd.h>
 #include <limits>
 
 namespace DriverSDK{
 class CAN;
 class CANEmu;
 
-using canRXFunction = int (*)(int const, int const, int* const, unsigned char* const);
+using canRXFunction = int (*)(int const, int const, int* const, unsigned char* const, int* const);
 using canTXFunction = void (*)(int const, int const, unsigned char* const, int const, CAN* const);
-using canEmuRXFunction = int (*)(int const, int const, int* const, unsigned char* const);
+using canEmuRXFunction = int (*)(int const, int const, int* const, unsigned char* const, int* const);
 using canEmuTXFunction = void (*)(int const, int const, unsigned char* const, int const, CANEmu* const);
 
 extern int dofAll, dofLeftEffector;
-extern WrapperPair<DriverRxData, DriverTxData, MotorParameters>* drivers;
-extern WrapperPair<DigitRxData, DigitTxData, EffectorParameters>* digits;
+extern WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
+extern WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
+
+struct CANopenData{
+    int functionCode, rtr, length;
+    unsigned char data[8];
+};
+
+struct Correspondence{
+    CANopenData rx, tx;
+};
+
+Correspondence const Correspondence0 = {
+    .rx = { .functionCode = 0x000, .rtr = 0, .length = 1, .data = {0x81, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },
+    .tx = { .functionCode = 0x000, .rtr = 0, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
+};
+
+Correspondence const Correspondence0_ = {
+    .rx = { .functionCode = 0x700, .rtr = 1, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },
+    .tx = { .functionCode = 0x700, .rtr = 0, .length = 1, .data = {0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
+};
+
+Correspondence const Correspondence1 = {
+    .rx = { .functionCode = 0x000, .rtr = 0, .length = 1, .data = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },
+    .tx = { .functionCode = 0x000, .rtr = 0, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
+};
+
+Correspondence const Correspondence1_ = {
+    .rx = { .functionCode = 0x700, .rtr = 1, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },
+    .tx = { .functionCode = 0x700, .rtr = 0, .length = 1, .data = {0x85, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
+};
+
+std::vector<Correspondence> const Correspondences = { {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0xc2, 0x60, 0x01, 0x00, 0x00, 0x00, 0x00} },   // period
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0xc2, 0x60, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x72, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00} },   // maxCurrent
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x72, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x14, 0x01, 0x00, 0x02, 0x00, 0x80} },   // Disable RPDO
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x14, 0x01, 0x00, 0x03, 0x00, 0x80} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x02, 0x14, 0x01, 0x00, 0x04, 0x00, 0x80} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x03, 0x14, 0x01, 0x00, 0x05, 0x00, 0x80} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x18, 0x01, 0x80, 0x01, 0x00, 0x80} },   // Disable TPDO
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x18, 0x01, 0x80, 0x02, 0x00, 0x80} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x02, 0x18, 0x01, 0x80, 0x03, 0x00, 0x80} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x03, 0x18, 0x01, 0x80, 0x04, 0x00, 0x80} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },   // RPDO
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x02, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x03, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },   // TPDO
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x18, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x18, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x02, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x18, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x03, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x18, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x00, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },   // TPDO
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x01, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x02, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x03, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },   // RPDO
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x02, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x03, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },   // TPDO
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x02, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x03, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x16, 0x01, 0x20, 0x00, 0x7a, 0x60} },   // RPDO1
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x16, 0x02, 0x20, 0x00, 0xff, 0x60} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x16, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x16, 0x00, 0x02, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x16, 0x01, 0x10, 0x00, 0x71, 0x60} },   // RPDO2
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x16, 0x02, 0x10, 0x00, 0x40, 0x60} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x16, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x16, 0x03, 0x08, 0x00, 0x60, 0x60} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x16, 0x03, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x16, 0x00, 0x03, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x1a, 0x01, 0x20, 0x00, 0x64, 0x60} },   // TPDO1
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x1a, 0x02, 0x20, 0x00, 0x6c, 0x60} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x1a, 0x00, 0x02, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x01, 0x10, 0x00, 0x77, 0x60} },   // TPDO2
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x02, 0x10, 0x00, 0x41, 0x60} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x02, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x03, 0x10, 0x00, 0x3f, 0x60} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x03, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x04, 0x08, 0x00, 0x61, 0x60} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x04, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x1a, 0x00, 0x04, 0x00, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x14, 0x01, 0x00, 0x02, 0x00, 0x00} },   // Enable RPDO
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x14, 0x01, 0x00, 0x03, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x18, 0x01, 0x80, 0x01, 0x00, 0x00} },   // Enable TPDO
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x18, 0x01, 0x80, 0x02, 0x00, 0x00} },
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }
+};
 
 unsigned char const EncosEnable   [3] = {0x71, 0x03, 0xe8};
 unsigned char const EncosDisable  [3] = {0x6d, 0x00, 0x00};
@@ -49,16 +229,16 @@ unsigned char const AgibotData    [8] = {0x00, 0x00, 0x7f, 0x7f, 0x7f, 0x7f, 0x0
 unsigned short float2para(float const f, float const min, float const max, int const bit);
 float para2float(unsigned short const us, float const min, float const max, int const bit);
 
-int nullRX(int const order, int const alias, int* const slaveID, unsigned char* const data);
-
+int nullCANRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr);
+int nullCANEmuRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr);
 void nullCANTX(int const order, int const masterID, unsigned char* const data, int const length, CAN* const can);
 void nullCANEmuTX(int const order, int const masterID, unsigned char* const data, int const length, CANEmu* const canemu);
 
 template<typename T>
-int encosRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
+int encosRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 2:
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0007:
             memcpy(data, EncosDamp, 3);
             return 3;
@@ -68,7 +248,7 @@ int encosRX(int const order, int const alias, int* const slaveID, unsigned char*
         }
         break;
     case 1:
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0007:
             break;
         case 0x0001:
@@ -79,7 +259,7 @@ int encosRX(int const order, int const alias, int* const slaveID, unsigned char*
         }
         break;
     case 0:
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0007:
             memcpy(data, EncosDisable, 3);
             T::alias2status[alias] = 0x0001;
@@ -92,7 +272,7 @@ int encosRX(int const order, int const alias, int* const slaveID, unsigned char*
     }
     DriverParameters const* parameters = T::alias2parameters[alias];
     unsigned short p, v, t, kp, kd;
-    if((T::alias2status[alias] & 0x0f7f) != 0x0007){
+    if((T::alias2status[alias] & 0x007f) != 0x0007){
          p = float2para(0.0, parameters->minP,  parameters->maxP,  16);
          v = float2para(0.0, parameters->minV,  parameters->maxV,  12);
         kp = float2para(0.0, parameters->minKp, parameters->maxKp, 12);
@@ -149,14 +329,14 @@ void encosTX(int const order, int const masterID, unsigned char* const data, int
     static long previous[8] = {current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
-        if((T::alias2status[alias] & 0x0f7f) == 0x0000){
+        if((T::alias2status[alias] & 0x007f) == 0x0000){
             int i = 0;
             while(i < 32){
                 int a = T::orderSlaveID2alias[order][i];
                 if(a > 0 && a <= dofAll){
                     T::alias2status[a] = 0x0001;
                 }
-                i++;
+                ++i;
             }
         }
         can->txSwap->advanceNodePtr();
@@ -171,7 +351,7 @@ void encosTX(int const order, int const masterID, unsigned char* const data, int
                 T::alias2status[a] |= 0x4000;
                 drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
             }
-            i++;
+            ++i;
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
@@ -180,10 +360,10 @@ void encosTX(int const order, int const masterID, unsigned char* const data, int
 }
 
 template<typename T>
-int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
+int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 1:
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0007:
             break;
         case 0x0001:
@@ -194,7 +374,7 @@ int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char
         }
         break;
     case 0:
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0007:
             memcpy(data, DamiaoDisable, 8);
             T::alias2status[alias] = 0x0001;
@@ -205,7 +385,7 @@ int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char
         }
         break;
     case -1:
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0007:
             break;
         case 0x0001:
@@ -266,14 +446,14 @@ void damiaoTX(int const order, int const masterID, unsigned char* const data, in
     static long previous[8] = {current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
-        if((T::alias2status[alias] & 0x0f7f) == 0x0000){
+        if((T::alias2status[alias] & 0x007f) == 0x0000){
             int i = 0;
             while(i < 32){
                 int a = T::orderSlaveID2alias[order][i];
                 if(a > 0 && a <= dofAll){
                     T::alias2status[a] = 0x0001;
                 }
-                i++;
+                ++i;
             }
         }
         can->txSwap->advanceNodePtr();
@@ -288,7 +468,7 @@ void damiaoTX(int const order, int const masterID, unsigned char* const data, in
                 T::alias2status[a] |= 0x4000;
                 drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
             }
-            i++;
+            ++i;
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
@@ -297,10 +477,10 @@ void damiaoTX(int const order, int const masterID, unsigned char* const data, in
 }
 
 template<typename T>
-int realManRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
+int realManRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 1:
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0250:
             T::alias2status[alias] = 0x0007;
         case 0x0007:
@@ -310,7 +490,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
             return 3;
             break;
         case 0x0050:
-            *slaveID += 0x0600;
+            *slaveID += 0x600;
             return 0;
             break;
         case 0x0000:
@@ -320,7 +500,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
         }
         break;
     case 0:
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0250:
         case 0x0007:
             memcpy(data, RealManDisable, 3);
@@ -329,7 +509,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
         case 0x0001:
             break;
         case 0x0050:
-            *slaveID += 0x0600;
+            *slaveID += 0x600;
             return 0;
             break;
         case 0x0000:
@@ -339,7 +519,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
         }
         break;
     case -1:
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0250:
             memcpy(data, RealManDisable, 3);
             return 3;
@@ -351,7 +531,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
             return 3;
             break;
         case 0x0050:
-            *slaveID += 0x0600;
+            *slaveID += 0x600;
             return 0;
             break;
         case 0x0000:
@@ -367,7 +547,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
     if(*slaveID == 1){
         enabled[order] = true;
     }
-    if((T::alias2status[alias] & 0x0f7f) != 0x0007){
+    if((T::alias2status[alias] & 0x007f) != 0x0007){
         enabled[order] = false;
     }
     if(*slaveID == 1){
@@ -400,7 +580,7 @@ void realManTX(int const order, int const masterID, unsigned char* const data, i
         if(length != 16){
             return;
         }
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0050:
             T::alias2status[alias] = 0x0250;
             signed char temperature = *(short*)(data + 4) * 0.1;
@@ -421,7 +601,7 @@ void realManTX(int const order, int const masterID, unsigned char* const data, i
         if(length != 3){
             return;
         }
-        switch(T::alias2status[alias] & 0x0f7f){
+        switch(T::alias2status[alias] & 0x007f){
         case 0x0250:
         case 0x0007:
             if(data[1] == 0x0a){
@@ -474,7 +654,7 @@ void realManTX(int const order, int const masterID, unsigned char* const data, i
                 T::alias2status[a] |= 0x4000;
                 drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
             }
-            i++;
+            ++i;
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
@@ -483,7 +663,124 @@ void realManTX(int const order, int const masterID, unsigned char* const data, i
 }
 
 template<typename T>
-int agibotRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
+int canopenConfigRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
+    return std::numeric_limits<int>::min();
+}
+
+template<typename T>
+void canopenConfigTX(int const order, int const masterID, unsigned char* const data, int const length, T* const can){
+    std::lock_guard<std::mutex> guard(T::checkMutex);
+    if(length != T::checkData.length){
+        return;
+    }
+    int i = 0;
+    while(i < length){
+        if(data[i] != T::checkData.data[i]){
+            break;
+        }
+        ++i;
+    }
+    if(i < length){
+        return;
+    }
+    auto itr = T::checkSlaveIDs.begin();
+    while(itr != T::checkSlaveIDs.end()){
+        if(masterID == T::checkData.functionCode + *itr){
+            itr = T::checkSlaveIDs.erase(itr);
+        }else{
+            ++itr;
+        }
+    }
+}
+
+template<typename T>
+bool canopenCheck(long const period, int const count){
+    int tryCount = 0;
+    while(true){
+        ++tryCount;
+        if(tryCount > count){
+            return false;
+        }
+        usleep(period / 1000);
+        T::checkMutex.lock();
+        if(T::checkSlaveIDs.size() > 0){
+            T::checkMutex.unlock();
+            continue;
+        }
+        T::checkMutex.unlock();
+        return true;
+    }
+}
+
+template<typename T>
+int canopenRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
+    static unsigned int count[32] = {
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+    };
+    ++count[alias];
+    if(count[alias] % 2 == 0){  // RPDO1
+        *slaveID += 0x200;
+        *(           int*)(data + 0) = drivers[alias - 1].rx.previous()->TargetPosition;
+        *(           int*)(data + 4) = drivers[alias - 1].rx.previous()->TargetVelocity;
+        return 8;
+    }else{                      // RPDO2
+        *slaveID += 0x300;
+        *(         short*)(data + 0) = drivers[alias - 1].rx.previous()->TargetTorque;
+        *(unsigned short*)(data + 2) = drivers[alias - 1].rx.previous()->ControlWord;
+        *(          char*)(data + 4) = drivers[alias - 1].rx.previous()->Mode;
+        return 5;
+    }
+}
+
+template<typename T>
+void canopenTX(int const order, int const masterID, unsigned char* const data, int const length, T* const can){
+    int const slaveID = T::orderMasterID2slaveID[order][masterID], alias = T::orderSlaveID2alias[order][slaveID];
+    if(masterID > 0x280){       // TPDO2
+        if(length != 7){
+            return;
+        }
+        drivers[alias - 1].tx.next()->ActualTorque   = *(         short*)(data + 0);
+        drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)(data + 2);
+        drivers[alias - 1].tx.next()->ErrorCode      = *(unsigned short*)(data + 4);
+        drivers[alias - 1].tx.next()->ModeDisplay    = *(          char*)(data + 6);
+        struct timeval tv;
+        gettimeofday(&tv, nullptr);
+        long current = TIMEVAL2US(tv);
+        static long previous[8] = {current, current, current, current, current, current, current, current};
+        can->mask |= 1 << slaveID;
+        if(can->mask == can->MASK){
+            can->txSwap->advanceNodePtr();
+            can->mask = 0;
+            previous[order] = current;
+        }else if(current - previous[order] > 20 * can->period / 1000){
+            unsigned int x = can->mask ^ can->MASK;
+            int i = 0;
+            while(i < 32){
+                if((x & 1 << i) > 0){
+                    int a = T::orderSlaveID2alias[order][i];
+                    T::alias2status[a] |= 0x4000;
+                    drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
+                }
+                ++i;
+            }
+            can->txSwap->advanceNodePtr();
+            can->mask = 0;
+            previous[order] = current;
+        }
+    }else if(masterID > 0x180){ // TPDO1
+        if(length != 8){
+            return;
+        }
+        drivers[alias - 1].tx.next()->ActualPosition = *(           int*)(data + 0);
+        drivers[alias - 1].tx.next()->ActualVelocity = *(           int*)(data + 4);
+    }
+}
+
+template<typename T>
+int agibotRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
     int i = 0;
     if(alias == 201){
         i = dofLeftEffector;
@@ -512,7 +809,7 @@ void agibotTX(int const order, int const masterID, unsigned char* const data, in
 }
 
 template<typename T>
-int linkerBotRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
+int linkerBotRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
     int i = 0;
     if(alias == 201){
         i = dofLeftEffector;
@@ -521,7 +818,7 @@ int linkerBotRX(int const order, int const alias, int* const slaveID, unsigned c
     int j = 0;
     while(j < 6){
         data[j + 1] = (90 - digits[i + j].rx.previous()->TargetPosition) * 255 / 90;
-        j++;
+        ++j;
     }
     return 7;
 }
@@ -539,7 +836,7 @@ void linkerBotTX(int const order, int const masterID, unsigned char* const data,
     int j = 0;
     while(j < 6){
         digits[i + j].tx.next()->ActualPosition = (255 - data[j + 1]) * 90 / 255;
-        j++;
+        ++j;
     }
     can->mask_ |= 1 << slaveID;
     if(can->mask_ == can->MASK_){
@@ -554,16 +851,19 @@ public:
     char* device;
     static long period;
     static int CANHAL;
-    static std::mutex resourceMutex;
+    static std::mutex resourceMutex, checkMutex;
+    static CANopenData checkData;
+    static std::vector<int> checkSlaveIDs;
+    std::vector<int> canopenAliases;
     CANBase(int const order, char const* device);
     int ifaceIsUp();
     int ifaceUp();
     int ifaceUp_();
     int ifaceDown();
     int open(int const masterID);
-    int send(int const slaveID, unsigned char const* data, int const length);
+    int send(int const slaveID, unsigned char const* data, int const rtr, int const length);
     int recv(unsigned char* const data, int const length, int* const masterID);
-    int sendfd(int const slaveID, unsigned char const* data, int const length);
+    int sendfd(int const slaveID, unsigned char const* data, int const rtr, int const length);
     int recvfd(unsigned char* const data, int const length, int* const masterID);
     ~CANBase();
 };
@@ -593,6 +893,8 @@ public:
     static void cleanup_(void* arg);
     static void* tx__(void* arg);
     static void* tx_(void* arg);
+    void transfer(int const alias, long const period, unsigned short const maxCurr, CANopenData const rx);
+    int canopenConfig();
     static int run(std::vector<CAN>& cans);
     ~CAN();
 };

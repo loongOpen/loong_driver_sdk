@@ -25,6 +25,10 @@ extern std::vector<std::map<int, std::vector<int>>> canEmuAlias2masterIDs;
 extern std::vector<std::map<int, int>> canEmuAlias2slaveID;
 extern int dofEffector;
 
+int nullCANEmuRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
+    return std::numeric_limits<int>::min();
+}
+
 void nullCANEmuTX(int const order, int const masterID, unsigned char* const data, int const length, CANEmu* const canemu){
     printf("unexpected data with master_id %d and length %d on canemus[%d]\n", masterID, length, order);
 }
@@ -48,43 +52,43 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
         while(i <= dofAll){
             alias2status[i] = 0xffff;
             alias2parameters[i] = nullptr;
-            i++;
+            ++i;
         }
         i = 0;
         while(i < 8){
             j = 0;
             while(j < 2048){
                 orderMasterID2slaveID[i][j] = -1;
-                j++;
+                ++j;
             }
-            i++;
+            ++i;
         }
         i = 0;
         while(i < 8){
             j = 0;
             while(j < 256){
                 orderSlaveID2alias[i][j] = 0;
-                j++;
+                ++j;
             }
-            i++;
+            ++i;
         }
         i = 0;
         while(i < 8){
             j = 0;
             while(j < 256){
-                rxFuncs[i][j] = nullRX;
-                j++;
+                rxFuncs[i][j] = nullCANEmuRX;
+                ++j;
             }
-            i++;
+            ++i;
         }
         i = 0;
         while(i < 8){
             j = 0;
             while(j < 2048){
                 txFuncs[i][j] = nullCANEmuTX;
-                j++;
+                ++j;
             }
-            i++;
+            ++i;
         }
         initialized = true;
     }
@@ -108,6 +112,10 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
                 printf("RealMan driver not supported on canemu bus\n");
                 exit(-1);
             }
+            if(type == "CANopen"){
+                printf("CANopen driver not supported on canemu bus\n");
+                exit(-1);
+            }
             alias2status[alias] = 0x0000;
             auto itr_ = type2parameters.find(type);
             if(itr_ == type2parameters.end()){
@@ -129,18 +137,16 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
                 txFuncs[order][masterIDs[i]] = encosTX<CANEmu>;
             }else if(type.starts_with("Damiao")){
                 txFuncs[order][masterIDs[i]] = damiaoTX<CANEmu>;
-            }else if(type.starts_with("RealMan")){
-                txFuncs[order][masterIDs[i]] = realManTX<CANEmu>;
             }else if(type == "AGIBOT"){
                 txFuncs[order][masterIDs[i]] = agibotTX<CANEmu>;
             }else if(type == "LinkerBot"){
                 txFuncs[order][masterIDs[i]] = linkerBotTX<CANEmu>;
             }
-            i++;
+            ++i;
         }
         printf(", slave_id %d\n", slaveID);
         orderSlaveID2alias[order][slaveID] = alias;
-        if(rxFuncs[order][slaveID] != nullRX){
+        if(rxFuncs[order][slaveID] != nullCANEmuRX){
             printf("invalid canemu bus configuration\n");
             exit(-1);
         }
@@ -148,14 +154,12 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
             rxFuncs[order][slaveID] = encosRX<CANEmu>;
         }else if(type.starts_with("Damiao")){
             rxFuncs[order][slaveID] = damiaoRX<CANEmu>;
-        }else if(type.starts_with("RealMan")){
-            rxFuncs[order][slaveID] = realManRX<CANEmu>;
         }else if(type == "AGIBOT"){
             rxFuncs[order][slaveID] = agibotRX<CANEmu>;
         }else if(type == "LinkerBot"){
             rxFuncs[order][slaveID] = linkerBotRX<CANEmu>;
         }
-        itr++;
+        ++itr;
     }
     slaveCount = alias2type.size();
 }
@@ -164,21 +168,21 @@ int CANEmu::config(){
     if(alias2type.size() == 0){
         return 0;
     }
-    rxSwap  = new SwapList(dofAll      * sizeof(DriverRxData));
-    txSwap  = new SwapList(dofAll      * sizeof(DriverTxData));
-    rxSwap_ = new SwapList(dofEffector * sizeof( DigitRxData));
-    txSwap_ = new SwapList(dofEffector * sizeof( DigitTxData));
+    rxSwap  = new SwapList(dofAll      * sizeof(DriverRXData));
+    txSwap  = new SwapList(dofAll      * sizeof(DriverTXData));
+    rxSwap_ = new SwapList(dofEffector * sizeof( DigitRXData));
+    txSwap_ = new SwapList(dofEffector * sizeof( DigitTXData));
     int k = 0;
     auto itr = alias2slaveID.begin();
     while(itr != alias2slaveID.end()){
-        int alias = itr->first, slave = itr->second;
+        int alias = itr->first, slaveID = itr->second;
         std::string const& type = alias2type.find(alias)->second;
         std::string const category = configXML->typeCategory("CAN", type.c_str());
         if(category == "driver"){
 #ifndef NIIC
-            if(drivers[alias - 1].init("CANEmu", 3, order, 0, slave, alias, type, k * sizeof(DriverRxData), k * sizeof(DriverTxData), nullptr, nullptr) != 0){
+            if(drivers[alias - 1].init("CANEmu", 3, order, 0, slaveID, alias, type, k * sizeof(DriverRXData), k * sizeof(DriverTXData), nullptr, nullptr) != 0){
 #else
-            if(drivers[alias - 1].init("CANEmu", 3, order, 0, slave, alias, type, k * sizeof(DriverRxData), k * sizeof(DriverTxData)) != 0){
+            if(drivers[alias - 1].init("CANEmu", 3, order, 0, slaveID, alias, type, k * sizeof(DriverRXData), k * sizeof(DriverTXData)) != 0){
 #endif
                 printf("\tdrivers[%d] init failed\n", alias - 1);
                 return -1;
@@ -187,8 +191,8 @@ int CANEmu::config(){
                 printf("\tdrivers[%d] config failed\n", alias - 1);
                 return -1;
             }
-            MASK |= 1 << slave;
-            k++;
+            MASK |= 1 << slaveID;
+            ++k;
         }else if(category == "effector"){
             int i, j;
             if(alias == 200){
@@ -203,9 +207,9 @@ int CANEmu::config(){
             }
             while(i < j){
 #ifndef NIIC
-                if(digits[i].init("CANEmu", 3, order, 0, slave, alias, type, i * sizeof(DigitRxData), i * sizeof(DigitTxData), nullptr, nullptr) != 0){
+                if(digits[i].init("CANEmu", 3, order, 0, slaveID, alias, type, i * sizeof(DigitRXData), i * sizeof(DigitTXData), nullptr, nullptr) != 0){
 #else
-                if(digits[i].init("CANEmu", 3, order, 0, slave, alias, type, i * sizeof(DigitRxData), i * sizeof(DigitTxData)) != 0){
+                if(digits[i].init("CANEmu", 3, order, 0, slaveID, alias, type, i * sizeof(DigitRXData), i * sizeof(DigitTXData)) != 0){
 #endif
                     printf("\tdigits[%d] init failed\n", i);
                     return -1;
@@ -214,11 +218,11 @@ int CANEmu::config(){
                     printf("\tdigits[%d] config failed\n", i);
                     return -1;
                 }
-                i++;
+                ++i;
             }
-            MASK_ |= 1 << slave;
+            MASK_ |= 1 << slaveID;
         }
-        itr++;
+        ++itr;
     }
     return 0;
 }
@@ -227,9 +231,9 @@ int CANEmu::run(std::vector<CANEmu>& canemus){
     int i = 0, j = 0;
     while(i < canemus.size()){
         if(canemus[i].alias2type.size() > 0){
-            j++;
+            ++j;
         }
-        i++;
+        ++i;
     }
     if(j == 0){
         return 0;
@@ -243,10 +247,10 @@ int CANEmu::run(std::vector<CANEmu>& canemus){
             if(a > 0 && a <= dofAll){
                 printf("%2d ", a);
             }
-            j++;
+            ++j;
         }
         printf(" MASK: 0x%08x\n", canemus[i].MASK);
-        i++;
+        ++i;
     }
     return 0;
 }
@@ -264,7 +268,7 @@ CANEmu::~CANEmu(){
                 delete alias2parameters[i];
                 alias2parameters[i] = nullptr;
             }
-            i++;
+            ++i;
         }
         delete[] alias2parameters;
         alias2parameters = nullptr;

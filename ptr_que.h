@@ -39,7 +39,7 @@ private:
         if(pthread_mutexattr_setrobust(&mutexAttribute, PTHREAD_MUTEX_ROBUST) == 0){
             if(pthread_mutexattr_settype(&mutexAttribute, PTHREAD_MUTEX_ERRORCHECK) == 0){
                 if(pthread_mutex_init(mutex, &mutexAttribute) == 0){
-                    printf("mutex initialized\n");
+                    printf("ptr_que mutex initialized\n");
                     pthread_mutexattr_destroy(&mutexAttribute);
                     return 0;
                 }else{

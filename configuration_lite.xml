@@ -525,135 +525,6 @@
                 <Object index="0x6020" subindex="0x0c" signed="0" bit_length="16" operation="1">H</Object>
             </Dictionary>
         </Device>
-        <Device type="Tsinghua">
-            <VendorID>0x00000009</VendorID>
-            <ProductCode>0x26483052</ProductCode>
-            <RxPDOs index="0x1601">
-                <Object>StopThumb</Object>
-                <Object>StopThumbBend</Object>
-                <Object>StopForefinger</Object>
-                <Object>StopMiddle</Object>
-                <Object>StopRing</Object>
-                <Object>StopLittle</Object>
-                <Object>RxPDOPadding</Object>
-            </RxPDOs>
-            <RxPDOs index="0x1602">
-                <Object>TargetSpeedThumb</Object>
-                <Object>TargetSpeedThumbBend</Object>
-                <Object>TargetSpeedForefinger</Object>
-                <Object>TargetSpeedMiddle</Object>
-                <Object>TargetSpeedRing</Object>
-                <Object>TargetSpeedLittle</Object>
-                <Object>TargetAngleThumb</Object>
-                <Object>TargetAngleThumbBend</Object>
-                <Object>TargetAngleForefinger</Object>
-                <Object>TargetAngleMiddle</Object>
-                <Object>TargetAngleRing</Object>
-                <Object>TargetAngleLittle</Object>
-                <Object>CurrentLimitThumb</Object>
-                <Object>CurrentLimitThumbBend</Object>
-                <Object>CurrentLimitForefinger</Object>
-                <Object>CurrentLimitMiddle</Object>
-                <Object>CurrentLimitRing</Object>
-                <Object>CurrentLimitLittle</Object>
-            </RxPDOs>
-            <TxPDOs index="0x1a00">
-                <Object>TouchSensorThumb1</Object>
-                <Object>TouchSensorThumb2</Object>
-                <Object>TouchSensorThumb3</Object>
-                <Object>TouchSensorThumb4</Object>
-                <Object>TouchSensorForefinger1</Object>
-                <Object>TouchSensorForefinger2</Object>
-                <Object>TouchSensorForefinger3</Object>
-                <Object>TouchSensorForefinger4</Object>
-                <Object>TouchSensorMiddle1</Object>
-                <Object>TouchSensorMiddle2</Object>
-                <Object>TouchSensorMiddle3</Object>
-                <Object>TouchSensorMiddle4</Object>
-                <Object>TouchSensorRing1</Object>
-                <Object>TouchSensorRing2</Object>
-                <Object>TouchSensorRing3</Object>
-                <Object>TouchSensorRing4</Object>
-                <Object>TouchSensorLittle1</Object>
-                <Object>TouchSensorLittle2</Object>
-                <Object>TouchSensorLittle3</Object>
-                <Object>TouchSensorLittle4</Object>
-            </TxPDOs>
-            <TxPDOs index="0x1a53">
-                <Object>ActualAngleThumb</Object>
-                <Object>ActualAngleThumbBend</Object>
-                <Object>ActualAngleForefinger</Object>
-                <Object>ActualAngleMiddle</Object>
-                <Object>ActualAngleRing</Object>
-                <Object>ActualAngleLittle</Object>
-                <Object>ActualCurrentThumb</Object>
-                <Object>ActualCurrentThumbBend</Object>
-                <Object>ActualCurrentForefinger</Object>
-                <Object>ActualCurrentMiddle</Object>
-                <Object>ActualCurrentRing</Object>
-                <Object>ActualCurrentLittle</Object>
-            </TxPDOs>
-            <Dictionary>
-                <Object index="0x0000" subindex="0x00" signed="0" bit_length="0"  operation="1">Alias</Object>
-                <Object index="0x7010" subindex="0x01" signed="0" bit_length="1"  operation="0">StopThumb</Object>
-                <Object index="0x7010" subindex="0x02" signed="0" bit_length="1"  operation="0">StopThumbBend</Object>
-                <Object index="0x7010" subindex="0x03" signed="0" bit_length="1"  operation="0">StopForefinger</Object>
-                <Object index="0x7010" subindex="0x04" signed="0" bit_length="1"  operation="0">StopMiddle</Object>
-                <Object index="0x7010" subindex="0x05" signed="0" bit_length="1"  operation="0">StopRing</Object>
-                <Object index="0x7010" subindex="0x06" signed="0" bit_length="1"  operation="0">StopLittle</Object>
-                <Object index="0x0000" subindex="0x00" signed="1" bit_length="10" operation="0">RxPDOPadding</Object>
-                <Object index="0x7020" subindex="0x01" signed="0" bit_length="16" operation="0">TargetSpeedThumb</Object>
-                <Object index="0x7020" subindex="0x02" signed="0" bit_length="16" operation="0">TargetSpeedThumbBend</Object>
-                <Object index="0x7020" subindex="0x03" signed="0" bit_length="16" operation="0">TargetSpeedForefinger</Object>
-                <Object index="0x7020" subindex="0x04" signed="0" bit_length="16" operation="0">TargetSpeedMiddle</Object>
-                <Object index="0x7020" subindex="0x05" signed="0" bit_length="16" operation="0">TargetSpeedRing</Object>
-                <Object index="0x7020" subindex="0x06" signed="0" bit_length="16" operation="0">TargetSpeedLittle</Object>
-                <Object index="0x7020" subindex="0x07" signed="0" bit_length="16" operation="0">TargetAngleThumb</Object>
-                <Object index="0x7020" subindex="0x08" signed="0" bit_length="16" operation="0">TargetAngleThumbBend</Object>
-                <Object index="0x7020" subindex="0x09" signed="0" bit_length="16" operation="0">TargetAngleForefinger</Object>
-                <Object index="0x7020" subindex="0x0a" signed="0" bit_length="16" operation="0">TargetAngleMiddle</Object>
-                <Object index="0x7020" subindex="0x0b" signed="0" bit_length="16" operation="0">TargetAngleRing</Object>
-                <Object index="0x7020" subindex="0x0c" signed="0" bit_length="16" operation="0">TargetAngleLittle</Object>
-                <Object index="0x7020" subindex="0x0d" signed="0" bit_length="16" operation="0">CurrentLimitThumb</Object>
-                <Object index="0x7020" subindex="0x0e" signed="0" bit_length="16" operation="0">CurrentLimitThumbBend</Object>
-                <Object index="0x7020" subindex="0x0f" signed="0" bit_length="16" operation="0">CurrentLimitForefinger</Object>
-                <Object index="0x7020" subindex="0x10" signed="0" bit_length="16" operation="0">CurrentLimitMiddle</Object>
-                <Object index="0x7020" subindex="0x11" signed="0" bit_length="16" operation="0">CurrentLimitRing</Object>
-                <Object index="0x7020" subindex="0x12" signed="0" bit_length="16" operation="0">CurrentLimitLittle</Object>
-                <Object index="0x6000" subindex="0x01" signed="0" bit_length="16" operation="1">TouchSensorThumb1</Object>
-                <Object index="0x6000" subindex="0x02" signed="0" bit_length="16" operation="1">TouchSensorThumb2</Object>
-                <Object index="0x6000" subindex="0x03" signed="0" bit_length="16" operation="1">TouchSensorThumb3</Object>
-                <Object index="0x6000" subindex="0x04" signed="0" bit_length="16" operation="1">TouchSensorThumb4</Object>
-                <Object index="0x6000" subindex="0x05" signed="0" bit_length="16" operation="1">TouchSensorForefinger1</Object>
-                <Object index="0x6000" subindex="0x06" signed="0" bit_length="16" operation="1">TouchSensorForefinger2</Object>
-                <Object index="0x6000" subindex="0x07" signed="0" bit_length="16" operation="1">TouchSensorForefinger3</Object>
-                <Object index="0x6000" subindex="0x08" signed="0" bit_length="16" operation="1">TouchSensorForefinger4</Object>
-                <Object index="0x6000" subindex="0x09" signed="0" bit_length="16" operation="1">TouchSensorMiddle1</Object>
-                <Object index="0x6000" subindex="0x0a" signed="0" bit_length="16" operation="1">TouchSensorMiddle2</Object>
-                <Object index="0x6000" subindex="0x0b" signed="0" bit_length="16" operation="1">TouchSensorMiddle3</Object>
-                <Object index="0x6000" subindex="0x0c" signed="0" bit_length="16" operation="1">TouchSensorMiddle4</Object>
-                <Object index="0x6000" subindex="0x0d" signed="0" bit_length="16" operation="1">TouchSensorRing1</Object>
-                <Object index="0x6000" subindex="0x0e" signed="0" bit_length="16" operation="1">TouchSensorRing2</Object>
-                <Object index="0x6000" subindex="0x0f" signed="0" bit_length="16" operation="1">TouchSensorRing3</Object>
-                <Object index="0x6000" subindex="0x10" signed="0" bit_length="16" operation="1">TouchSensorRing4</Object>
-                <Object index="0x6000" subindex="0x11" signed="0" bit_length="16" operation="1">TouchSensorLittle1</Object>
-                <Object index="0x6000" subindex="0x12" signed="0" bit_length="16" operation="1">TouchSensorLittle2</Object>
-                <Object index="0x6000" subindex="0x13" signed="0" bit_length="16" operation="1">TouchSensorLittle3</Object>
-                <Object index="0x6000" subindex="0x14" signed="0" bit_length="16" operation="1">TouchSensorLittle4</Object>
-                <Object index="0x6053" subindex="0x01" signed="0" bit_length="16" operation="1">ActualAngleThumb</Object>
-                <Object index="0x6053" subindex="0x02" signed="0" bit_length="16" operation="1">ActualAngleThumbBend</Object>
-                <Object index="0x6053" subindex="0x03" signed="0" bit_length="16" operation="1">ActualAngleForefinger</Object>
-                <Object index="0x6053" subindex="0x04" signed="0" bit_length="16" operation="1">ActualAngleMiddle</Object>
-                <Object index="0x6053" subindex="0x05" signed="0" bit_length="16" operation="1">ActualAngleRing</Object>
-                <Object index="0x6053" subindex="0x06" signed="0" bit_length="16" operation="1">ActualAngleLittle</Object>
-                <Object index="0x6053" subindex="0x07" signed="0" bit_length="16" operation="1">ActualCurrentThumb</Object>
-                <Object index="0x6053" subindex="0x08" signed="0" bit_length="16" operation="1">ActualCurrentThumbBend</Object>
-                <Object index="0x6053" subindex="0x09" signed="0" bit_length="16" operation="1">ActualCurrentForefinger</Object>
-                <Object index="0x6053" subindex="0x0a" signed="0" bit_length="16" operation="1">ActualCurrentMiddle</Object>
-                <Object index="0x6053" subindex="0x0b" signed="0" bit_length="16" operation="1">ActualCurrentRing</Object>
-                <Object index="0x6053" subindex="0x0c" signed="0" bit_length="16" operation="1">ActualCurrentLittle</Object>
-            </Dictionary>
-        </Device>
         <Device type="Ruiyan_1dof">
             <VendorID>0x00002a3f</VendorID>
             <ProductCode>0x00050002</ProductCode>
@@ -1316,6 +1187,18 @@
             <MinT>-90.0</MinT>
             <MaxT>90.0</MaxT>
         </Device>
+        <Device type="Encos EC-A7520-P2-22">
+            <MinP>-12.5</MinP>
+            <MaxP>12.5</MaxP>
+            <MinV>-30.0</MinV>
+            <MaxV>30.0</MaxV>
+            <MinKp>0.0</MinKp>
+            <MaxKp>500.0</MaxKp>
+            <MinKd>0.0</MinKd>
+            <MaxKd>50.0</MaxKd>
+            <MinT>-130.0</MinT>
+            <MaxT>130.0</MaxT>
+        </Device>
         <Device type="Encos EC-A6416-P2-30.25">
             <MinP>-12.5</MinP>
             <MaxP>12.5</MaxP>
@@ -1418,6 +1301,40 @@
             <COffsetUnit>0.002</COffsetUnit>
             <TConstant>3.0</TConstant>
         </Device>
+        <Device type="CANopen">
+            <RxPDOs index="0x1600">
+                <Object>TargetPosition</Object>
+                <Object>TargetVelocity</Object>
+            </RxPDOs>
+            <RxPDOs index="0x1601">
+                <Object>TargetTorque</Object>
+                <Object>ControlWord</Object>
+                <Object>Mode</Object>
+            </RxPDOs>
+            <TxPDOs index="0x1a00">
+                <Object>ActualPosition</Object>
+                <Object>ActualVelocity</Object>
+            </TxPDOs>
+            <TxPDOs index="0x1a01">
+                <Object>ActualTorque</Object>
+                <Object>StatusWord</Object>
+                <Object>ErrorCode</Object>
+                <Object>ModeDisplay</Object>
+            </TxPDOs>
+            <Dictionary>
+                <Object index="0x607a" subindex="0x00" signed="1" bit_length="32" operation="0">TargetPosition</Object>
+                <Object index="0x60ff" subindex="0x00" signed="1" bit_length="32" operation="0">TargetVelocity</Object>
+                <Object index="0x6071" subindex="0x00" signed="1" bit_length="16" operation="0">TargetTorque</Object>
+                <Object index="0x6040" subindex="0x00" signed="0" bit_length="16" operation="0">ControlWord</Object>
+                <Object index="0x6060" subindex="0x00" signed="1" bit_length="8"  operation="0">Mode</Object>
+                <Object index="0x6064" subindex="0x00" signed="1" bit_length="32" operation="1">ActualPosition</Object>
+                <Object index="0x606c" subindex="0x00" signed="1" bit_length="32" operation="1">ActualVelocity</Object>
+                <Object index="0x6077" subindex="0x00" signed="1" bit_length="16" operation="1">ActualTorque</Object>
+                <Object index="0x6041" subindex="0x00" signed="0" bit_length="16" operation="1">StatusWord</Object>
+                <Object index="0x603f" subindex="0x00" signed="0" bit_length="16" operation="1">ErrorCode</Object>
+                <Object index="0x6061" subindex="0x00" signed="1" bit_length="8"  operation="1">ModeDisplay</Object>
+            </Dictionary>
+        </Device>
     </Devices>
     <Categories>
         <Category name="battery">
@@ -1429,6 +1346,7 @@
             <Type>Encos EC-A10010-P2-24</Type>
             <Type>Encos EC-A8116-P1-18</Type>
             <Type>Encos EC-A8112-P1-18</Type>
+            <Type>Encos EC-A7520-P2-22</Type>
             <Type>Encos EC-A6416-P2-30.25</Type>
             <Type>Encos EC-A4315-P2-36</Type>
             <Type>Encos EC-A4310-P2-36</Type>
@@ -1438,6 +1356,7 @@
             <Type>RealMan WHJ60-S-D70-100-B</Type>
             <Type>RealMan WHJ30-S-D60-80-B</Type>
             <Type>RealMan WHJ10-M-D50-80-B</Type>
+            <Type>CANopen</Type>
         </Category>
         <Category name="effector">
             <Type dof="1">AGIBOT</Type>
@@ -1472,68 +1391,70 @@
     </Masters>--><!-- D-Robotics S600 -->
     <Slaves>
         <!-- Left Leg -->
-        <Slave master="0" master_ids="1"            slave_id="1"  alias="1"   type="Encos EC-A10020-P2-24"    >0</Slave>
-        <Slave master="0" master_ids="2"            slave_id="2"  alias="2"   type="Encos EC-A8116-P1-18"     >0</Slave>
-        <Slave master="0" master_ids="3"            slave_id="3"  alias="3"   type="Encos EC-A10020-P1-12"    >0</Slave>
-        <Slave master="0" master_ids="4"            slave_id="4"  alias="4"   type="Encos EC-A10020-P1-12"    >0</Slave>
-        <Slave master="0" master_ids="5"            slave_id="5"  alias="5"   type="Encos EC-A8112-P1-18"     >0</Slave>
-        <Slave master="0" master_ids="6"            slave_id="6"  alias="6"   type="Encos EC-A8112-P1-18"     >0</Slave>
+        <Slave master="0" master_ids="1"                 slave_id="1"  alias="1"   type="Encos EC-A10020-P2-24"    >0</Slave>
+        <Slave master="0" master_ids="2"                 slave_id="2"  alias="2"   type="Encos EC-A8116-P1-18"     >0</Slave>
+        <Slave master="0" master_ids="3"                 slave_id="3"  alias="3"   type="Encos EC-A10020-P1-12"    >0</Slave>
+        <Slave master="0" master_ids="4"                 slave_id="4"  alias="4"   type="Encos EC-A10020-P1-12"    >0</Slave>
+        <Slave master="0" master_ids="5"                 slave_id="5"  alias="5"   type="Encos EC-A8112-P1-18"     >0</Slave>
+        <Slave master="0" master_ids="6"                 slave_id="6"  alias="6"   type="Encos EC-A8112-P1-18"     >0</Slave>
         <!-- Right Leg -->
-        <Slave master="1" master_ids="1"            slave_id="1"  alias="7"   type="Encos EC-A10020-P2-24"    >0</Slave>
-        <Slave master="1" master_ids="2"            slave_id="2"  alias="8"   type="Encos EC-A8116-P1-18"     >0</Slave>
-        <Slave master="1" master_ids="3"            slave_id="3"  alias="9"   type="Encos EC-A10020-P1-12"    >0</Slave>
-        <Slave master="1" master_ids="4"            slave_id="4"  alias="10"  type="Encos EC-A10020-P1-12"    >0</Slave>
-        <Slave master="1" master_ids="5"            slave_id="5"  alias="11"  type="Encos EC-A8112-P1-18"     >0</Slave>
-        <Slave master="1" master_ids="6"            slave_id="6"  alias="12"  type="Encos EC-A8112-P1-18"     >0</Slave>
+        <Slave master="1" master_ids="1"                 slave_id="1"  alias="7"   type="Encos EC-A10020-P2-24"    >0</Slave>
+        <Slave master="1" master_ids="2"                 slave_id="2"  alias="8"   type="Encos EC-A8116-P1-18"     >0</Slave>
+        <Slave master="1" master_ids="3"                 slave_id="3"  alias="9"   type="Encos EC-A10020-P1-12"    >0</Slave>
+        <Slave master="1" master_ids="4"                 slave_id="4"  alias="10"  type="Encos EC-A10020-P1-12"    >0</Slave>
+        <Slave master="1" master_ids="5"                 slave_id="5"  alias="11"  type="Encos EC-A8112-P1-18"     >0</Slave>
+        <Slave master="1" master_ids="6"                 slave_id="6"  alias="12"  type="Encos EC-A8112-P1-18"     >0</Slave>
         <!-- Left Arm -->
-        <Slave master="2" master_ids="1"            slave_id="1"  alias="13"  type="Encos EC-A4315-P2-36"     >0</Slave>
+        <Slave master="2" master_ids="1"                 slave_id="1"  alias="13"  type="Encos EC-A4315-P2-36"     >0</Slave>
 
-        <Slave master="2" master_ids="17"           slave_id="1"  alias="13"  type="Damiao DM-J6248P-2EC"     >0</Slave>
-        <Slave master="2" master_ids="18"           slave_id="2"  alias="14"  type="Damiao DM-J6248P-2EC"     >0</Slave>
-        <Slave master="2" master_ids="19"           slave_id="3"  alias="15"  type="Damiao DM-J4340P-2EC"     >0</Slave>
-        <Slave master="2" master_ids="20"           slave_id="4"  alias="16"  type="Damiao DM-J4340P-2EC"     >0</Slave>
-        <Slave master="2" master_ids="21"           slave_id="5"  alias="17"  type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="2" master_ids="22"           slave_id="6"  alias="18"  type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="2" master_ids="23"           slave_id="7"  alias="19"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="2" master_ids="17"                slave_id="1"  alias="13"  type="Damiao DM-J6248P-2EC"     >0</Slave>
+        <Slave master="2" master_ids="18"                slave_id="2"  alias="14"  type="Damiao DM-J6248P-2EC"     >0</Slave>
+        <Slave master="2" master_ids="19"                slave_id="3"  alias="15"  type="Damiao DM-J4340P-2EC"     >0</Slave>
+        <Slave master="2" master_ids="20"                slave_id="4"  alias="16"  type="Damiao DM-J4340P-2EC"     >0</Slave>
+        <Slave master="2" master_ids="21"                slave_id="5"  alias="17"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="2" master_ids="22"                slave_id="6"  alias="18"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="2" master_ids="23"                slave_id="7"  alias="19"  type="Damiao DM-J4310-2EC"      >0</Slave>
 
-        <Slave master="2" master_ids="130 257 1793" slave_id="1"  alias="13"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
-        <Slave master="2" master_ids="131 258 1794" slave_id="2"  alias="14"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
-        <Slave master="2" master_ids="132 259 1795" slave_id="3"  alias="15"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
-        <Slave master="2" master_ids="133 260 1796" slave_id="4"  alias="16"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
-        <Slave master="2" master_ids="134 261 1797" slave_id="5"  alias="17"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
-        <Slave master="2" master_ids="135 262 1798" slave_id="6"  alias="18"  type="RealMan WHJ10-M-D50-80-B" >0</Slave><!-- master_ids="1534 262 1798" -->
-        <Slave master="2" master_ids="136 263 1799" slave_id="7"  alias="19"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
+        <Slave master="2" master_ids="130 257 1793"      slave_id="1"  alias="13"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
+        <Slave master="2" master_ids="131 258 1794"      slave_id="2"  alias="14"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
+        <Slave master="2" master_ids="132 259 1795"      slave_id="3"  alias="15"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
+        <Slave master="2" master_ids="133 260 1796"      slave_id="4"  alias="16"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
+        <Slave master="2" master_ids="134 261 1797"      slave_id="5"  alias="17"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
+        <Slave master="2" master_ids="135 262 1798"      slave_id="6"  alias="18"  type="RealMan WHJ10-M-D50-80-B" >0</Slave><!-- master_ids="1534 262 1798" -->
+        <Slave master="2" master_ids="136 263 1799"      slave_id="7"  alias="19"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
 
-        <Slave master="2" master_ids="8"            slave_id="8"  alias="200" type="AGIBOT"                   >0</Slave>
-        <Slave master="2" master_ids="40"           slave_id="40" alias="200" type="LinkerBot"                >0</Slave>
+        <Slave master="2" master_ids="8"                 slave_id="8"  alias="200" type="AGIBOT"                   >0</Slave>
+        <Slave master="2" master_ids="40"                slave_id="40" alias="200" type="LinkerBot"                >0</Slave>
         <!-- Right Arm -->
-        <Slave master="3" master_ids="1"            slave_id="1"  alias="20"  type="Encos EC-A4315-P2-36"     >0</Slave>
+        <Slave master="3" master_ids="1"                 slave_id="1"  alias="20"  type="Encos EC-A4315-P2-36"     >0</Slave>
 
-        <Slave master="3" master_ids="17"           slave_id="1"  alias="20"  type="Damiao DM-J6248P-2EC"     >0</Slave>
-        <Slave master="3" master_ids="18"           slave_id="2"  alias="21"  type="Damiao DM-J6248P-2EC"     >0</Slave>
-        <Slave master="3" master_ids="19"           slave_id="3"  alias="22"  type="Damiao DM-J4340P-2EC"     >0</Slave>
-        <Slave master="3" master_ids="20"           slave_id="4"  alias="23"  type="Damiao DM-J4340P-2EC"     >0</Slave>
-        <Slave master="3" master_ids="21"           slave_id="5"  alias="24"  type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="3" master_ids="22"           slave_id="6"  alias="25"  type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="3" master_ids="23"           slave_id="7"  alias="26"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="3" master_ids="17"                slave_id="1"  alias="20"  type="Damiao DM-J6248P-2EC"     >0</Slave>
+        <Slave master="3" master_ids="18"                slave_id="2"  alias="21"  type="Damiao DM-J6248P-2EC"     >0</Slave>
+        <Slave master="3" master_ids="19"                slave_id="3"  alias="22"  type="Damiao DM-J4340P-2EC"     >0</Slave>
+        <Slave master="3" master_ids="20"                slave_id="4"  alias="23"  type="Damiao DM-J4340P-2EC"     >0</Slave>
+        <Slave master="3" master_ids="21"                slave_id="5"  alias="24"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="3" master_ids="22"                slave_id="6"  alias="25"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="3" master_ids="23"                slave_id="7"  alias="26"  type="Damiao DM-J4310-2EC"      >0</Slave>
 
-        <Slave master="3" master_ids="130 257 1793" slave_id="1"  alias="20"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
-        <Slave master="3" master_ids="131 258 1794" slave_id="2"  alias="21"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
-        <Slave master="3" master_ids="132 259 1795" slave_id="3"  alias="22"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
-        <Slave master="3" master_ids="133 260 1796" slave_id="4"  alias="23"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
-        <Slave master="3" master_ids="134 261 1797" slave_id="5"  alias="24"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
-        <Slave master="3" master_ids="135 262 1798" slave_id="6"  alias="25"  type="RealMan WHJ10-M-D50-80-B" >0</Slave><!-- master_ids="1534 262 1798" -->
-        <Slave master="3" master_ids="136 263 1799" slave_id="7"  alias="26"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
+        <Slave master="3" master_ids="130 257 1793"      slave_id="1"  alias="20"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
+        <Slave master="3" master_ids="131 258 1794"      slave_id="2"  alias="21"  type="RealMan WHJ60-S-D70-100-B">0</Slave>
+        <Slave master="3" master_ids="132 259 1795"      slave_id="3"  alias="22"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
+        <Slave master="3" master_ids="133 260 1796"      slave_id="4"  alias="23"  type="RealMan WHJ30-S-D60-80-B" >0</Slave>
+        <Slave master="3" master_ids="134 261 1797"      slave_id="5"  alias="24"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
+        <Slave master="3" master_ids="135 262 1798"      slave_id="6"  alias="25"  type="RealMan WHJ10-M-D50-80-B" >0</Slave><!-- master_ids="1534 262 1798" -->
+        <Slave master="3" master_ids="136 263 1799"      slave_id="7"  alias="26"  type="RealMan WHJ10-M-D50-80-B" >0</Slave>
 
-        <Slave master="3" master_ids="8"            slave_id="8"  alias="201" type="AGIBOT"                   >0</Slave>
-        <Slave master="3" master_ids="39"           slave_id="39" alias="201" type="LinkerBot"                >0</Slave>
+        <Slave master="3" master_ids="8"                 slave_id="8"  alias="201" type="AGIBOT"                   >0</Slave>
+        <Slave master="3" master_ids="39"                slave_id="39" alias="201" type="LinkerBot"                >0</Slave>
         <!-- Waist -->
-        <Slave master="4" master_ids="17"           slave_id="1"  alias="27"  type=""                         >0</Slave>
-        <Slave master="4" master_ids="18"           slave_id="2"  alias="28"  type=""                         >0</Slave>
-        <Slave master="4" master_ids="19"           slave_id="3"  alias="29"  type=""                         >0</Slave>
+        <Slave master="4" master_ids="17"                slave_id="1"  alias="27"  type=""                         >0</Slave>
+        <Slave master="4" master_ids="18"                slave_id="2"  alias="28"  type=""                         >0</Slave>
+        <Slave master="4" master_ids="19"                slave_id="3"  alias="29"  type=""                         >0</Slave>
         <!-- Neck -->
-        <Slave master="4" master_ids="20"           slave_id="4"  alias="30"  type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="4" master_ids="21"           slave_id="5"  alias="31"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="4" master_ids="20"                slave_id="4"  alias="30"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="4" master_ids="21"                slave_id="5"  alias="31"  type="Damiao DM-J4310-2EC"      >0</Slave>
+        <Slave master="4" master_ids="388 644 1412 1796" slave_id="4"  alias="30"  type="CANopen"                  >0</Slave>
+        <Slave master="4" master_ids="389 645 1413 1797" slave_id="5"  alias="31"  type="CANopen"                  >0</Slave>
     </Slaves>
 </CAN>
 <RS485Emu>
@@ -1561,6 +1482,7 @@
         <Category name="effector">
             <Type dof="1">ChangingTek</Type>
             <Type dof="1">ChangingTek_</Type>
+            <Type dof="1">DH-Robotics</Type>
             <Type dof="6">Inspire</Type>
             <Type dof="6">Inspire_</Type>
             <Type dof="6">BrainCo</Type>
@@ -1991,7 +1913,7 @@
         <MinimumPosition>-0.69813172</MinimumPosition>
         <MaximumPosition>0.69813172</MaximumPosition>
     </Motor>
-    <Motor limb="5" motor="0" alias="30">
+    <!--<Motor limb="5" motor="0" alias="30">
         <Polarity>1</Polarity>
         <CountBias>0</CountBias>
         <EncoderResolution>131072</EncoderResolution>
@@ -2018,7 +1940,35 @@
         <MaximumTorque>26</MaximumTorque>
         <MinimumPosition>-0.69813172</MinimumPosition>
         <MaximumPosition>0.69813172</MaximumPosition>
-    </Motor>
+    </Motor>-->
+    <Motor limb="5" motor="0" alias="30">
+        <Polarity>1</Polarity>
+        <CountBias>0</CountBias>
+        <EncoderResolution>65536</EncoderResolution>
+        <GearRatioTor>1</GearRatioTor>
+        <GearRatioPosVel>101</GearRatioPosVel>
+        <RatedCurrent>1</RatedCurrent>
+        <TorqueConstant>1</TorqueConstant>
+        <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>5</RatedTorque>
+        <MaximumTorque>11</MaximumTorque>
+        <MinimumPosition>-1.569</MinimumPosition>
+        <MaximumPosition>1.569</MaximumPosition>
+    </Motor><!-- CANopen -->
+    <Motor limb="5" motor="1" alias="31">
+        <Polarity>1</Polarity>
+        <CountBias>0</CountBias>
+        <EncoderResolution>65536</EncoderResolution>
+        <GearRatioTor>1</GearRatioTor>
+        <GearRatioPosVel>101</GearRatioPosVel>
+        <RatedCurrent>1</RatedCurrent>
+        <TorqueConstant>1</TorqueConstant>
+        <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>5</RatedTorque>
+        <MaximumTorque>11</MaximumTorque>
+        <MinimumPosition>-0.69813172</MinimumPosition>
+        <MaximumPosition>0.69813172</MaximumPosition>
+    </Motor><!-- CANopen -->
 </Motors>
 <IMU device="" baudrate="460800" type="Forsense"/><!-- type="Xsens/HiPNUC/Forsense/YESENSE/YESENSE_/Lins-Tech" -->
 </Config>

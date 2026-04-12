@@ -313,12 +313,12 @@ std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus, s
                             i = aliases2domainType->size() - 1;
                             break;
                         }
-                        k++;
+                        ++k;
                     }
-                    count++;
-                    j++;
+                    ++count;
+                    ++j;
                 }
-                i++;
+                ++i;
             }
         }
         while(ret.size() <= master){
@@ -386,12 +386,12 @@ std::vector<std::map<int, int>> ConfigXML::alias2attribute(char const* bus, char
                             i = aliases2domainType->size() - 1;
                             break;
                         }
-                        k++;
+                        ++k;
                     }
-                    count++;
-                    j++;
+                    ++count;
+                    ++j;
                 }
-                i++;
+                ++i;
             }
         }
         while(ret.size() <= master){
@@ -443,12 +443,12 @@ std::vector<std::map<int, std::vector<int>>> ConfigXML::alias2attribute_(char co
                             i = aliases2domainType->size() - 1;
                             break;
                         }
-                        k++;
+                        ++k;
                     }
-                    count++;
-                    j++;
+                    ++count;
+                    ++j;
                 }
-                i++;
+                ++i;
             }
         }
         while(ret.size() <= master){

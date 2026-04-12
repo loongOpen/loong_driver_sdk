@@ -100,8 +100,8 @@ public:
     int recvMotorSDOResponse(motorSDOClass& data);
     int sendMotorREGRequest(motorREGClass const& data);
     int recvMotorREGResponse(motorREGClass& data);
-    int calibrate(int const i);
     int calibrate_(int const i);
+    int calibrate(int const i);
     void advance();
     std::string version();
 private:

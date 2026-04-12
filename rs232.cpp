@@ -36,7 +36,7 @@ bool validXsens(unsigned char const* buff){
     int i = 1, sum = 0;
     while(i < 49){
         sum += buff[i];
-        i++;
+        ++i;
     }
     if(sum > 0xff){
        sum = ~sum;
@@ -58,9 +58,9 @@ void crcUpdate(unsigned short* currentCRC, unsigned char const* buff, int const 
                 temp ^= 0x1021;
             }
             crc = temp;
-            j++;
+            ++j;
         }
-        i++;
+        ++i;
     }
     *currentCRC = crc;
 }
@@ -111,7 +111,7 @@ unsigned int crc32(unsigned int crc, unsigned char const* buff, unsigned int con
     int i = 0;
     while(i < length){
         crc = Table[(crc ^ buff[i]) & 0xff] ^ crc >> 8;
-        i++;
+        ++i;
     }
     return crc;
 }
@@ -126,7 +126,7 @@ unsigned short checksum(unsigned char const* buff, int length){
 	while(i < length){
 		a += buff[i];
 		b += a;
-		i++;
+		++i;
 	}
 	return (unsigned short)b << 8 | a;
 }
@@ -143,7 +143,7 @@ bool validLinstech(unsigned char const* buff){
     int i = 2, sum = 0;
     while(i < 40){
         sum += buff[i];
-        i++;
+        ++i;
     }
     sum = ~sum;
     sum &= 0xff;
@@ -430,7 +430,7 @@ RS232::RS232(char const* device, int const baudrate, char const* type){
         txSwap->nodePtr.load()->memPtr[0] = header0;
         txSwap->nodePtr.load()->memPtr[1] = header1;
         txSwap->advanceNodePtr();
-        i++;
+        ++i;
     }
 }
 
@@ -453,7 +453,7 @@ void* RS232::recv(void* arg){
         if(baudrateArray[i] == imu->baudrate){
             break;
         }
-        i++;
+        ++i;
     }
     if(i == 13){
         printf("invalid baudrate %d\n", imu->baudrate);
@@ -497,7 +497,7 @@ void* RS232::recv(void* arg){
         node->next = new ChainNode();
         node->next->previous = node;
         node = node->next;
-        i++;
+        ++i;
     }
     node->nr = 2 * imu->frameLength - 1;
     node->next = node0;
@@ -537,7 +537,7 @@ void* RS232::recv(void* arg){
         node = node->next;
         if(i < imu->frameLength){
             imu->txSwap->nodePtr.load()->next->memPtr[i] = buff[node->nr];
-            i++;
+            ++i;
         }
         if(buff[node->previous->nr] == imu->header0 && buff[node->nr] == imu->header1){
             if(imu->valid(imu->txSwap->nodePtr.load()->next->memPtr)){

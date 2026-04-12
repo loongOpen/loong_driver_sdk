@@ -24,10 +24,6 @@ double const Pi = std::acos(-1);
 
 int main(int argc, char** argv){
     int enabled = 0, count = 2;
-    if(argc == 3){
-        enabled = atoi(argv[1]);
-        count = atoi(argv[2]);
-    }
     DriverSDK::DriverSDK& driverSDK = DriverSDK::DriverSDK::instance();
     printf("loong_driver_sdk %s\n", driverSDK.version().c_str());
     std::vector<unsigned short> cpusECAT = {2, 3, 3, 3, 3, 3};
@@ -58,19 +54,19 @@ int main(int argc, char** argv){
     printf("digitNr %d\nmotorNr %ld/%d:\t", digitNr, activeMotors.size(), motorNr);
     while(i < activeMotors.size()){
         printf("%d ", activeMotors[i] + 1);
-        i++;
+        ++i;
     }
     printf("\n");
     std::vector<DriverSDK::motorSDOClass> sdoData;
     i = 0;
     while(i < motorNr){
         sdoData.emplace_back(i);
-        i++;
+        ++i;
     }
     i = 0;
     while(i < motorNr){
         driverSDK.fillSDO(sdoData[i], "ActualPosition");
-        i++;
+        ++i;
     }
     DriverSDK::imuStruct imuData;
     std::vector<DriverSDK::digitTargetStruct> digitTargetData;
@@ -79,7 +75,7 @@ int main(int argc, char** argv){
     while(i < digitNr){
         digitTargetData.push_back(DriverSDK::digitTargetStruct{});
         digitActualData.push_back(DriverSDK::digitActualStruct{});
-        i++;
+        ++i;
     }
     std::vector<DriverSDK::motorTargetStruct> motorTargetData;
     std::vector<DriverSDK::motorActualStruct> motorActualData;
@@ -87,13 +83,21 @@ int main(int argc, char** argv){
     while(i < motorNr){
         motorTargetData.push_back(DriverSDK::motorTargetStruct{});
         motorActualData.push_back(DriverSDK::motorActualStruct{});
-        i++;
+        ++i;
     }
     std::vector<DriverSDK::sensorStruct> sensorData;
     i = 0;
     while(i < 2){
         sensorData.push_back(DriverSDK::sensorStruct{});
-        i++;
+        ++i;
+    }
+    float motorPositions[motorNr];
+    if(argc == 2 && argv[1][0] == 'e'){
+        goto effector;
+    }
+    if(argc == 3){
+        enabled = atoi(argv[1]);
+        count = atoi(argv[2]);
     }
     i = 0;
     while(i < 1600){
@@ -107,26 +111,25 @@ int main(int argc, char** argv){
         j = 0;
         while(j < 2){
             printf("sensor%02d:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", j + 1, sensorData[j].F[0], sensorData[j].F[1], sensorData[j].F[2], sensorData[j].M[0], sensorData[j].M[1], sensorData[j].M[2]);
-            j++;
+            ++j;
         }
         driverSDK.getMotorActual(motorActualData);
         j = 0;
         while(j < motorNr){
             printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
-            j++;
+            ++j;
         }
         driverSDK.advance();
         usleep(4000);
         driverSDK.advance();
         usleep(4000);
-        i++;
+        ++i;
     }
-    float motorPositions[motorNr];
     i = 0;
     while(i < motorNr){
         motorPositions[i] = motorActualData[i].pos;
         motorTargetData[i].enabled = enabled;
-        i++;
+        ++i;
     }
     i = 0;
     while(count > 0){
@@ -137,7 +140,7 @@ int main(int argc, char** argv){
             j = 0;
             while(j < 2){
                 printf("sensor%02d:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", j + 1, sensorData[j].F[0], sensorData[j].F[1], sensorData[j].F[2], sensorData[j].M[0], sensorData[j].M[1], sensorData[j].M[2]);
-                j++;
+                ++j;
             }
             driverSDK.getMotorActual(motorActualData);
             j = 0;
@@ -146,11 +149,11 @@ int main(int argc, char** argv){
                 motorTargetData[j].kp = 50.0;
                 motorTargetData[j].kd = 0.85;
                 printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
-                j++;
+                ++j;
             }
             driverSDK.setMotorTarget(motorTargetData);
             usleep(4000);
-            i++;
+            ++i;
         }
         usleep(4000);
         while(i > 0){
@@ -160,7 +163,7 @@ int main(int argc, char** argv){
             j = 0;
             while(j < 2){
                 printf("sensor%02d:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", j + 1, sensorData[j].F[0], sensorData[j].F[1], sensorData[j].F[2], sensorData[j].M[0], sensorData[j].M[1], sensorData[j].M[2]);
-                j++;
+                ++j;
             }
             driverSDK.getMotorActual(motorActualData);
             j = 0;
@@ -169,18 +172,18 @@ int main(int argc, char** argv){
                 motorTargetData[j].kp = 50.0;
                 motorTargetData[j].kd = 0.85;
                 printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
-                j++;
+                ++j;
             }
             driverSDK.setMotorTarget(motorTargetData);
             usleep(4000);
-            i--;
+            --i;
         }
-        count--;
+        --count;
     }
     i = 0;
     while(i < motorNr){
         motorTargetData[i].enabled = 0;
-        i++;
+        ++i;
     }
     i = 0;
     while(i < 1600){
@@ -190,18 +193,18 @@ int main(int argc, char** argv){
         j = 0;
         while(j < 2){
             printf("sensor%02d:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", j + 1, sensorData[j].F[0], sensorData[j].F[1], sensorData[j].F[2], sensorData[j].M[0], sensorData[j].M[1], sensorData[j].M[2]);
-            j++;
+            ++j;
         }
         driverSDK.getMotorActual(motorActualData);
         j = 0;
         while(j < motorNr){
             motorTargetData[j].pos = motorActualData[j].pos;
             printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
-            j++;
+            ++j;
         }
         driverSDK.setMotorTarget(motorTargetData);
         usleep(4000);
-        i++;
+        ++i;
     }
     i = 0;
     while(i < 3200){
@@ -211,7 +214,7 @@ int main(int argc, char** argv){
         j = 0;
         while(j < 2){
             printf("sensor%02d:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", j + 1, sensorData[j].F[0], sensorData[j].F[1], sensorData[j].F[2], sensorData[j].M[0], sensorData[j].M[1], sensorData[j].M[2]);
-            j++;
+            ++j;
         }
         driverSDK.getMotorActual(motorActualData);
         j = 0;
@@ -220,11 +223,11 @@ int main(int argc, char** argv){
             driverSDK.recvMotorSDOResponse(sdoData[j]);
             motorTargetData[j].pos = motorActualData[j].pos;
             printf("motor%02d:\t%8ld %8d 0x%04x 0x%04x\n", j + 1, sdoData[j].value, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
-            j++;
+            ++j;
         }
         driverSDK.setMotorTarget(motorTargetData);
         usleep(4000);
-        i++;
+        ++i;
     }
     i = 0;
     while(i < motorNr){
@@ -233,12 +236,13 @@ int main(int argc, char** argv){
         // printf("motor%02d CountBias %d\n", i + 1, driverSDK.calibrate(i));
         driverSDK.advance();
         usleep(4000);
-        i++;
+        ++i;
     }
+effector:
     i = 0;
     while(i < digitNr){
         digitTargetData[i].pos = 0;
-        i++;
+        ++i;
     }
     i = 0;
     while(i < 6400){
@@ -248,13 +252,13 @@ int main(int argc, char** argv){
         while(j < digitNr){
             digitTargetData[j].pos = std::abs(90.0 * std::sin(2.0 * Pi * (double)i / 6400.0));
             printf("%8d\t", digitActualData[j].pos);
-            j++;
+            ++j;
         }
         printf("\n");
         driverSDK.setDigitTarget(digitTargetData);
         driverSDK.advance();
         usleep(4000);
-        i++;
+        ++i;
     }
     return 0;
 }

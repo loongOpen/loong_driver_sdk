@@ -89,7 +89,7 @@ struct REGMsg{
     int recycled;
 };
 
-struct DriverRxData{
+struct DriverRXData{
     int TargetPosition;
     int TargetVelocity;
     short TargetTorque;         // kd (can)
@@ -100,7 +100,7 @@ struct DriverRxData{
     int VelocityOffset;
 };
 
-struct DriverTxData{
+struct DriverTXData{
     int ActualPosition;
     int ActualVelocity;
     short ActualTorque;
@@ -131,15 +131,15 @@ public:
     ~MotorParameters();
 };
 
-struct DigitRxData{
+struct DigitRXData{
     unsigned short TargetPosition;
 };
 
-struct DigitTxData{
+struct DigitTXData{
     unsigned short ActualPosition;
 };
 
-struct HandRxData{
+struct HandRXData{
     unsigned char stop;
     char Undefined;
     unsigned short TargetSpeedThumb;
@@ -162,7 +162,7 @@ struct HandRxData{
     unsigned short CurrentLimitLittle;
 };
 
-struct HandTxData{
+struct HandTXData{
     unsigned short TouchSensorThumb[4];
     unsigned short TouchSensorForefinger[4];
     unsigned short TouchSensorMiddle[4];
@@ -182,19 +182,19 @@ struct HandTxData{
     unsigned short ActualCurrentLittle;
 };
 
-struct ConverterDatum{
+struct ConverterChannel{
     unsigned short Index;
     unsigned short ID;
     unsigned short Length;
     unsigned char Data[64];
 };
 
-struct ConverterRxData{
-    ConverterDatum channels[8];
+struct ConverterRXData{
+    ConverterChannel channels[8];
 };
 
-struct ConverterTxData{
-    ConverterDatum channels[8];
+struct ConverterTXData{
+    ConverterChannel channels[8];
 };
 
 class EffectorParameters{
@@ -208,7 +208,7 @@ public:
     ~EffectorParameters();
 };
 
-struct SensorRxData{
+struct SensorRXData{
     int ControlCode;
     float x;
     float y;
@@ -219,7 +219,7 @@ struct SensorRxData{
     float d;
 };
 
-struct SensorTxData{
+struct SensorTXData{
     int Fx;
     int Fy;
     int Fz;
@@ -242,23 +242,23 @@ public:
     ~SensorParameters();
 };
 
-struct __attribute__((__packed__)) TransferrerDatum{
+struct __attribute__((__packed__)) TransferrerChannel{
     unsigned int ID;
     unsigned char RTR;
     unsigned char DLC;
     unsigned char Byte[8];
 };
 
-struct __attribute__((__packed__)) TransferrerRxData{
+struct __attribute__((__packed__)) TransferrerRXData{
     unsigned char Count;
     unsigned char IDE;
-    TransferrerDatum channels[6];
+    TransferrerChannel channels[6];
 };
 
-struct __attribute__((__packed__)) TransferrerTxData{
+struct __attribute__((__packed__)) TransferrerTXData{
     unsigned char Count;
     unsigned char IDE;
-    TransferrerDatum channels[6];
+    TransferrerChannel channels[6];
 };
 
 class TransferrerParameters{
@@ -320,13 +320,13 @@ public:
     }
 };
 
-template<typename RxData, typename TxData, typename Parameters>
+template<typename RXData, typename TXData, typename Parameters>
 class WrapperPair{
 public:
     int busCode, order, domain, slave, alias, enabled;
     std::string bus, type;
-    DataWrapper<RxData> rx;
-    DataWrapper<TxData> tx;
+    DataWrapper<RXData> rx;
+    DataWrapper<TXData> tx;
 #ifndef NIIC
     ec_sdo_request_t* sdoHandler;
     ec_reg_request_t* regHandler;
@@ -335,7 +335,7 @@ public:
 #endif
     Parameters parameters;
     WrapperPair(){
-        busCode = -1;   // 0: ECAT; 1: CAN; 2: RS485; 3: CANEmu
+        busCode = -1;   // 0: ECAT; 1: CAN; 2: CANopen; 3: CANEmu; 4: RS-485
         order = -1;
         domain = -1;
         slave = -1;

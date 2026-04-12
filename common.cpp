@@ -33,7 +33,7 @@ void print(unsigned char const* data, int const length){
         }else if((i + 1) % 8 == 0){
             printf(" ");
         }
-        i++;
+        ++i;
     }
     printf("\n");
 }
@@ -60,7 +60,7 @@ unsigned short single2half(float const f){
         unsigned int halfMan = man >> (14 - halfExp);
         unsigned int roundBit = 1 << (13 - halfExp);    // bit (14 - halfExp)
         if((man & roundBit) != 0 && (man & (3 * roundBit - 1)) != 0){
-            halfMan++;
+            ++halfMan;
         }
         return halfSign | halfMan;
     }
@@ -160,7 +160,7 @@ SwapList::SwapList(int const size){
         node->previous = current;
         current->next = node;
         current = current->next;
-        i++;
+        ++i;
     }
     nodePtr.load()->previous = current;
     current->next = nodePtr.load();

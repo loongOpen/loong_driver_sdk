@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(driver_test VERSION 4.2.5 LANGUAGES C CXX)
+project(driver_test VERSION 4.3.0 LANGUAGES C CXX)
 option(AARCH64 "aarch64" OFF)
 option(RISCV64 "riscv64" OFF)
 option(NIIC "necro" OFF)

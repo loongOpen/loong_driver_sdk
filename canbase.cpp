@@ -18,7 +18,6 @@
 #include "config_xml.h"
 #include "hobot_can_hal.h"
 #include "canbase.h"
-#include <unistd.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <linux/can/raw.h>
@@ -43,20 +42,18 @@ float para2float(unsigned short const us, float const min, float const max, int 
     return us * (max - min) / ((1 << bit) - 1.0) + min;
 }
 
-int nullRX(int const order, int const alias, int* const slaveID, unsigned char* const data){
-    return 0;
-}
-
 long CANBase::period;
 int CANBase::CANHAL;
-std::mutex CANBase::resourceMutex;
+std::mutex CANBase::resourceMutex, CANBase::checkMutex;
+CANopenData CANBase::checkData;
+std::vector<int> CANBase::checkSlaveIDs;
 
 CANBase::CANBase(int const order, char const* device){
     static bool initialized = false;
     if(!initialized){
         period = configXML->canAttribute("period");
-        if(period < 1000000L){
-            period = 1000000L;
+        if(period < 1000000){
+            period = 1000000;
         }
         CANHAL = 0;
         initialized = true;
@@ -334,7 +331,7 @@ int CANBase::open(int const masterID){
     return sock;
 }
 
-int CANBase::send(int const slaveID, unsigned char const* data, int length){
+int CANBase::send(int const slaveID, unsigned char const* data, int const rtr, int const length){
     int ret;
     struct can_frame frame;
     if(length > sizeof(frame.data)){
@@ -342,12 +339,15 @@ int CANBase::send(int const slaveID, unsigned char const* data, int length){
         return -1;
     }
     frame.can_id = slaveID;
+    if(rtr == 1){
+        frame.can_id |= CAN_RTR_FLAG;
+    }
     frame.can_dlc = length;
     memcpy(frame.data, data, length);
     static unsigned int count[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     ret = write(sock, &frame, sizeof(frame));
     if(ret != sizeof(frame)){
-        count[order]++;
+        ++count[order];
         if(count[order] % (2 * slaveCount) == 0){
             if(autoRestart){
                 printf("send: cans[%d] write() ret = %d\n", order, ret);
@@ -382,7 +382,7 @@ int CANBase::recv(unsigned char* const data, int const length, int* const master
     return frame.can_dlc;
 }
 
-int CANBase::sendfd(int const slaveID, unsigned char const* data, int const length){
+int CANBase::sendfd(int const slaveID, unsigned char const* data, int const rtr, int const length){
     int ret;
     struct canfd_frame frame;
     if(length > sizeof(frame.data)){
@@ -390,6 +390,9 @@ int CANBase::sendfd(int const slaveID, unsigned char const* data, int const leng
         return -1;
     }
     frame.can_id = slaveID;
+    if(rtr == 1){
+        frame.can_id |= CAN_RTR_FLAG;
+    }
     frame.len = length;
     if(canfd == 0){
         frame.flags &= ~CANFD_FDF;
@@ -405,7 +408,7 @@ int CANBase::sendfd(int const slaveID, unsigned char const* data, int const leng
     static unsigned int count[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     ret = write(sock, &frame, sizeof(frame));
     if(ret != sizeof(frame)){
-        count[order]++;
+        ++count[order];
         if(count[order] % (2 * slaveCount) == 0){
             if(autoRestart){
                 printf("sendfd: cans[%d] write() ret = %d\n", order, ret);
@@ -448,7 +451,7 @@ CANBase::~CANBase(){
     if(CANHAL > 0){
         CANHAL = -CANHAL - 1;
     }
-    CANHAL++;
+    ++CANHAL;
     if(CANHAL == -1){
         canDeInit();
         CANHAL = 0;
