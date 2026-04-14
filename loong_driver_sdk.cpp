@@ -942,23 +942,23 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
                 switch(drivers[i].tx->StatusWord & 0x007f){
                 case 0x0031:
                     drivers[i].rx->Mode = operatingMode[i];
-                    drivers[i].rx->ControlWord = 0x07;
+                    drivers[i].rx->ControlWord = 0x0007;
                     swap->advanceNodePtr();
                     drivers[i].rx->Mode = operatingMode[i];
-                    drivers[i].rx->ControlWord = 0x07;
+                    drivers[i].rx->ControlWord = 0x0007;
                     swap->advanceNodePtr();
                     drivers[i].rx->Mode = operatingMode[i];
-                    drivers[i].rx->ControlWord = 0x07;
+                    drivers[i].rx->ControlWord = 0x0007;
                     swap->advanceNodePtr();
                     break;
                 case 0x0033:
-                    drivers[i].rx->ControlWord = 0x0f;
+                    drivers[i].rx->ControlWord = 0x000f;
                     drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
                     swap->advanceNodePtr();
-                    drivers[i].rx->ControlWord = 0x0f;
+                    drivers[i].rx->ControlWord = 0x000f;
                     drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
                     swap->advanceNodePtr();
-                    drivers[i].rx->ControlWord = 0x0f;
+                    drivers[i].rx->ControlWord = 0x000f;
                     drivers[i].rx->TargetPosition = drivers[i].tx->ActualPosition;
                     swap->advanceNodePtr();
                     break;
@@ -966,22 +966,22 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
                     drivers[i].rx->Mode = operatingMode[i];
                     break;
                 default:
-                    drivers[i].rx->ControlWord = 0x06;
+                    drivers[i].rx->ControlWord = 0x0006;
                     swap->advanceNodePtr();
-                    drivers[i].rx->ControlWord = 0x06;
+                    drivers[i].rx->ControlWord = 0x0006;
                     swap->advanceNodePtr();
-                    drivers[i].rx->ControlWord = 0x06;
+                    drivers[i].rx->ControlWord = 0x0006;
                     swap->advanceNodePtr();
                 }
                 break;
             }case 0:
-                drivers[i].rx->ControlWord = 0x06;
+                drivers[i].rx->ControlWord = 0x0006;
                 break;
             case -1:
+                drivers[i].rx->ControlWord = 0x0080;
                 if(drivers[i].busCode != 0){
                     break;
                 }
-                drivers[i].rx->ControlWord = 0x86;
                 imp.putDriverSDORequest(drivers[i].parameters.clearErrorSDO);
                 if(imp.getDriverSDOResponse(drivers[i].parameters.clearErrorSDO) == 0){
                     if(drivers[i].parameters.clearErrorSDO.state < 0){
@@ -1079,9 +1079,11 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
                     if(drivers[i].parameters.temperatureSDO.state < 0){
                         printf("requesting drivers[%d] temperature failed\n", i);
                     }else{
-                        data[i].temp = drivers[i].parameters.temperatureSDO.value;
+                        data[i].temp[0] = drivers[i].parameters.temperatureSDO.value;
                     }
                 }
+            }else if(drivers[i].busCode == 2){
+                data[i].temp[0] = drivers[i].tx->Undefined;
             }
             data[i].pos        = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
             data[i].vel        = 2.0 * Pi * drivers[i].parameters.polarity * drivers[i].tx->ActualVelocity / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
@@ -1092,7 +1094,8 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
             data[i].pos        = drivers[i].parameters.polarity *  (*(float*)&drivers[i].tx->ActualPosition - drivers[i].parameters.countBias);
             data[i].vel        = drivers[i].parameters.polarity *   *(float*)&drivers[i].tx->ActualVelocity;
             data[i].tor        = drivers[i].parameters.polarity * half2single(drivers[i].tx->ActualTorque);
-            data[i].temp       =                                              drivers[i].tx->Undefined;
+            data[i].temp[0]    =                                              drivers[i].tx->Undefined;
+            data[i].temp[1]    =                                              drivers[i].tx->ModeDisplay;
             data[i].statusWord =                                              drivers[i].tx->StatusWord;
             data[i].errorCode  =                                              drivers[i].tx->ErrorCode;
         }

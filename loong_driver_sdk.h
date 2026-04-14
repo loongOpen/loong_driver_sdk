@@ -45,7 +45,7 @@ struct motorTargetStruct{
 
 struct motorActualStruct{
     float pos = 0.0, vel = 0.0, tor = 0.0;
-    short temp = 0;
+    signed char temp[2] = {0, 0};       // temp[0]: temperatureMOS; temp[1]: temperatureRotor
     unsigned short statusWord = 65535;  // 0: PREOP; 65535: inactive
     unsigned short errorCode = 0;
 };

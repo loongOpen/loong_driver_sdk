@@ -194,7 +194,7 @@ std::vector<Correspondence> const Correspondences = { {
         .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x03, 0x10, 0x00, 0x3f, 0x60} },
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x03, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x04, 0x08, 0x00, 0x61, 0x60} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x04, 0x08, 0x01, 0x16, 0x20} },
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x04, 0x00, 0x00, 0x00, 0x00} }
     }, {
         .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x1a, 0x00, 0x04, 0x00, 0x00, 0x00} },
@@ -312,15 +312,16 @@ void encosTX(int const order, int const masterID, unsigned char* const data, int
     unsigned short t = *(unsigned short*)(data + 3);
     int const slaveID = T::orderMasterID2slaveID[order][masterID], alias = T::orderSlaveID2alias[order][slaveID];
     DriverParameters const* parameters = T::alias2parameters[alias];
-    signed char temperature = (data[6] - 50) / 2;
-    bool error = err > 0 && (err != 1 && err != 2 && err != 4 || err == 1 && temperature > 99);
-    if(temperature > 80){
+    signed char temperatureMOS = (data[7] - 50) / 2, temperatureRotor = (data[6] - 50) / 2;
+    bool error = err > 0 && (err != 1 && err != 2 && err != 4 || err == 1 && (temperatureMOS > 120 || temperatureRotor > 120));
+    if(temperatureMOS > 100 || temperatureRotor > 100){
         T::alias2status[alias] |= 0x0080;
     }
     *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             para2float(p, parameters->minP, parameters->maxP, 16);
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
-              drivers[alias - 1].tx.next()->Undefined      = temperature;
+              drivers[alias - 1].tx.next()->Undefined      = temperatureMOS;
+              drivers[alias - 1].tx.next()->ModeDisplay    = temperatureRotor;
               drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0x0000;
     struct timeval tv;
@@ -429,15 +430,16 @@ void damiaoTX(int const order, int const masterID, unsigned char* const data, in
     unsigned short t = *(unsigned short*)(data + 3);
     int const slaveID = T::orderMasterID2slaveID[order][masterID], alias = T::orderSlaveID2alias[order][slaveID];
     DriverParameters const* parameters = T::alias2parameters[alias];
-    signed char temperature = data[7];
+    signed char temperatureMOS = data[6], temperatureRotor = data[7];
     bool error = err > 1;
-    if(temperature > 80){
+    if(temperatureMOS > 100 || temperatureRotor > 100){
         T::alias2status[alias] |= 0x0080;
     }
     *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             para2float(p, parameters->minP, parameters->maxP, 16);
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
-              drivers[alias - 1].tx.next()->Undefined      = temperature;
+              drivers[alias - 1].tx.next()->Undefined      = temperatureMOS;
+              drivers[alias - 1].tx.next()->ModeDisplay    = temperatureRotor;
               drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0x0000;
     struct timeval tv;
@@ -745,7 +747,7 @@ void canopenTX(int const order, int const masterID, unsigned char* const data, i
         drivers[alias - 1].tx.next()->ActualTorque   = *(         short*)(data + 0);
         drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)(data + 2);
         drivers[alias - 1].tx.next()->ErrorCode      = *(unsigned short*)(data + 4);
-        drivers[alias - 1].tx.next()->ModeDisplay    = *(          char*)(data + 6);
+        drivers[alias - 1].tx.next()->Undefined      = *(          char*)(data + 6);
         struct timeval tv;
         gettimeofday(&tv, nullptr);
         long current = TIMEVAL2US(tv);

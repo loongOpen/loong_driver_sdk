@@ -94,7 +94,7 @@ struct DriverRXData{
     int TargetVelocity;
     short TargetTorque;         // kd (can)
     unsigned short ControlWord; // kp (can)
-    char Mode;
+    signed char Mode;
     signed char Undefined;      // enabled (can)
     short TorqueOffset;
     int VelocityOffset;
@@ -105,8 +105,8 @@ struct DriverTXData{
     int ActualVelocity;
     short ActualTorque;
     unsigned short StatusWord;
-    char ModeDisplay;
-    signed char Undefined;      // temp (can)
+    signed char ModeDisplay;    // temperatureRotor (can)
+    signed char Undefined;      // temperatureMOS (can)
     unsigned short ErrorCode;
 };
 

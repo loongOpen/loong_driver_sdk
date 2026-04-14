@@ -116,7 +116,7 @@ int main(int argc, char** argv){
         driverSDK.getMotorActual(motorActualData);
         j = 0;
         while(j < motorNr){
-            printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
+            printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp[0], motorActualData[j].statusWord, motorActualData[j].errorCode);
             ++j;
         }
         driverSDK.advance();
@@ -148,7 +148,7 @@ int main(int argc, char** argv){
                 motorTargetData[j].pos = motorPositions[j] * std::cos(Pi / 2.0 * (double)i / 3200.0);
                 motorTargetData[j].kp = 50.0;
                 motorTargetData[j].kd = 0.85;
-                printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
+                printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp[0], motorActualData[j].statusWord, motorActualData[j].errorCode);
                 ++j;
             }
             driverSDK.setMotorTarget(motorTargetData);
@@ -171,7 +171,7 @@ int main(int argc, char** argv){
                 motorTargetData[j].pos = motorPositions[j] * std::cos(Pi / 2.0 * (double)i / 3200.0);
                 motorTargetData[j].kp = 50.0;
                 motorTargetData[j].kd = 0.85;
-                printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
+                printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp[0], motorActualData[j].statusWord, motorActualData[j].errorCode);
                 ++j;
             }
             driverSDK.setMotorTarget(motorTargetData);
@@ -199,7 +199,7 @@ int main(int argc, char** argv){
         j = 0;
         while(j < motorNr){
             motorTargetData[j].pos = motorActualData[j].pos;
-            printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
+            printf("motor%02d:\t%8.3f %8d 0x%04x 0x%04x\n", j + 1, motorActualData[j].pos, motorActualData[j].temp[0], motorActualData[j].statusWord, motorActualData[j].errorCode);
             ++j;
         }
         driverSDK.setMotorTarget(motorTargetData);
@@ -222,7 +222,7 @@ int main(int argc, char** argv){
             driverSDK.sendMotorSDORequest(sdoData[j]);
             driverSDK.recvMotorSDOResponse(sdoData[j]);
             motorTargetData[j].pos = motorActualData[j].pos;
-            printf("motor%02d:\t%8ld %8d 0x%04x 0x%04x\n", j + 1, sdoData[j].value, motorActualData[j].temp, motorActualData[j].statusWord, motorActualData[j].errorCode);
+            printf("motor%02d:\t%8ld %8d 0x%04x 0x%04x\n", j + 1, sdoData[j].value, motorActualData[j].temp[0], motorActualData[j].statusWord, motorActualData[j].errorCode);
             ++j;
         }
         driverSDK.setMotorTarget(motorTargetData);
