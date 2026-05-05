@@ -449,6 +449,8 @@ void* CAN::tx__(void* arg){
     struct canframe frames[32];
     struct pack_info packInfo;
     packInfo.length = 32;
+    struct timespec currentTime, wakeupTime;
+    clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     while(true){
         int ret = canRecvMsgFrame(can.device, frames, &packInfo);
         if(ret < 0){
@@ -465,6 +467,17 @@ void* CAN::tx__(void* arg){
             txFuncs[can.order][masterID](can.order, masterID, frames[i].data, length, &can);
             ++i;
         }
+        wakeupTime.tv_nsec += can.period * can.division;
+        while(wakeupTime.tv_nsec >= NSEC_PER_SEC){
+            wakeupTime.tv_nsec -= NSEC_PER_SEC;
+            ++wakeupTime.tv_sec;
+        }
+        clock_gettime(CLOCK_MONOTONIC, &currentTime);
+        if(TIMESPEC2NS(wakeupTime) > TIMESPEC2NS(currentTime)){
+            clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeupTime, NULL);
+        }else{
+            wakeupTime = currentTime;
+        }
     }
     return nullptr;
 }
@@ -475,7 +488,7 @@ void* CAN::tx_(void* arg){
     pthread_cleanup_push(cleanup_, &pths);
     int i = 0;
     while(i < cans.size()){
-        if(cans[i].canhal != 1){
+        if(cans[i].alias2type.size() < 1 || cans[i].canhal != 1){
             ++i;
             continue;
         }
@@ -661,8 +674,8 @@ int CAN::run(std::vector<CAN>& cans){
         j = 0;
         while(j < 256){
             int a = orderSlaveID2alias[i][j];
-            if(a > 0 && a <= dofAll){
-                printf("%2d ", a);
+            if(j < 32 && a <= dofAll){
+                printf("%02d ", a);
             }
             ++j;
         }

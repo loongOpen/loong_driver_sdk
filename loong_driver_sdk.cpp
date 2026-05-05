@@ -38,6 +38,7 @@ std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs, canEmuAlias2mas
 std::vector<std::map<int, int>> canAlias2slaveID, canEmuAlias2slaveID, ecatAlias2domain;
 std::vector<std::vector<int>> ecatDomainDivisions;
 int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector, batteryCount;
+sensorFunction sensorFuncs[2] = {nullSensor, nullSensor};
 WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
 WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
 WrapperPair<ConverterRXData, ConverterTXData, EffectorParameters> converters[2];
@@ -226,8 +227,8 @@ int DriverSDK::impClass::driverCheck(){
 int DriverSDK::impClass::init(char const* xmlFile){
     configXML = new ConfigXML(xmlFile);
     std::vector<std::vector<int>> motorAlias = configXML->motorAlias();
-    if(motorAlias.size() != 6){
-        printf("there must be 6 limbs: left leg, right leg, left arm, right arm, waist and neck.\nwhereas the size of a limb can be 0.");
+    if(motorAlias.size() < 4 || motorAlias.size() > 6){
+        printf("there must be 4 limbs at least: left leg, right leg, left arm, right arm, and 6 at most with waist and neck in addition\n");
         return -1;
     }
     if(motorAlias[0].size() != motorAlias[1].size()){
@@ -835,33 +836,33 @@ int DriverSDK::fillSDO(motorSDOClass& data, char const* object){
 }
 
 void DriverSDK::getIMU(imuStruct& data){
-    float f = imp.imu->rpy0(imp.imu->txSwap);
+    float f = imp.imu->rpy[0](imp.imu->txSwap);
     if(f >= -Pi && f <= Pi){
         data.rpy[0] = f;
     }
-    f = imp.imu->rpy1(imp.imu->txSwap);
+    f = imp.imu->rpy[1](imp.imu->txSwap);
     if(f >= -Pi && f <= Pi){
         data.rpy[1] = f;
     }
-    f = imp.imu->rpy2(imp.imu->txSwap);
+    f = imp.imu->rpy[2](imp.imu->txSwap);
     if(f >= -2.0 * Pi && f <= 2.0 * Pi){
         data.rpy[2] = f;
     }
-    f = imp.imu->gyr0(imp.imu->txSwap);
+    f = imp.imu->gyr[0](imp.imu->txSwap);
     if(f >= -10.0 * Pi && f <= 10.0 * Pi){
         data.gyr[0] = f;
     }
-    f = imp.imu->gyr1(imp.imu->txSwap);
+    f = imp.imu->gyr[1](imp.imu->txSwap);
     if(f >= -10.0 * Pi && f <= 10.0 * Pi){
         data.gyr[1] = f;
     }
-    f = imp.imu->gyr2(imp.imu->txSwap);
+    f = imp.imu->gyr[2](imp.imu->txSwap);
     if(f >= -10.0 * Pi && f <= 10.0 * Pi){
         data.gyr[2] = f;
     }
-    data.acc[0] = imp.imu->acc0(imp.imu->txSwap);
-    data.acc[1] = imp.imu->acc1(imp.imu->txSwap);
-    data.acc[2] = imp.imu->acc2(imp.imu->txSwap);
+    data.acc[0] = imp.imu->acc[0](imp.imu->txSwap);
+    data.acc[1] = imp.imu->acc[1](imp.imu->txSwap);
+    data.acc[2] = imp.imu->acc[2](imp.imu->txSwap);
 }
 
 int DriverSDK::getSensor(std::vector<sensorStruct>& data){
@@ -875,13 +876,12 @@ int DriverSDK::getSensor(std::vector<sensorStruct>& data){
             ++i;
             continue;
         }
-        data[i].F[0]       = sensors[i].tx->Fx / 10000.0;
-        data[i].F[1]       = sensors[i].tx->Fy / 10000.0;
-        data[i].F[2]       = sensors[i].tx->Fz / 10000.0;
-        data[i].M[0]       = sensors[i].tx->Mx / 10000.0;
-        data[i].M[1]       = sensors[i].tx->My / 10000.0;
-        data[i].M[2]       = sensors[i].tx->Mz / 10000.0;
-        data[i].statusCode = sensors[i].tx->StatusCode;
+        data[i].F[0] = sensorFuncs[i](sensors[i].tx->Fx);
+        data[i].F[1] = sensorFuncs[i](sensors[i].tx->Fy);
+        data[i].F[2] = sensorFuncs[i](sensors[i].tx->Fz);
+        data[i].M[0] = sensorFuncs[i](sensors[i].tx->Mx);
+        data[i].M[1] = sensorFuncs[i](sensors[i].tx->My);
+        data[i].M[2] = sensorFuncs[i](sensors[i].tx->Mz);
         ++i;
     }
     return 0;

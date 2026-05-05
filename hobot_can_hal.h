@@ -15,6 +15,8 @@
  * Designed and built with love @zhihu by @cjrcl.
  */
 
+#pragma once
+
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -34,9 +36,7 @@ struct canframe{
     unsigned char data[64];
 };
 
-#pragma pack(1)
-
-typedef struct{
+typedef struct __attribute__((__packed__)){
     unsigned char can_channel;
     unsigned char verbose;
     unsigned char reserved;
@@ -44,13 +44,11 @@ typedef struct{
     unsigned int* filter_id;
 }can_filter_info_t;
 
-typedef struct{
+typedef struct __attribute__((__packed__)){
     unsigned short length;
     unsigned char reversed[2];
     can_filter_info_t data;
 }Can_Config_Filter_Type;
-
-#pragma pack(0)
 
 struct pack_info{
     unsigned long soc_ts;
@@ -63,11 +61,11 @@ struct pack_info{
 };
 
 int canInit();
-int canSendMsgConfig(char const* target, Can_Config_Filter_Type* filter, struct pack_info* pack);
-int canSendMsgFrame(char const* target, struct canframe* frame, struct pack_info* pack);
-int canRecvMsgFrame(char const* target, struct canframe* frame, struct pack_info* pack);
-int canSendMsgRaw(char const* target, unsigned char* tx_buf, struct pack_info* pack);
-int canRecvMsgRaw(char const* target, unsigned char* rx_buf, struct pack_info* pack);
+int canSendMsgConfig(char const* target, Can_Config_Filter_Type* filter, struct pack_info* packInfo);
+int canSendMsgFrame(char const* target, struct canframe* frames, struct pack_info* packInfo);
+int canRecvMsgFrame(char const* target, struct canframe* frames, struct pack_info* packInfo);
+int canSendMsgRaw(char const* target, unsigned char* txBuff, struct pack_info* packInfo);
+int canRecvMsgRaw(char const* target, unsigned char* rxBuff, struct pack_info* packInfo);
 void canDeInit();
 
 #ifdef __cplusplus

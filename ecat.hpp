@@ -21,6 +21,12 @@
 #include "common.h"
 
 namespace DriverSDK{
+using sensorFunction = float (*)(int const);
+
+float nullSensor(int const value);
+float linkTouch(int const value);
+float kunweiTech(int const value);
+
 class ECAT{
 public:
     bool sdoRequestable, regRequestable;

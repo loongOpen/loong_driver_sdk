@@ -36,6 +36,18 @@ extern std::vector<unsigned short> processorsECAT;
 extern std::vector<unsigned short> maxCurrent;
 extern std::atomic<int> ecatStalled;
 
+float nullSensor(int const value){
+    return 0.0;
+}
+
+float linkTouch(int const value){
+    return value / 10000.0;
+}
+
+float kunweiTech(int const value){
+    return value / 10000.0;
+}
+
 ECAT::ECAT(int const order){
     domainSizes = nullptr;
     rxPDOSwaps = nullptr;

@@ -244,8 +244,8 @@ int CANEmu::run(std::vector<CANEmu>& canemus){
         j = 0;
         while(j < 256){
             int a = orderSlaveID2alias[i][j];
-            if(a > 0 && a <= dofAll){
-                printf("%2d ", a);
+            if(j < 32 && a <= dofAll){
+                printf("%02d ", a);
             }
             ++j;
         }

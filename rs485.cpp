@@ -153,10 +153,27 @@ void changingTekTX_(modbus_t* const ctx, int const alias){
 void dhRX(modbus_t* const ctx, int const alias){
     unsigned short position = 0;
     if(alias == 200){
-        position = (90 - digits[0].rx.previous()->TargetPosition) * 1000 / 90;
+        static long lastTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        static unsigned short lastPosition = 0;
+        long currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        unsigned short targetPosition = digits[0].rx.previous()->TargetPosition;
+        if(std::abs(targetPosition - lastPosition) < 5 || currentTime - lastTime < 600){
+            return;
+        }
+        lastTime = currentTime;
+        position = lastPosition = targetPosition;
     }else{
-        position = (90 - digits[dofLeftEffector].rx.previous()->TargetPosition) * 1000 / 90;
+        static long lastTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        static unsigned short lastPosition = 0;
+        long currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        unsigned short targetPosition = digits[dofLeftEffector].rx.previous()->TargetPosition;
+        if(std::abs(targetPosition - lastPosition) < 5 || currentTime - lastTime < 600){
+            return;
+        }
+        lastTime = currentTime;
+        position = lastPosition = targetPosition;
     }
+    position = (90 - position) * 1000 / 90;
     modbus_set_slave(ctx, alias);
     if(modbus_write_register(ctx, 0x0103, position) != 1){
         return;
@@ -164,10 +181,15 @@ void dhRX(modbus_t* const ctx, int const alias){
 }
 
 void dhTX(modbus_t* const ctx, int const alias){
-    unsigned short position = 0;
+    short position = 0;
     modbus_set_slave(ctx, alias);
-    if(modbus_read_registers(ctx, 0x0202, 1, &position) != 1){
+    if(modbus_read_registers(ctx, 0x0202, 1, (unsigned short*)&position) != 1){
         return;
+    }
+    if(position < 0){
+        position = 0;
+    }else if(position > 1000){
+        position = 1000;
     }
     position = (1000 - position) * 90 / 1000;
     if(alias == 200){

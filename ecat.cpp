@@ -41,6 +41,7 @@ extern std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> 
 extern std::vector<std::map<int, int>> ecatAlias2domain;
 extern std::vector<std::vector<int>> ecatDomainDivisions;
 extern int dofAll, dofLeftEffector, dofEffector;
+extern sensorFunction sensorFuncs[2];
 extern WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
 extern WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
 extern WrapperPair<ConverterRXData, ConverterTXData, EffectorParameters> converters[2];
@@ -52,6 +53,18 @@ extern std::atomic<int> ecatStalled;
 extern std::vector<RS485>* rs485sPtr;
 extern std::vector<CANEmu>* canemusPtr;
 WrapperPair<HandRXData, HandTXData, EffectorParameters> hands[2];
+
+float nullSensor(int const value){
+    return 0.0;
+}
+
+float linkTouch(int const value){
+    return value / 10000.0;
+}
+
+float kunweiTech(int const value){
+    return value / 10000.0;
+}
 
 ECAT::ECAT(int const order){
     domains = nullptr;
@@ -569,13 +582,30 @@ int ECAT::config(){
                     printf("\tconverters[%d] init failed\n", alias - 200);
                     return -1;
                 }
+            }else{
+                printf("\tinvalid effector type %s\n", type.c_str());
+                return -1;
             }
         }else if(category == "sensor"){
+            if(alias == 220){
+                k = 0;
+            }else if(alias == 221){
+                k = 1;
+            }else{
+                printf("\tinvalid sensor alias %d\n", alias);
+                return -1;
+            }
+            if(sensors[alias - 220].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler, regHandler) != 0){
+                printf("\tsensors[%d] init failed\n", alias - 220);
+                return -1;
+            }
             if(type == "LinkTouch"){
-                if(sensors[alias - 220].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler, regHandler) != 0){
-                    printf("\tsensors[%d] init failed\n", alias - 220);
-                    return -1;
-                }
+                sensorFuncs[k] = linkTouch;
+            }else if(type == "KunweiTech"){
+                sensorFuncs[k] = kunweiTech;
+            }else{
+                printf("\tinvalid sensor type %s\n", type.c_str());
+                return -1;
             }
         }else if(category == "transferrer"){
             if(type == "Encos_6dof"){
@@ -583,6 +613,9 @@ int ECAT::config(){
                     printf("\transferrers[%d] init failed\n", -alias - 1);
                     return -1;
                 }
+            }else{
+                printf("\tinvalid transferrer type %s\n", type.c_str());
+                return -1;
             }
         }
         if(dc){

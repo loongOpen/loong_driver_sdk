@@ -17,6 +17,9 @@
 !libethercat_x86_64.so
 !libethercat_aarch64.so
 !libethercat_riscv64.so
+!libenpht-can.so
+!libeph506_can.so
+!libeph507-can.so
 driver_test*
 !driver_test.cpp
 !driver_test.sh

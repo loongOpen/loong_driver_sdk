@@ -31,8 +31,19 @@ endif(NIIC)
 if(IPROUTE2)
     add_definitions(-DIPROUTE2)
 endif(IPROUTE2)
-add_library(hbcanhal_${march} SHARED hobot_can_hal.c)
+if(ENPHT)
+    add_library(hbcanhal_${march} SHARED hobot_can_hal_enpht.c)
+else(ENPHT)
+    add_library(hbcanhal_${march} SHARED hobot_can_hal_null.c)
+endif(ENPHT)
 set_target_properties(hbcanhal_${march} PROPERTIES NO_SONAME ON)
+target_include_directories(hbcanhal_${march} PRIVATE
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/enpht/include
+)
+target_link_directories(hbcanhal_${march} PRIVATE
+    ${PROJECT_SOURCE_DIR}
+)
+target_link_libraries(hbcanhal_${march} PRIVATE enpht-can)
 if(NIIC)
     add_library(loong_driver_sdk_${arch} SHARED common.cpp config_xml.cpp rs232.cpp rs485.cpp canbase.cpp can.cpp canemu.cpp ecat.cxx loong_driver_sdk.cpp)
 else(NIIC)
