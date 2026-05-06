@@ -1032,7 +1032,7 @@ void* ECAT::rxtx(void* arg){
                     int k = 0;
                     while(k < 6){
                         if(channels[k].ID > 0){
-                            CANEmu::txFuncs[j][channels[k].ID](j, channels[k].ID, channels[k].Byte, channels[k].DLC, &canemus[j]);
+                            CANEmu::txFuncs[j][channels[k].ID](channels[k].ID, channels[k].Byte, channels[k].DLC, &canemus[j]);
                         }
                         ++k;
                     }

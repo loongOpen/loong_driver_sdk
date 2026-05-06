@@ -64,8 +64,8 @@ int canInit();
 int canSendMsgConfig(char const* target, Can_Config_Filter_Type* filter, struct pack_info* packInfo);
 int canSendMsgFrame(char const* target, struct canframe* frames, struct pack_info* packInfo);
 int canRecvMsgFrame(char const* target, struct canframe* frames, struct pack_info* packInfo);
-int canSendMsgRaw(char const* target, unsigned char* txBuff, struct pack_info* packInfo);
-int canRecvMsgRaw(char const* target, unsigned char* rxBuff, struct pack_info* packInfo);
+int canSendMsgRaw(char const* target, unsigned char* rxBuff, struct pack_info* packInfo);
+int canRecvMsgRaw(char const* target, unsigned char* txBuff, struct pack_info* packInfo);
 void canDeInit();
 
 #ifdef __cplusplus

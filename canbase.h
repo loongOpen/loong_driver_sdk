@@ -27,9 +27,9 @@ class CAN;
 class CANEmu;
 
 using canRXFunction = int (*)(int const, int const, int* const, unsigned char* const, int* const);
-using canTXFunction = void (*)(int const, int const, unsigned char* const, int const, CAN* const);
+using canTXFunction = void (*)(int const, unsigned char* const, int const, CAN* const);
 using canEmuRXFunction = int (*)(int const, int const, int* const, unsigned char* const, int* const);
-using canEmuTXFunction = void (*)(int const, int const, unsigned char* const, int const, CANEmu* const);
+using canEmuTXFunction = void (*)(int const, unsigned char* const, int const, CANEmu* const);
 
 extern int dofAll, dofLeftEffector;
 extern WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
@@ -228,11 +228,10 @@ unsigned char const AgibotData    [8] = {0x00, 0x00, 0x7f, 0x7f, 0x7f, 0x7f, 0x0
 
 unsigned short float2para(float const f, float const min, float const max, int const bit);
 float para2float(unsigned short const us, float const min, float const max, int const bit);
-
 int nullCANRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr);
+void nullCANTX(int const masterID, unsigned char* const data, int const length, CAN* const can);
 int nullCANEmuRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr);
-void nullCANTX(int const order, int const masterID, unsigned char* const data, int const length, CAN* const can);
-void nullCANEmuTX(int const order, int const masterID, unsigned char* const data, int const length, CANEmu* const canemu);
+void nullCANEmuTX(int const masterID, unsigned char* const data, int const length, CANEmu* const canemu);
 
 template<typename T>
 int encosRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
@@ -297,7 +296,7 @@ int encosRX(int const order, int const alias, int* const slaveID, unsigned char*
 }
 
 template<typename T>
-void encosTX(int const order, int const masterID, unsigned char* const data, int const length, T* const can){
+void encosTX(int const masterID, unsigned char* const data, int const length, T* const can){
     if(length != 8){
         return;
     }
@@ -310,7 +309,7 @@ void encosTX(int const order, int const masterID, unsigned char* const data, int
     data[3] = data[5];
     data[4] = data[4] & 0x0f;
     unsigned short t = *(unsigned short*)(data + 3);
-    int const slaveID = T::orderMasterID2slaveID[order][masterID], alias = T::orderSlaveID2alias[order][slaveID];
+    int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
     DriverParameters const* parameters = T::alias2parameters[alias];
     signed char temperatureMOS = (data[7] - 50) / 2, temperatureRotor = (data[6] - 50) / 2;
     bool error = err > 0 && (err != 1 && err != 2 && err != 4 || err == 1 && (temperatureMOS > 120 || temperatureRotor > 120));
@@ -333,7 +332,7 @@ void encosTX(int const order, int const masterID, unsigned char* const data, int
         if((T::alias2status[alias] & 0x007f) == 0x0000){
             int i = 0;
             while(i < 32){
-                int a = T::orderSlaveID2alias[order][i];
+                int a = T::orderSlaveID2alias[can->order][i];
                 if(a > 0 && a <= dofAll){
                     T::alias2status[a] = 0x0001;
                 }
@@ -342,13 +341,13 @@ void encosTX(int const order, int const masterID, unsigned char* const data, int
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[order] = current;
-    }else if(current - previous[order] > 20 * can->period / 1000){
+        previous[can->order] = current;
+    }else if(current - previous[can->order] > 20 * can->period / 1000){
         unsigned int x = can->mask ^ can->MASK;
         int i = 0;
         while(i < 32){
             if((x & 1 << i) > 0){
-                int a = T::orderSlaveID2alias[order][i];
+                int a = T::orderSlaveID2alias[can->order][i];
                 T::alias2status[a] |= 0x4000;
                 drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
             }
@@ -356,7 +355,7 @@ void encosTX(int const order, int const masterID, unsigned char* const data, int
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[order] = current;
+        previous[can->order] = current;
     }
 }
 
@@ -414,7 +413,7 @@ int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char
 }
 
 template<typename T>
-void damiaoTX(int const order, int const masterID, unsigned char* const data, int const length, T* const can){
+void damiaoTX(int const masterID, unsigned char* const data, int const length, T* const can){
     if(length != 8){
         return;
     }
@@ -428,7 +427,7 @@ void damiaoTX(int const order, int const masterID, unsigned char* const data, in
     data[3] = data[5];
     data[4] = data[4] & 0x0f;
     unsigned short t = *(unsigned short*)(data + 3);
-    int const slaveID = T::orderMasterID2slaveID[order][masterID], alias = T::orderSlaveID2alias[order][slaveID];
+    int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
     DriverParameters const* parameters = T::alias2parameters[alias];
     signed char temperatureMOS = data[6], temperatureRotor = data[7];
     bool error = err > 1;
@@ -451,7 +450,7 @@ void damiaoTX(int const order, int const masterID, unsigned char* const data, in
         if((T::alias2status[alias] & 0x007f) == 0x0000){
             int i = 0;
             while(i < 32){
-                int a = T::orderSlaveID2alias[order][i];
+                int a = T::orderSlaveID2alias[can->order][i];
                 if(a > 0 && a <= dofAll){
                     T::alias2status[a] = 0x0001;
                 }
@@ -460,13 +459,13 @@ void damiaoTX(int const order, int const masterID, unsigned char* const data, in
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[order] = current;
-    }else if(current - previous[order] > 20 * can->period / 1000){
+        previous[can->order] = current;
+    }else if(current - previous[can->order] > 20 * can->period / 1000){
         unsigned int x = can->mask ^ can->MASK;
         int i = 0;
         while(i < 32){
             if((x & 1 << i) > 0){
-                int a = T::orderSlaveID2alias[order][i];
+                int a = T::orderSlaveID2alias[can->order][i];
                 T::alias2status[a] |= 0x4000;
                 drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
             }
@@ -474,7 +473,7 @@ void damiaoTX(int const order, int const masterID, unsigned char* const data, in
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[order] = current;
+        previous[can->order] = current;
     }
 }
 
@@ -575,8 +574,8 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
 }
 
 template<typename T>
-void realManTX(int const order, int const masterID, unsigned char* const data, int const length, T* const can){
-    int const slaveID = T::orderMasterID2slaveID[order][masterID], alias = T::orderSlaveID2alias[order][slaveID];
+void realManTX(int const masterID, unsigned char* const data, int const length, T* const can){
+    int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
     DriverParameters const* parameters = T::alias2parameters[alias];
     if(masterID > 0x700){
         if(length != 16){
@@ -646,13 +645,13 @@ void realManTX(int const order, int const masterID, unsigned char* const data, i
     if(can->mask == can->MASK){
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[order] = current;
-    }else if(current - previous[order] > 20 * can->period / 1000){
+        previous[can->order] = current;
+    }else if(current - previous[can->order] > 20 * can->period / 1000){
         unsigned int x = can->mask ^ can->MASK;
         int i = 0;
         while(i < 32){
             if((x & 1 << i) > 0){
-                int a = T::orderSlaveID2alias[order][i];
+                int a = T::orderSlaveID2alias[can->order][i];
                 T::alias2status[a] |= 0x4000;
                 drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
             }
@@ -660,7 +659,7 @@ void realManTX(int const order, int const masterID, unsigned char* const data, i
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[order] = current;
+        previous[can->order] = current;
     }
 }
 
@@ -670,7 +669,7 @@ int canopenConfigRX(int const order, int const alias, int* const slaveID, unsign
 }
 
 template<typename T>
-void canopenConfigTX(int const order, int const masterID, unsigned char* const data, int const length, T* const can){
+void canopenConfigTX(int const masterID, unsigned char* const data, int const length, T* const can){
     std::lock_guard<std::mutex> guard(T::checkMutex);
     if(length != T::checkData.length){
         return;
@@ -738,8 +737,8 @@ int canopenRX(int const order, int const alias, int* const slaveID, unsigned cha
 }
 
 template<typename T>
-void canopenTX(int const order, int const masterID, unsigned char* const data, int const length, T* const can){
-    int const slaveID = T::orderMasterID2slaveID[order][masterID], alias = T::orderSlaveID2alias[order][slaveID];
+void canopenTX(int const masterID, unsigned char* const data, int const length, T* const can){
+    int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
     if(masterID > 0x280){       // TPDO2
         if(length != 7){
             return;
@@ -756,13 +755,13 @@ void canopenTX(int const order, int const masterID, unsigned char* const data, i
         if(can->mask == can->MASK){
             can->txSwap->advanceNodePtr();
             can->mask = 0;
-            previous[order] = current;
-        }else if(current - previous[order] > 20 * can->period / 1000){
+            previous[can->order] = current;
+        }else if(current - previous[can->order] > 20 * can->period / 1000){
             unsigned int x = can->mask ^ can->MASK;
             int i = 0;
             while(i < 32){
                 if((x & 1 << i) > 0){
-                    int a = T::orderSlaveID2alias[order][i];
+                    int a = T::orderSlaveID2alias[can->order][i];
                     T::alias2status[a] |= 0x4000;
                     drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
                 }
@@ -770,7 +769,7 @@ void canopenTX(int const order, int const masterID, unsigned char* const data, i
             }
             can->txSwap->advanceNodePtr();
             can->mask = 0;
-            previous[order] = current;
+            previous[can->order] = current;
         }
     }else if(masterID > 0x180){ // TPDO1
         if(length != 8){
@@ -793,11 +792,11 @@ int agibotRX(int const order, int const alias, int* const slaveID, unsigned char
 }
 
 template<typename T>
-void agibotTX(int const order, int const masterID, unsigned char* const data, int const length, T* const can){
+void agibotTX(int const masterID, unsigned char* const data, int const length, T* const can){
     if(length != 8){
         return;
     }
-    int const slaveID = T::orderMasterID2slaveID[order][masterID], alias = T::orderSlaveID2alias[order][slaveID];
+    int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
     int i = 0;
     if(alias == 201){
         i = dofLeftEffector;
@@ -826,11 +825,11 @@ int linkerBotRX(int const order, int const alias, int* const slaveID, unsigned c
 }
 
 template<typename T>
-void linkerBotTX(int const order, int const masterID, unsigned char* const data, int const length, T* const can){
+void linkerBotTX(int const masterID, unsigned char* const data, int const length, T* const can){
     if(length != 7){
         return;
     }
-    int const slaveID = T::orderMasterID2slaveID[order][masterID], alias = T::orderSlaveID2alias[order][slaveID];
+    int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
     int i = 0;
     if(alias == 201){
         i = dofLeftEffector;
@@ -840,7 +839,7 @@ void linkerBotTX(int const order, int const masterID, unsigned char* const data,
         digits[i + j].tx.next()->ActualPosition = (255 - data[j + 1]) * 90 / 255;
         ++j;
     }
-    can->mask_ |= 1 << slaveID;
+    can->mask_ |= 1 << slaveID % 32;
     if(can->mask_ == can->MASK_){
         can->txSwap_->advanceNodePtr();
         can->mask_ = 0;

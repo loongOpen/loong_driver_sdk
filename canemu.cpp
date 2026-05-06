@@ -29,8 +29,8 @@ int nullCANEmuRX(int const order, int const alias, int* const slaveID, unsigned 
     return std::numeric_limits<int>::min();
 }
 
-void nullCANEmuTX(int const order, int const masterID, unsigned char* const data, int const length, CANEmu* const canemu){
-    printf("unexpected data with master_id %d and length %d on canemus[%d]\n", masterID, length, order);
+void nullCANEmuTX(int const masterID, unsigned char* const data, int const length, CANEmu* const canemu){
+    printf("unexpected data with master_id %d and length %d on canemus[%d]\n", masterID, length, canemu->order);
 }
 
 std::map<std::string, DriverParameters*> CANEmu::type2parameters;
@@ -220,7 +220,7 @@ int CANEmu::config(){
                 }
                 ++i;
             }
-            MASK_ |= 1 << slaveID;
+            MASK_ |= 1 << slaveID % 32;
         }
         ++itr;
     }

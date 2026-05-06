@@ -35,8 +35,8 @@ int nullCANRX(int const order, int const alias, int* const slaveID, unsigned cha
     return std::numeric_limits<int>::min();
 }
 
-void nullCANTX(int const order, int const masterID, unsigned char* const data, int const length, CAN* const can){
-    printf("unexpected data with master_id %d and length %d on cans[%d]\n", masterID, length, order);
+void nullCANTX(int const masterID, unsigned char* const data, int const length, CAN* const can){
+    printf("unexpected data with master_id %d and length %d on cans[%d]\n", masterID, length, can->order);
 }
 
 pthread_t CAN::rxPth, CAN::txPth, CAN::txPth_;
@@ -275,7 +275,7 @@ int CAN::config(){
                 }
                 ++i;
             }
-            MASK_ |= 1 << slaveID;
+            MASK_ |= 1 << slaveID % 32;
         }
         ++itr;
     }
@@ -424,7 +424,7 @@ void* CAN::tx(void* arg){
                 ++i;
                 continue;
             }
-            txFuncs[order][masterID](order, masterID, data, length, &cans[order]);
+            txFuncs[order][masterID](masterID, data, length, &cans[order]);
             ++i;
         }
     }
@@ -449,8 +449,10 @@ void* CAN::tx__(void* arg){
     struct canframe frames[32];
     struct pack_info packInfo;
     packInfo.length = 32;
+#ifdef ENPHT
     struct timespec currentTime, wakeupTime;
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
+#endif
     while(true){
         int ret = canRecvMsgFrame(can.device, frames, &packInfo);
         if(ret < 0){
@@ -464,9 +466,10 @@ void* CAN::tx__(void* arg){
                 ++i;
                 continue;
             }
-            txFuncs[can.order][masterID](can.order, masterID, frames[i].data, length, &can);
+            txFuncs[can.order][masterID](masterID, frames[i].data, length, &can);
             ++i;
         }
+#ifdef ENPHT
         wakeupTime.tv_nsec += can.period * can.division;
         while(wakeupTime.tv_nsec >= NSEC_PER_SEC){
             wakeupTime.tv_nsec -= NSEC_PER_SEC;
@@ -478,6 +481,7 @@ void* CAN::tx__(void* arg){
         }else{
             wakeupTime = currentTime;
         }
+#endif
     }
     return nullptr;
 }

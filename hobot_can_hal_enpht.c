@@ -87,11 +87,11 @@ int canRecvMsgFrame(char const* target, struct canframe* frames, struct pack_inf
     return packInfo->data_num = frameCount;
 }
 
-int canSendMsgRaw(char const* target, unsigned char* txBuff, struct pack_info* packInfo){
+int canSendMsgRaw(char const* target, unsigned char* rxBuff, struct pack_info* packInfo){
     return 0;
 }
 
-int canRecvMsgRaw(char const* target, unsigned char* rxBuff, struct pack_info* packInfo){
+int canRecvMsgRaw(char const* target, unsigned char* txBuff, struct pack_info* packInfo){
     return 0;
 }
 

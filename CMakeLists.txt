@@ -3,6 +3,7 @@ project(driver_test VERSION 4.3.0 LANGUAGES C CXX)
 option(AARCH64 "aarch64" OFF)
 option(RISCV64 "riscv64" OFF)
 option(NIIC "necro" OFF)
+option(ENPHT "enpht" OFF)
 option(IPROUTE2 "iproute2" OFF)
 set(march x86_64)
 set(arch x64)
@@ -32,6 +33,7 @@ if(IPROUTE2)
     add_definitions(-DIPROUTE2)
 endif(IPROUTE2)
 if(ENPHT)
+    add_definitions(-DENPHT)
     add_library(hbcanhal_${march} SHARED hobot_can_hal_enpht.c)
 else(ENPHT)
     add_library(hbcanhal_${march} SHARED hobot_can_hal_null.c)
@@ -59,10 +61,10 @@ target_include_directories(loong_driver_sdk_${arch} PRIVATE
     ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/include
 )
 target_link_directories(loong_driver_sdk_${arch} PRIVATE
-    ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat-cpp/lib;
-    ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat/lib;
-    ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/lib;
-    ${PROJECT_SOURCE_DIR}/../loong_third_party/netlink/lib;
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat-cpp/lib
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat/lib
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/lib
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/netlink/lib
     ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/lib
 )
 if(NIIC)
