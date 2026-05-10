@@ -54,8 +54,8 @@ int canSendMsgFrame(char const* target, struct canframe* frames, struct pack_inf
         objs[i].TimeFlag = 0;
         objs[i].RemoteFlag = frames[i].can_type >> 2;
         objs[i].ExtendedFlag = 0;
-        objs[i].DataLen = frames[i].len;
-        memcpy(objs[i].Data, frames[i].data, frames[i].len);
+        objs[i].DataLen = frames[i].len < 8 ? frames[i].len : 8;
+        memcpy(objs[i].Data, frames[i].data, objs[i].DataLen);
         ++i;
     }
     ViStatus hr = EphCAN_Transmit(cardNum, target[3] - '0', packInfo->data_num, objs);
@@ -76,12 +76,12 @@ int canRecvMsgFrame(char const* target, struct canframe* frames, struct pack_inf
     }
     int i = 0;
     while(i < frameCount){
-        frames[i].canid = objs[ch][i].ID;
+        frames[i].canid = objs[ch][i].ID < 0x7ff ? objs[ch][i].ID : 0x7ff;
         frames[i].count = ++count[ch];
         frames[i].can_type = objs[ch][i].RemoteFlag << 2;
         frames[i].can_channel = ch;
-        frames[i].len = objs[ch][i].DataLen;
-        memcpy(frames[i].data, objs[ch][i].Data, objs[ch][i].DataLen);
+        frames[i].len = objs[ch][i].DataLen < 8 ? objs[ch][i].DataLen : 8;
+        memcpy(frames[i].data, objs[ch][i].Data, frames[i].len);
         ++i;
     }
     return packInfo->data_num = frameCount;

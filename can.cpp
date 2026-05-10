@@ -571,13 +571,13 @@ int CAN::canopenConfig(){
                 if(tryCount > 4){
                     break;
                 }
-                transfer(canopenAliases[i], period, maxCurrent[canopenAliases[i] -1], Correspondence0_.rx);
+                transfer(canopenAliases[i], period, maxCurrent[canopenAliases[i] - 1], Correspondence0_.rx);
                 checkMutex.lock();
                 checkData = Correspondence0_.tx;
                 checkSlaveIDs.clear();
                 checkSlaveIDs.push_back(alias2slaveID.find(canopenAliases[i])->second);
                 checkMutex.unlock();
-            }while(!canopenCheck<CANEmu>(period, 20));
+            }while(!canopenCheck<CAN>(period, 20));
             if(tryCount > 4){
                 break;
             }
@@ -593,13 +593,13 @@ int CAN::canopenConfig(){
         int j = 0, alias = canopenAliases[i];
         while(j < Correspondences.size()){
             do{
-                transfer(alias, period, maxCurrent[canopenAliases[i] -1], Correspondences[j].rx);
+                transfer(alias, period, maxCurrent[canopenAliases[i] - 1], Correspondences[j].rx);
                 checkMutex.lock();
                 checkData = Correspondences[j].tx;
                 checkSlaveIDs.clear();
                 checkSlaveIDs.push_back(alias2slaveID.find(alias)->second);
                 checkMutex.unlock();
-            }while(!canopenCheck<CANEmu>(period, 20));
+            }while(!canopenCheck<CAN>(period, 20));
             ++j;
         }
         ++i;
@@ -615,13 +615,13 @@ int CAN::canopenConfig(){
                 if(tryCount > 4){
                     break;
                 }
-                transfer(canopenAliases[i], period, maxCurrent[canopenAliases[i] -1], Correspondence1_.rx);
+                transfer(canopenAliases[i], period, maxCurrent[canopenAliases[i] - 1], Correspondence1_.rx);
                 checkMutex.lock();
                 checkData = Correspondence1_.tx;
                 checkSlaveIDs.clear();
                 checkSlaveIDs.push_back(alias2slaveID.find(canopenAliases[i])->second);
                 checkMutex.unlock();
-            }while(!canopenCheck<CANEmu>(period, 20));
+            }while(!canopenCheck<CAN>(period, 20));
             if(tryCount > 4){
                 break;
             }

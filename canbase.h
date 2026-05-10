@@ -334,6 +334,13 @@ void encosTX(int const masterID, unsigned char* const data, int const length, T*
             while(i < 32){
                 int a = T::orderSlaveID2alias[can->order][i];
                 if(a > 0 && a <= dofAll){
+                    if(std::abs(*(float*)&drivers[a - 1].tx.next()->ActualPosition - drivers[a - 1].parameters.countBias) > 2 * Pi - 0.2){
+                        if(drivers[a - 1].parameters.countBias > 0){
+                            drivers[a - 1].parameters.countBias -= 2 * Pi;
+                        }else{
+                            drivers[a - 1].parameters.countBias += 2 * Pi;
+                        }
+                    }
                     T::alias2status[a] = 0x0001;
                 }
                 ++i;
@@ -452,6 +459,13 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
             while(i < 32){
                 int a = T::orderSlaveID2alias[can->order][i];
                 if(a > 0 && a <= dofAll){
+                    if(std::abs(*(float*)&drivers[a - 1].tx.next()->ActualPosition - drivers[a - 1].parameters.countBias) > 2 * Pi - 0.2){
+                        if(drivers[a - 1].parameters.countBias > 0){
+                            drivers[a - 1].parameters.countBias -= 2 * Pi;
+                        }else{
+                            drivers[a - 1].parameters.countBias += 2 * Pi;
+                        }
+                    }
                     T::alias2status[a] = 0x0001;
                 }
                 ++i;

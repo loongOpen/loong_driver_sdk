@@ -1208,10 +1208,10 @@ int DriverSDK::calibrate_(int const i){
 int DriverSDK::calibrate(int const i){
     if(drivers[i].busCode == 0){
         return calibrate_(i);
-    }else if(drivers[i].busCode == 1 || drivers[i].busCode == 2){
+    }else if(drivers[i].busCode == 1 || drivers[i].busCode == 2 || drivers[i].busCode == 3){
         int value_ = drivers[i].tx->ActualPosition;
         float value = 0.0;
-        if(drivers[i].busCode == 1){
+        if(drivers[i].busCode == 1 || drivers[i].busCode == 3){
             value = *(float*)&value_;
         }else if(drivers[i].busCode == 2){
             value = value_;

@@ -45,7 +45,9 @@ target_include_directories(hbcanhal_${march} PRIVATE
 target_link_directories(hbcanhal_${march} PRIVATE
     ${PROJECT_SOURCE_DIR}
 )
-target_link_libraries(hbcanhal_${march} PRIVATE enpht-can)
+if(ENPHT)
+    target_link_libraries(hbcanhal_${march} PRIVATE enpht-can)
+endif(ENPHT)
 if(NIIC)
     add_library(loong_driver_sdk_${arch} SHARED common.cpp config_xml.cpp rs232.cpp rs485.cpp canbase.cpp can.cpp canemu.cpp ecat.cxx loong_driver_sdk.cpp)
 else(NIIC)
