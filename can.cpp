@@ -1,4 +1,4 @@
-﻿/* Copyright 2025 人形机器人（上海）有限公司
+/* Copyright 2025 人形机器人（上海）有限公司
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -334,7 +334,7 @@ void* CAN::rx(void* arg){
                         frames[nr].canid = BSWAP(slaveID);
                         frames[nr].count = ++cans[i].rollingCounter;
                         frames[nr].can_type = rtr << 2 | cans[i].canfd << 1;
-                        frames[nr].can_channel = cans[i].device[3] - '0';
+                        frames[nr].can_channel = cans[i].device[4] == '_' || cans[i].device[4] == '\0' ? cans[i].device[3] - '0' : 10 + cans[i].device[4] - '0';
                         frames[nr].len = length;
                         memcpy(frames[nr].data, data_, length);
                         ++packInfo.data_num;

@@ -1,4 +1,4 @@
-﻿/* Copyright 2025 人形机器人（上海）有限公司
+/* Copyright 2025 人形机器人（上海）有限公司
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -321,7 +321,7 @@ void encosTX(int const masterID, unsigned char* const data, int const length, T*
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
               drivers[alias - 1].tx.next()->Undefined      = temperatureMOS;
               drivers[alias - 1].tx.next()->ModeDisplay    = temperatureRotor;
-              drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0008 : T::alias2status[alias];
+              drivers[alias - 1].tx.next()->StatusWord     = error ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0x0000;
     struct timeval tv;
     gettimeofday(&tv, nullptr);
@@ -437,7 +437,14 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
     int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
     DriverParameters const* parameters = T::alias2parameters[alias];
     signed char temperatureMOS = data[6], temperatureRotor = data[7];
-    bool error = err > 1;
+    bool error = false;
+    if(err == 0){
+        T::alias2status[alias] &= ~(0x0001 ^ 0x0007);
+    }else if(err == 1){
+        T::alias2status[alias] |= 0x0001 ^ 0x0007;
+    }else{
+        error = true;
+    }
     if(temperatureMOS > 100 || temperatureRotor > 100){
         T::alias2status[alias] |= 0x0080;
     }
@@ -446,7 +453,7 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
               drivers[alias - 1].tx.next()->Undefined      = temperatureMOS;
               drivers[alias - 1].tx.next()->ModeDisplay    = temperatureRotor;
-              drivers[alias - 1].tx.next()->StatusWord     = error ? 0x0008 : T::alias2status[alias];
+              drivers[alias - 1].tx.next()->StatusWord     = error ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0x0000;
     struct timeval tv;
     gettimeofday(&tv, nullptr);
@@ -454,7 +461,7 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
     static long previous[8] = {current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
-        if((T::alias2status[alias] & 0x007f) == 0x0000){
+        if((T::alias2status[alias] & 0x007f & ~(0x0001 ^ 0x0007)) == 0x0000){
             int i = 0;
             while(i < 32){
                 int a = T::orderSlaveID2alias[can->order][i];
@@ -607,7 +614,7 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
             *(float*)&drivers[alias - 1].tx->ActualVelocity = 0.0;
                       drivers[alias - 1].tx->ActualTorque   = single2half(*(int*)(data + 12) * parameters->actualCUnit * parameters->tConstant);
                       drivers[alias - 1].tx->Undefined      = temperature;
-                      drivers[alias - 1].tx->StatusWord     = err > 0 ? 0x0008 : T::alias2status[alias];
+                      drivers[alias - 1].tx->StatusWord     = err > 0 ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];
                       drivers[alias - 1].tx->ErrorCode      = err;
             break;
         }
@@ -649,7 +656,7 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity = *(int*)(data + 4) * parameters->actualVUnit * Pi / 30.0;
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(*(int*)(data + 0) * parameters->actualCUnit * parameters->tConstant);
               drivers[alias - 1].tx.next()->Undefined      = temperature;
-              drivers[alias - 1].tx.next()->StatusWord     = err > 0 ? 0x0008 : T::alias2status[alias];
+              drivers[alias - 1].tx.next()->StatusWord     = err > 0 ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = err;
     struct timeval tv;
     gettimeofday(&tv, nullptr);

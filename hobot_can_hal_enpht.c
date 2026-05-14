@@ -1,4 +1,4 @@
-/* Copyright 2025 ÈËĞÎ»úÆ÷ÈË£¨ÉÏº££©ÓĞÏŞ¹«Ë¾
+/* Copyright 2025 äººå½¢æœºå™¨äººï¼ˆä¸Šæµ·ï¼‰æœ‰é™å…¬å¸
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,8 +74,9 @@ int canRecvMsgFrame(char const* target, struct canframe* frames, struct pack_inf
     if(hr != 0){
         return hr < 0 ? hr : -hr;
     }
+    packInfo->data_num = *(unsigned int*)&frameCount;
     int i = 0;
-    while(i < frameCount){
+    while(i < packInfo->data_num){
         frames[i].canid = objs[ch][i].ID < 0x7ff ? objs[ch][i].ID : 0x7ff;
         frames[i].count = ++count[ch];
         frames[i].can_type = objs[ch][i].RemoteFlag << 2;
@@ -84,7 +85,7 @@ int canRecvMsgFrame(char const* target, struct canframe* frames, struct pack_inf
         memcpy(frames[i].data, objs[ch][i].Data, frames[i].len);
         ++i;
     }
-    return packInfo->data_num = frameCount;
+    return packInfo->data_num;
 }
 
 int canSendMsgRaw(char const* target, unsigned char* rxBuff, struct pack_info* packInfo){
