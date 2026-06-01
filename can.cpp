@@ -31,11 +31,11 @@ extern int dofEffector;
 extern std::vector<unsigned short> processorsCAN;
 extern std::vector<unsigned short> maxCurrent;
 
-int nullCANRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
+int nullRXCAN(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
     return std::numeric_limits<int>::min();
 }
 
-void nullCANTX(int const masterID, unsigned char* const data, int const length, CAN* const can){
+void nullTXCAN(int const masterID, unsigned char* const data, int const length, CAN* const can){
     printf("unexpected data with master_id %d and length %d on cans[%d]\n", masterID, length, can->order);
 }
 
@@ -90,7 +90,7 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         while(i < 8){
             j = 0;
             while(j < 256){
-                rxFuncs[i][j] = nullCANRX;
+                rxFuncs[i][j] = nullRXCAN;
                 ++j;
             }
             ++i;
@@ -99,7 +99,7 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         while(i < 8){
             j = 0;
             while(j < 2048){
-                txFuncs[i][j] = nullCANTX;
+                txFuncs[i][j] = nullTXCAN;
                 ++j;
             }
             ++i;
@@ -140,7 +140,7 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         while(i < masterIDs.size()){
             printf(" %d", masterIDs[i]);
             orderMasterID2slaveID[order][masterIDs[i]] = slaveID;
-            if(txFuncs[order][masterIDs[i]] != nullCANTX){
+            if(txFuncs[order][masterIDs[i]] != nullTXCAN){
                 printf("\ninvalid can bus configuration\n");
                 exit(-1);
             }
@@ -150,7 +150,7 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
                 txFuncs[order][masterIDs[i]] = damiaoTX<CAN>;
             }else if(type.starts_with("RealMan")){
                 txFuncs[order][masterIDs[i]] = realManTX<CAN>;
-            }else if(type == "CANopen"){
+            }else if(type.starts_with("CANopen")){
                 txFuncs[order][masterIDs[i]] = canopenConfigTX<CAN>;
             }else if(type == "AGIBOT"){
                 txFuncs[order][masterIDs[i]] = agibotTX<CAN>;
@@ -161,7 +161,7 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         }
         printf(", slave_id %d\n", slaveID);
         orderSlaveID2alias[order][slaveID] = alias;
-        if(rxFuncs[order][slaveID] != nullCANRX){
+        if(rxFuncs[order][slaveID] != nullRXCAN){
             printf("invalid can bus configuration\n");
             exit(-1);
         }
@@ -171,7 +171,7 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
             rxFuncs[order][slaveID] = damiaoRX<CAN>;
         }else if(type.starts_with("RealMan")){
             rxFuncs[order][slaveID] = realManRX<CAN>;
-        }else if(type == "CANopen"){
+        }else if(type.starts_with("CANopen")){
             rxFuncs[order][slaveID] = canopenConfigRX<CAN>;
             canopenAliases.push_back(alias);
         }else if(type == "AGIBOT"){
@@ -219,7 +219,7 @@ int CAN::config(){
         std::string const& type = alias2type.find(alias)->second;
         std::string const category = configXML->typeCategory("CAN", type.c_str());
         if(category == "driver"){
-            if(type == "CANopen"){
+            if(type.starts_with("CANopen")){
 #ifndef NIIC
                 if(drivers[alias - 1].init("CANopen", 2, order, 0, slaveID, alias, type, k * sizeof(DriverRXData), k * sizeof(DriverTXData), nullptr, nullptr) != 0){
 #else
@@ -513,7 +513,7 @@ void* CAN::tx_(void* arg){
     return nullptr;
 }
 
-void CAN::transfer(int const alias, long const period, unsigned short const maxCurr, CANopenData const rx){
+void CAN::transfer(int const alias, long const period, unsigned short const maxCurr, CANopenData rx){
     int slaveID = 0;
     if(alias != 0){
         slaveID = alias2slaveID.find(alias)->second;
@@ -523,24 +523,29 @@ void CAN::transfer(int const alias, long const period, unsigned short const maxC
             *(unsigned short*)(rx.data + 4) = id;
         }
         if(rx.data[2] == 0x18 && rx.data[3] == 0x05){
-            *(unsigned short*)(rx.data + 4) = period / 1000000;
+            *(unsigned short*)(rx.data + 4) = 2 * period / 1000000;
         }
         if(rx.data[1] == 0xc2 && rx.data[2] == 0x60 && rx.data[3] == 0x01){
-            *(unsigned  char*)(rx.data + 4) = period / 1000000;
+            *                 (rx.data + 4) = 2 * period / 1000000;
         }
         if(rx.data[1] == 0x72 && rx.data[2] == 0x60 && rx.data[3] == 0x00){
             *(unsigned short*)(rx.data + 4) = maxCurr;
         }
+        if(rx.functionCode == 0){
+            *                 (rx.data + 1) = slaveID;
+            slaveID = 0;
+        }
     }
+    slaveID += rx.functionCode;
     if(canhal == 0){
         if(canfd == 1 || device[0] == '/'){
-            sendfd(rx.functionCode + slaveID, rx.data, rx.rtr, rx.length);
+            sendfd(slaveID, rx.data, rx.rtr, rx.length);
         }else{
-            send(rx.functionCode + slaveID, rx.data, rx.rtr, rx.length);
+            send(slaveID, rx.data, rx.rtr, rx.length);
         }
     }else if(canhal == 1){
         struct canframe frames[1];
-        frames[0].canid = BSWAP(rx.functionCode + slaveID);
+        frames[0].canid = BSWAP(slaveID);
         frames[0].count = ++rollingCounter;
         frames[0].can_type = rx.rtr << 2 | canfd << 1;
         frames[0].can_channel = device[3] - '0';
@@ -560,7 +565,104 @@ int CAN::canopenConfig(){
     if(canopenAliases.size() == 0){
         return 0;
     }
-    while(true){
+    int i = 0;
+    while(i < canopenAliases.size()){
+        int j = 0, alias = canopenAliases[i];
+        printf("configuring CANopen driver with alias %d\n", alias);
+        std::vector<Correspondence> correspondences;
+        while(j < 23){
+            correspondences.push_back(Correspondences[j]);
+            ++j;
+        }
+        tinyxml2::XMLElement* deviceXML = configXML->device("CAN", alias2type.find(alias)->second.c_str());
+        std::vector<std::vector<std::string>> rxPDOs = configXML->pdos(deviceXML, "RxPDOs"), txPDOs = configXML->pdos(deviceXML, "TxPDOs");
+        std::vector<unsigned short> rxLabels, txLabels;
+        int m = 0;
+        while(m < rxPDOs.size()){
+            unsigned short index = strtoul(rxPDOs[m][0].c_str(), nullptr, 16);
+            Correspondence correspondence = Correspondences[23];
+            *(unsigned short*)(correspondence.rx.data + 1) = index;
+            *(unsigned short*)(correspondence.tx.data + 1) = index;
+            correspondences.push_back(correspondence);
+            rxLabels.push_back(index);
+            int n = 1;
+            while(n < rxPDOs[m].size()){
+                std::vector<std::string> entry = configXML->entry(deviceXML, rxPDOs[m][n].c_str());
+                correspondence = Correspondences[24];
+                *(unsigned short*)(correspondence.rx.data + 1) = index;
+                *                 (correspondence.rx.data + 3) = n;
+                *(unsigned short*)(correspondence.rx.data + 6) = strtoul(entry[1].c_str(), nullptr, 16);
+                *                 (correspondence.rx.data + 5) = strtoul(entry[2].c_str(), nullptr, 16);
+                *                 (correspondence.rx.data + 4) = strtoul(entry[4].c_str(), nullptr, 10);
+                *(unsigned short*)(correspondence.tx.data + 1) = index;
+                *                 (correspondence.tx.data + 3) = n;
+                correspondences.push_back(correspondence);
+                ++n;
+            }
+            correspondence = Correspondences[23];
+            *(unsigned short*)(correspondence.rx.data + 1) = index;
+            *                 (correspondence.rx.data + 4) = rxPDOs[m].size() - 1;
+            *(unsigned short*)(correspondence.tx.data + 1) = index;
+            correspondences.push_back(correspondence);
+            ++m;
+        }
+        m = 0;
+        while(m < txPDOs.size()){
+            unsigned short index = strtoul(txPDOs[m][0].c_str(), nullptr, 16);
+            Correspondence correspondence = Correspondences[25];
+            *(unsigned short*)(correspondence.rx.data + 1) = index;
+            *(unsigned short*)(correspondence.tx.data + 1) = index;
+            correspondences.push_back(correspondence);
+            txLabels.push_back(index);
+            int n = 1;
+            while(n < txPDOs[m].size()){
+                std::vector<std::string> entry = configXML->entry(deviceXML, txPDOs[m][n].c_str());
+                correspondence = Correspondences[26];
+                *(unsigned short*)(correspondence.rx.data + 1) = index;
+                *                 (correspondence.rx.data + 3) = n;
+                *(unsigned short*)(correspondence.rx.data + 6) = strtoul(entry[1].c_str(), nullptr, 16);
+                *                 (correspondence.rx.data + 5) = strtoul(entry[2].c_str(), nullptr, 16);
+                *                 (correspondence.rx.data + 4) = strtoul(entry[4].c_str(), nullptr, 10);
+                *(unsigned short*)(correspondence.tx.data + 1) = index;
+                *                 (correspondence.tx.data + 3) = n;
+                correspondences.push_back(correspondence);
+                ++n;
+            }
+            correspondence = Correspondences[25];
+            *(unsigned short*)(correspondence.rx.data + 1) = index;
+            *                 (correspondence.rx.data + 4) = txPDOs[m].size() - 1;
+            *(unsigned short*)(correspondence.tx.data + 1) = index;
+            correspondences.push_back(correspondence);
+            ++m;
+        }
+        m = 0;
+        while(m < rxLabels.size()){
+            correspondences.push_back(Correspondences[27 + rxLabels[m] - 0x1600]);
+            ++m;
+        }
+        m = 0;
+        while(m < txLabels.size()){
+            correspondences.push_back(Correspondences[31 + txLabels[m] - 0x1a00]);
+            ++m;
+        }
+        correspondences.push_back(Correspondences[35]);
+        j = 0;
+        while(j < correspondences.size()){
+            do{
+                transfer(alias, period, maxCurrent[canopenAliases[i] - 1], correspondences[j].rx);
+                checkMutex.lock();
+                checkSlaveIDs.clear();
+                if(correspondences[j].tx.functionCode != 0x000){
+                    checkSlaveIDs.push_back(alias2slaveID.find(alias)->second);
+                    checkData = correspondences[j].tx;
+                }
+                checkMutex.unlock();
+            }while(!canopenCheck<CAN>(period, 20));
+            ++j;
+        }
+        ++i;
+    }
+    /* while(true){
         transfer(0, period, 0, Correspondence0.rx);
         usleep(period / 1000);
         int i = 0;
@@ -571,9 +673,9 @@ int CAN::canopenConfig(){
                 if(tryCount > 4){
                     break;
                 }
-                transfer(canopenAliases[i], period, maxCurrent[canopenAliases[i] - 1], Correspondence0_.rx);
+                transfer(canopenAliases[i], period, maxCurrent[canopenAliases[i] - 1], Correspondence_.rx);
                 checkMutex.lock();
-                checkData = Correspondence0_.tx;
+                checkData = Correspondence_.tx;
                 checkSlaveIDs.clear();
                 checkSlaveIDs.push_back(alias2slaveID.find(canopenAliases[i])->second);
                 checkMutex.unlock();
@@ -587,59 +689,25 @@ int CAN::canopenConfig(){
             continue;
         }
         break;
-    }
-    int i = 0;
-    while(i < canopenAliases.size()){
-        int j = 0, alias = canopenAliases[i];
-        while(j < Correspondences.size()){
-            do{
-                transfer(alias, period, maxCurrent[canopenAliases[i] - 1], Correspondences[j].rx);
-                checkMutex.lock();
-                checkData = Correspondences[j].tx;
-                checkSlaveIDs.clear();
-                checkSlaveIDs.push_back(alias2slaveID.find(alias)->second);
-                checkMutex.unlock();
-            }while(!canopenCheck<CAN>(period, 20));
-            ++j;
-        }
-        ++i;
-    }
-    while(true){
-        transfer(0, period, 0, Correspondence1.rx);
-        usleep(period / 1000);
-        int i = 0;
-        while(i < canopenAliases.size()){
-            int tryCount = 0;
-            do{
-                ++tryCount;
-                if(tryCount > 4){
-                    break;
-                }
-                transfer(canopenAliases[i], period, maxCurrent[canopenAliases[i] - 1], Correspondence1_.rx);
-                checkMutex.lock();
-                checkData = Correspondence1_.tx;
-                checkSlaveIDs.clear();
-                checkSlaveIDs.push_back(alias2slaveID.find(canopenAliases[i])->second);
-                checkMutex.unlock();
-            }while(!canopenCheck<CAN>(period, 20));
-            if(tryCount > 4){
-                break;
-            }
-            ++i;
-        }
-        if(i < canopenAliases.size()){
-            continue;
-        }
-        break;
-    }
+    } */
+    transfer(0, period, 0, Correspondence0.rx);
     i = 0;
     while(i < canopenAliases.size()){
         int alias = canopenAliases[i], slaveID = alias2slaveID.find(alias)->second;
         std::vector<int> masterIDs = alias2masterIDs.find(alias)->second;
+        std::string const& type = alias2type.find(alias)->second;
+        std::string const subType = type.length() > 8 ? type.substr(8) : "Eyou";
         int j = 0;
         while(j < masterIDs.size()){
             if(orderMasterID2slaveID[order][masterIDs[j]] == slaveID){
-                txFuncs[order][masterIDs[j]] = canopenTX<CAN>;
+                if(subType == "Eyou"){
+                    txFuncs[order][masterIDs[j]] = canopenTX<CAN>;
+                }else if(subType == "Elmo"){
+                    txFuncs[order][masterIDs[j]] = canopenTX_<CAN>;
+                }else{
+                    printf("invalid CANopen driver subType %s\n", subType.c_str());
+                    return -1;
+                }
             }
             ++j;
         }
@@ -739,7 +807,7 @@ int CAN::run(std::vector<CAN>& cans){
     i = 0;
     while(i < cans.size()){
         if(cans[i].canopenConfig() != 0){
-            printf("cans[%d] canopen config failed\n", i);
+            printf("cans[%d] CANopen config failed\n", i);
             return -1;
         }
         ++i;

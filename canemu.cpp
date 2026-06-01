@@ -25,11 +25,11 @@ extern std::vector<std::map<int, std::vector<int>>> canEmuAlias2masterIDs;
 extern std::vector<std::map<int, int>> canEmuAlias2slaveID;
 extern int dofEffector;
 
-int nullCANEmuRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
+int nullRXCANEmu(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
     return std::numeric_limits<int>::min();
 }
 
-void nullCANEmuTX(int const masterID, unsigned char* const data, int const length, CANEmu* const canemu){
+void nullTXCANEmu(int const masterID, unsigned char* const data, int const length, CANEmu* const canemu){
     printf("unexpected data with master_id %d and length %d on canemus[%d]\n", masterID, length, canemu->order);
 }
 
@@ -76,7 +76,7 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
         while(i < 8){
             j = 0;
             while(j < 256){
-                rxFuncs[i][j] = nullCANEmuRX;
+                rxFuncs[i][j] = nullRXCANEmu;
                 ++j;
             }
             ++i;
@@ -85,7 +85,7 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
         while(i < 8){
             j = 0;
             while(j < 2048){
-                txFuncs[i][j] = nullCANEmuTX;
+                txFuncs[i][j] = nullTXCANEmu;
                 ++j;
             }
             ++i;
@@ -112,7 +112,7 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
                 printf("RealMan driver not supported on canemu bus\n");
                 exit(-1);
             }
-            if(type == "CANopen"){
+            if(type.starts_with("CANopen")){
                 printf("CANopen driver not supported on canemu bus\n");
                 exit(-1);
             }
@@ -129,7 +129,7 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
         while(i < masterIDs.size()){
             printf(" %d", masterIDs[i]);
             orderMasterID2slaveID[order][masterIDs[i]] = slaveID;
-            if(txFuncs[order][masterIDs[i]] != nullCANEmuTX){
+            if(txFuncs[order][masterIDs[i]] != nullTXCANEmu){
                 printf("\ninvalid canemu bus configuration\n");
                 exit(-1);
             }
@@ -146,7 +146,7 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
         }
         printf(", slave_id %d\n", slaveID);
         orderSlaveID2alias[order][slaveID] = alias;
-        if(rxFuncs[order][slaveID] != nullCANEmuRX){
+        if(rxFuncs[order][slaveID] != nullRXCANEmu){
             printf("invalid canemu bus configuration\n");
             exit(-1);
         }

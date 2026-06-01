@@ -23,7 +23,7 @@
 double const Pi = std::acos(-1);
 
 int main(int argc, char** argv){
-    int enabled = 0, count = 2;
+    int enabled = 0, count = 2, count_ = 2;
     DriverSDK::DriverSDK& driverSDK = DriverSDK::DriverSDK::instance();
     printf("loong_driver_sdk %s\n", driverSDK.version().c_str());
     std::vector<unsigned short> cpusECAT = {2, 3, 3, 3, 3, 3};
@@ -48,7 +48,7 @@ int main(int argc, char** argv){
         8, 8
     };
     driverSDK.setMode(mode);
-    driverSDK.init("configuration_lite.xml");
+    driverSDK.init("configuration.xml");
     std::vector<int> activeMotors = driverSDK.getActiveMotors();
     int i = 0, j = 0, motorNr = driverSDK.getTotalMotorNr(), digitNr = driverSDK.getLeftDigitNr() + driverSDK.getRightDigitNr();
     printf("digitNr %d\nmotorNr %ld/%d:\t", digitNr, activeMotors.size(), motorNr);
@@ -97,7 +97,7 @@ int main(int argc, char** argv){
     }
     if(argc == 3){
         enabled = atoi(argv[1]);
-        count = atoi(argv[2]);
+        count = count_ = atoi(argv[2]);
     }
     i = 0;
     while(i < 1600){
@@ -233,11 +233,14 @@ int main(int argc, char** argv){
     while(i < motorNr){
         driverSDK.advance();
         usleep(4000);
-        // printf("motor%02d CountBias %d\n", i + 1, driverSDK.calibrate(i));
+        if(enabled == 0 && count_ == 0){
+            printf("motor%02d CountBias %d\n", i + 1, driverSDK.calibrate(i));
+        }
         driverSDK.advance();
         usleep(4000);
         ++i;
     }
+    return 0;
 effector:
     i = 0;
     while(i < digitNr){

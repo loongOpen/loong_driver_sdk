@@ -912,12 +912,12 @@
             <COffsetUnit>0.002</COffsetUnit>
             <TConstant>3.0</TConstant>
         </Device>
-        <Device type="CANopen">
+        <Device type="CANopen Eyou">
             <RxPDOs index="0x1600">
                 <Object>TargetPosition</Object>
                 <Object>TargetVelocity</Object>
             </RxPDOs>
-            <RxPDOs index="0x1601">
+            <RxPDOs index="0x1602">
                 <Object>TargetTorque</Object>
                 <Object>ControlWord</Object>
                 <Object>Mode</Object>
@@ -926,7 +926,7 @@
                 <Object>ActualPosition</Object>
                 <Object>ActualVelocity</Object>
             </TxPDOs>
-            <TxPDOs index="0x1a01">
+            <TxPDOs index="0x1a02">
                 <Object>ActualTorque</Object>
                 <Object>StatusWord</Object>
                 <Object>ErrorCode</Object>
@@ -967,7 +967,7 @@
             <Type>RealMan WHJ60-S-D70-100-B</Type>
             <Type>RealMan WHJ30-S-D60-80-B</Type>
             <Type>RealMan WHJ10-M-D50-80-B</Type>
-            <Type>CANopen</Type>
+            <Type>CANopen Eyou</Type>
         </Category>
         <Category name="effector">
             <Type dof="1">AGIBOT</Type>
@@ -985,11 +985,11 @@
         <Master order="5" device="can5" canhal="false" auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
     </Masters>
     <!--<Masters period="2000000" rx_cpu="-1" tx_cpu="-1" tx_cpu_="-1">
-        <Master order="0" device="can5_ins0ch4" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="1" device="can6_ins0ch6" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="2" device="can7_ins4ch7" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="3" device="can8_ins4ch2" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="4" device="can9_ins0ch3" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="4" device="can5_ins0ch4" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="0" device="can6_ins0ch6" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="1" device="can7_ins4ch7" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="2" device="can8_ins4ch2" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="3" device="can9_ins0ch3" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
         <Master order="5" device="can0"         canhal="false" auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
     </Masters>--><!-- D-Robotics S100 -->
     <!--<Masters period="2000000" rx_cpu="-1" tx_cpu="-1" tx_cpu_="-1">
@@ -1064,8 +1064,8 @@
         <!-- Neck -->
         <Slave master="4" master_ids="20"                slave_id="4"  alias="30"  type="Damiao DM-J4310-2EC"      >0</Slave>
         <Slave master="4" master_ids="21"                slave_id="5"  alias="31"  type="Damiao DM-J4310-2EC"      >0</Slave>
-        <Slave master="4" master_ids="388 644 1412 1796" slave_id="4"  alias="30"  type="CANopen"                  >0</Slave><!-- 384+slave_id 640+slave_id 1408+slave_id 1792+slave_id -->
-        <Slave master="4" master_ids="389 645 1413 1797" slave_id="5"  alias="31"  type="CANopen"                  >0</Slave>
+        <Slave master="4" master_ids="388 900 1412 1796" slave_id="4"  alias="30"  type="CANopen Eyou"             >0</Slave><!-- master_ids="384+slave_id 896+slave_id 1408+slave_id 1792+slave_id" -->
+        <Slave master="4" master_ids="389 901 1413 1797" slave_id="5"  alias="31"  type="CANopen Eyou"             >0</Slave>
     </Slaves>
 </CAN>
 <RS485Emu>
@@ -1571,7 +1571,7 @@
         <MaximumTorque>11</MaximumTorque>
         <MinimumPosition>-1.569</MinimumPosition>
         <MaximumPosition>1.569</MaximumPosition>
-    </Motor><!-- CANopen -->
+    </Motor><!-- CANopen Eyou -->
     <Motor limb="5" motor="1" alias="31">
         <Polarity>1</Polarity>
         <CountBias>0</CountBias>
@@ -1585,7 +1585,7 @@
         <MaximumTorque>11</MaximumTorque>
         <MinimumPosition>-0.69813172</MinimumPosition>
         <MaximumPosition>0.69813172</MaximumPosition>
-    </Motor><!-- CANopen -->
+    </Motor><!-- CANopen Eyou -->
 </Motors>
-<IMU device="" baudrate="460800" type="Forsense"/><!-- type="Xsens/HiPNUC/Forsense/YESENSE/YESENSE_/Lins-Tech" -->
+<IMU device="/dev/ttyUSB0" baudrate="460800" type="Forsense"/><!-- type="Xsens/HiPNUC/Forsense/YESENSE/YESENSE_/Lins-Tech" -->
 </Config>

@@ -52,8 +52,8 @@ CANBase::CANBase(int const order, char const* device){
     static bool initialized = false;
     if(!initialized){
         period = configXML->canAttribute("period");
-        if(period < 1000000){
-            period = 1000000;
+        if(period < 500000){
+            period = 500000;
         }
         CANHAL = 0;
         initialized = true;
@@ -175,7 +175,6 @@ int CANBase::ifaceUp(){
         printf("system() failed\n");
         return -1;
     }
-    usleep(500000);
 #endif
     printf("iface %s is started\n", device);
     return 0;

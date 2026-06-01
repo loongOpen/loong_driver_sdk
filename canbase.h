@@ -44,174 +44,125 @@ struct Correspondence{
     CANopenData rx, tx;
 };
 
-Correspondence const Correspondence0 = {
-    .rx = { .functionCode = 0x000, .rtr = 0, .length = 1, .data = {0x81, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },
-    .tx = { .functionCode = 0x000, .rtr = 0, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
-};
-
-Correspondence const Correspondence0_ = {
-    .rx = { .functionCode = 0x700, .rtr = 1, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },
-    .tx = { .functionCode = 0x700, .rtr = 0, .length = 1, .data = {0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
-};
-
-Correspondence const Correspondence1 = {
-    .rx = { .functionCode = 0x000, .rtr = 0, .length = 1, .data = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },
-    .tx = { .functionCode = 0x000, .rtr = 0, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
-};
-
-Correspondence const Correspondence1_ = {
-    .rx = { .functionCode = 0x700, .rtr = 1, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },
-    .tx = { .functionCode = 0x700, .rtr = 0, .length = 1, .data = {0x85, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
-};
-
 std::vector<Correspondence> const Correspondences = { {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0xc2, 0x60, 0x01, 0x00, 0x00, 0x00, 0x00} },   // period
+        .rx = { .functionCode = 0x000, .rtr = 0, .length = 2, .data = {0x81, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },   // 00 NMT
+        .tx = { .functionCode = 0x700, .rtr = 0, .length = 1, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0xc2, 0x60, 0x01, 0x00, 0x00, 0x00, 0x00} },   // 01 period
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0xc2, 0x60, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x72, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00} },   // maxCurrent
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x72, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00} },   // 02 maxCurrent
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x72, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x14, 0x01, 0x00, 0x02, 0x00, 0x80} },   // Disable RPDO
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x14, 0x01, 0x00, 0x02, 0x00, 0x80} },   // 03 Disable RxPDO1
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x14, 0x01, 0x00, 0x03, 0x00, 0x80} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x14, 0x01, 0x00, 0x03, 0x00, 0x80} },   // 04 Disable RxPDO2
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x02, 0x14, 0x01, 0x00, 0x04, 0x00, 0x80} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x02, 0x14, 0x01, 0x00, 0x04, 0x00, 0x80} },   // 05 Disable RxPDO3
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x03, 0x14, 0x01, 0x00, 0x05, 0x00, 0x80} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x03, 0x14, 0x01, 0x00, 0x05, 0x00, 0x80} },   // 06 Disable RxPDO4
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x18, 0x01, 0x80, 0x01, 0x00, 0x80} },   // Disable TPDO
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x18, 0x01, 0x80, 0x01, 0x00, 0x80} },   // 07 Disable TxPDO1
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x18, 0x01, 0x80, 0x02, 0x00, 0x80} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x18, 0x01, 0x80, 0x02, 0x00, 0x80} },   // 08 Disable TxPDO2
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x02, 0x18, 0x01, 0x80, 0x03, 0x00, 0x80} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x02, 0x18, 0x01, 0x80, 0x03, 0x00, 0x80} },   // 09 Disable TxPDO3
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x03, 0x18, 0x01, 0x80, 0x04, 0x00, 0x80} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x03, 0x18, 0x01, 0x80, 0x04, 0x00, 0x80} },   // 10 Disable TxPDO4
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },   // RPDO
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },   // 11 RxPDO1 Transmission Type
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },   // 12 RxPDO2 Transmission Type
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x02, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x02, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },   // 13 RxPDO3 Transmission Type
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x03, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x03, 0x14, 0x02, 0xff, 0x00, 0x00, 0x00} },   // 14 RxPDO4 Transmission Type
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },   // TPDO
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },   // 15 TxPDO1 Transmission Type
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x18, 0x02, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },   // 16 TxPDO2 Transmission Type
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x18, 0x02, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x02, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x02, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },   // 17 TxPDO3 Transmission Type
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x18, 0x02, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x03, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x03, 0x18, 0x02, 0xff, 0x00, 0x00, 0x00} },   // 18 TxPDO4 Transmission Type
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x18, 0x02, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x00, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },   // TPDO
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x00, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },   // 19 TxPDO1 Event Timer
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x01, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x01, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },   // 20 TxPDO2 Event Timer
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x02, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x02, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },   // 21 TxPDO3 Event Timer
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x03, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2b, 0x03, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },   // 22 TxPDO4 Event Timer
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },   // RPDO
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },   // 23 RxPDO Count
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x02, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x03, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },   // TPDO
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x02, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x03, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x16, 0x01, 0x20, 0x00, 0x7a, 0x60} },   // RPDO1
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x16, 0x01, 0x20, 0x00, 0x7a, 0x60} },   // 24 RxPDO
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x16, 0x02, 0x20, 0x00, 0xff, 0x60} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x16, 0x02, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x16, 0x00, 0x02, 0x00, 0x00, 0x00} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x16, 0x01, 0x10, 0x00, 0x71, 0x60} },   // RPDO2
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x16, 0x02, 0x10, 0x00, 0x40, 0x60} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x16, 0x02, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x16, 0x03, 0x08, 0x00, 0x60, 0x60} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x16, 0x03, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x16, 0x00, 0x03, 0x00, 0x00, 0x00} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x1a, 0x01, 0x20, 0x00, 0x64, 0x60} },   // TPDO1
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x01, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x1a, 0x02, 0x20, 0x00, 0x6c, 0x60} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x02, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x1a, 0x00, 0x02, 0x00, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },   // 25 TxPDO Count
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x01, 0x10, 0x00, 0x77, 0x60} },   // TPDO2
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x01, 0x00, 0x00, 0x00, 0x00} }
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x1a, 0x01, 0x20, 0x00, 0x64, 0x60} },   // 26 TxPDO
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x02, 0x10, 0x00, 0x41, 0x60} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x02, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x03, 0x10, 0x00, 0x3f, 0x60} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x03, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x1a, 0x04, 0x08, 0x01, 0x16, 0x20} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x04, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x2f, 0x01, 0x1a, 0x00, 0x04, 0x00, 0x00, 0x00} },
-        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
-    }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x14, 0x01, 0x00, 0x02, 0x00, 0x00} },   // Enable RPDO
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x14, 0x01, 0x00, 0x02, 0x00, 0x00} },   // 27 Enable RxPDO1
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x14, 0x01, 0x00, 0x03, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x14, 0x01, 0x00, 0x03, 0x00, 0x00} },   // 28 Enable RxPDO2
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x18, 0x01, 0x80, 0x01, 0x00, 0x00} },   // Enable TPDO
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x02, 0x14, 0x01, 0x00, 0x04, 0x00, 0x00} },   // 29 Enable RxPDO3
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x03, 0x14, 0x01, 0x00, 0x05, 0x00, 0x00} },   // 30 Enable RxPDO4
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x00, 0x18, 0x01, 0x80, 0x01, 0x00, 0x00} },   // 31 Enable TxPDO1
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x00, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x18, 0x01, 0x80, 0x02, 0x00, 0x00} },
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x01, 0x18, 0x01, 0x80, 0x02, 0x00, 0x00} },   // 32 Enable TxPDO2
         .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x01, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x02, 0x18, 0x01, 0x80, 0x03, 0x00, 0x00} },   // 33 Enable TxPDO3
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x02, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x600, .rtr = 0, .length = 8, .data = {0x23, 0x03, 0x18, 0x01, 0x80, 0x04, 0x00, 0x00} },   // 34 Enable TxPDO4
+        .tx = { .functionCode = 0x580, .rtr = 0, .length = 8, .data = {0x60, 0x03, 0x18, 0x01, 0x00, 0x00, 0x00, 0x00} }
+    }, {
+        .rx = { .functionCode = 0x000, .rtr = 0, .length = 2, .data = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },   // 35 NMT
+        .tx = { .functionCode = 0x000, .rtr = 0, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
     }
+};
+
+Correspondence const Correspondence0 = {
+    .rx = { .functionCode = 0x000, .rtr = 0, .length = 2, .data = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },   // NMT
+    .tx = { .functionCode = 0x000, .rtr = 0, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
+};
+
+Correspondence const Correspondence_ = {
+    .rx = { .functionCode = 0x700, .rtr = 1, .length = 0, .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} },
+    .tx = { .functionCode = 0x700, .rtr = 0, .length = 1, .data = {0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
 };
 
 unsigned char const EncosEnable   [3] = {0x71, 0x03, 0xe8};
@@ -228,10 +179,10 @@ unsigned char const AgibotData    [8] = {0x00, 0x00, 0x7f, 0x7f, 0x7f, 0x7f, 0x0
 
 unsigned short float2para(float const f, float const min, float const max, int const bit);
 float para2float(unsigned short const us, float const min, float const max, int const bit);
-int nullCANRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr);
-void nullCANTX(int const masterID, unsigned char* const data, int const length, CAN* const can);
-int nullCANEmuRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr);
-void nullCANEmuTX(int const masterID, unsigned char* const data, int const length, CANEmu* const canemu);
+int nullRXCAN(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr);
+void nullTXCAN(int const masterID, unsigned char* const data, int const length, CAN* const can);
+int nullRXCANEmu(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr);
+void nullTXCANEmu(int const masterID, unsigned char* const data, int const length, CANEmu* const canemu);
 
 template<typename T>
 int encosRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
@@ -315,7 +266,10 @@ void encosTX(int const masterID, unsigned char* const data, int const length, T*
     bool error = err > 0 && (err != 1 && err != 2 && err != 4 || err == 1 && (temperatureMOS > 120 || temperatureRotor > 120));
     if(temperatureMOS > 100 || temperatureRotor > 100){
         T::alias2status[alias] |= 0x0080;
+    }else{
+        T::alias2status[alias] &= ~0x0080;
     }
+    T::alias2status[alias] &= ~0x4000;
     *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             para2float(p, parameters->minP, parameters->maxP, 16);
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
@@ -447,7 +401,10 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
     }
     if(temperatureMOS > 100 || temperatureRotor > 100){
         T::alias2status[alias] |= 0x0080;
+    }else{
+        T::alias2status[alias] &= ~0x0080;
     }
+    T::alias2status[alias] &= ~0x4000;
     *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             para2float(p, parameters->minP, parameters->maxP, 16);
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
@@ -609,7 +566,10 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
             unsigned short err = *(unsigned short*)(data + 0);
             if(temperature > 80){
                 T::alias2status[alias] |= 0x0080;
+            }else{
+                T::alias2status[alias] &= ~0x0080;
             }
+            T::alias2status[alias] &= ~0x4000;
             *(float*)&drivers[alias - 1].tx->ActualPosition = *(int*)(data + 8) * parameters->pUnit * Pi / 180.0;
             *(float*)&drivers[alias - 1].tx->ActualVelocity = 0.0;
                       drivers[alias - 1].tx->ActualTorque   = single2half(*(int*)(data + 12) * parameters->actualCUnit * parameters->tConstant);
@@ -651,7 +611,10 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
     unsigned short err = *(unsigned short*)(data + 12);
     if(temperature > 80){
         T::alias2status[alias] |= 0x0080;
+    }else{
+        T::alias2status[alias] &= ~0x0080;
     }
+    T::alias2status[alias] &= ~0x4000;
     *(float*)&drivers[alias - 1].tx.next()->ActualPosition = *(int*)(data + 8) * parameters->pUnit * Pi / 180.0;
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity = *(int*)(data + 4) * parameters->actualVUnit * Pi / 30.0;
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(*(int*)(data + 0) * parameters->actualCUnit * parameters->tConstant);
@@ -743,13 +706,13 @@ int canopenRX(int const order, int const alias, int* const slaveID, unsigned cha
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
     };
     ++count[alias];
-    if(count[alias] % 2 == 0){  // RPDO1
+    if(count[alias] % 2 == 0){  // RxPDO1
         *slaveID += 0x200;
         *(           int*)(data + 0) = drivers[alias - 1].rx.previous()->TargetPosition;
         *(           int*)(data + 4) = drivers[alias - 1].rx.previous()->TargetVelocity;
         return 8;
-    }else{                      // RPDO2
-        *slaveID += 0x300;
+    }else{                      // RxPDO3
+        *slaveID += 0x400;
         *(         short*)(data + 0) = drivers[alias - 1].rx.previous()->TargetTorque;
         *(unsigned short*)(data + 2) = drivers[alias - 1].rx.previous()->ControlWord;
         *(          char*)(data + 4) = drivers[alias - 1].rx.previous()->Mode;
@@ -760,7 +723,7 @@ int canopenRX(int const order, int const alias, int* const slaveID, unsigned cha
 template<typename T>
 void canopenTX(int const masterID, unsigned char* const data, int const length, T* const can){
     int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
-    if(masterID > 0x280){       // TPDO2
+    if(masterID > 0x380){       // TxPDO3
         if(length != 7){
             return;
         }
@@ -792,7 +755,51 @@ void canopenTX(int const masterID, unsigned char* const data, int const length, 
             can->mask = 0;
             previous[can->order] = current;
         }
-    }else if(masterID > 0x180){ // TPDO1
+    }else if(masterID > 0x180){ // TxPDO1
+        if(length != 8){
+            return;
+        }
+        drivers[alias - 1].tx.next()->ActualPosition = *(           int*)(data + 0);
+        drivers[alias - 1].tx.next()->ActualVelocity = *(           int*)(data + 4);
+    }
+}
+
+template<typename T>
+void canopenTX_(int const masterID, unsigned char* const data, int const length, T* const can){
+    int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
+    if(masterID > 0x380){       // TxPDO3
+        if(length != 8){
+            return;
+        }
+        drivers[alias - 1].tx.next()->ActualTorque   = *(         short*)(data + 0);
+        drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)(data + 2);
+        drivers[alias - 1].tx.next()->ErrorCode      = *(unsigned short*)(data + 4);
+        drivers[alias - 1].tx.next()->Undefined      = *(         short*)(data + 6);
+        struct timeval tv;
+        gettimeofday(&tv, nullptr);
+        long current = TIMEVAL2US(tv);
+        static long previous[8] = {current, current, current, current, current, current, current, current};
+        can->mask |= 1 << slaveID;
+        if(can->mask == can->MASK){
+            can->txSwap->advanceNodePtr();
+            can->mask = 0;
+            previous[can->order] = current;
+        }else if(current - previous[can->order] > 20 * can->period / 1000){
+            unsigned int x = can->mask ^ can->MASK;
+            int i = 0;
+            while(i < 32){
+                if((x & 1 << i) > 0){
+                    int a = T::orderSlaveID2alias[can->order][i];
+                    T::alias2status[a] |= 0x4000;
+                    drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
+                }
+                ++i;
+            }
+            can->txSwap->advanceNodePtr();
+            can->mask = 0;
+            previous[can->order] = current;
+        }
+    }else if(masterID > 0x180){ // TxPDO1
         if(length != 8){
             return;
         }
@@ -915,7 +922,7 @@ public:
     static void cleanup_(void* arg);
     static void* tx__(void* arg);
     static void* tx_(void* arg);
-    void transfer(int const alias, long const period, unsigned short const maxCurr, CANopenData const rx);
+    void transfer(int const alias, long const period, unsigned short const maxCurr, CANopenData rx);
     int canopenConfig();
     static int run(std::vector<CAN>& cans);
     ~CAN();
