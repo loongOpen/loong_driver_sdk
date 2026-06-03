@@ -306,14 +306,14 @@ void brainCoRX(modbus_t* const ctx, int const alias){
     if(alias == 201){
         i = dofLeftEffector;
     }
-    unsigned short targetPositions[] = {0, 0, 0, 0, 0, 0};
+    unsigned short data[] = {0, 1000, 0, 1000, 0, 1000, 0, 1000, 0, 1000, 0, 1000};
     int j = 0;
     while(j < 6){
-        targetPositions[j] = digits[i + j].rx.previous()->TargetPosition * 100 / 90;
+        data[2 * j] = digits[i + j].rx.previous()->TargetPosition * 1000 / 90;
         ++j;
     }
     modbus_set_slave(ctx, alias);
-    modbus_write_registers(ctx, 1010, 6, targetPositions);
+    modbus_write_registers(ctx, 1010, 12, data);
 }
 
 void brainCoTX(modbus_t* const ctx, int const alias){
@@ -323,12 +323,12 @@ void brainCoTX(modbus_t* const ctx, int const alias){
     }
     unsigned short actualPositions[] = {0, 0, 0, 0, 0, 0};
     modbus_set_slave(ctx, alias);
-    if(modbus_read_registers(ctx, 1010, 6, actualPositions) != 6){
+    if(modbus_read_input_registers(ctx, 2000, 6, actualPositions) != 6){
         return;
     }
     int j = 0;
     while(j < 6){
-        digits[i + j].tx.next()->ActualPosition = actualPositions[j] * 90 / 100;
+        digits[i + j].tx.next()->ActualPosition = actualPositions[j] * 90 / 1000;
         ++j;
     }
 }
@@ -512,6 +512,8 @@ int RS485::config(){
             leftRX = inspireRX_;
             leftTX = inspireTX_;
         }else if(type == "BrainCo"){
+            modbus_set_slave(ctx, 200);
+            modbus_write_register(ctx, 937, 0x0000);
             leftRX = brainCoRX;
             leftTX = brainCoTX;
         }else if(type == "HumanoidShanghai"){
@@ -560,6 +562,8 @@ int RS485::config(){
             rightRX = inspireRX_;
             rightTX = inspireTX_;
         }else if(type == "BrainCo"){
+            modbus_set_slave(ctx, 201);
+            modbus_write_register(ctx, 937, 0x0000);
             rightRX = brainCoRX;
             rightTX = brainCoTX;
         }else if(type == "HumanoidShanghai"){

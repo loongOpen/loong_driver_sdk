@@ -698,7 +698,7 @@ bool canopenCheck(long const period, int const count){
 }
 
 template<typename T>
-int canopenRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
+int canopenEyouRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
     static unsigned int count[32] = {
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -721,7 +721,7 @@ int canopenRX(int const order, int const alias, int* const slaveID, unsigned cha
 }
 
 template<typename T>
-void canopenTX(int const masterID, unsigned char* const data, int const length, T* const can){
+void canopenEyouTX(int const masterID, unsigned char* const data, int const length, T* const can){
     int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
     if(masterID > 0x380){       // TxPDO3
         if(length != 7){
@@ -746,8 +746,7 @@ void canopenTX(int const masterID, unsigned char* const data, int const length, 
             while(i < 32){
                 if((x & 1 << i) > 0){
                     int a = T::orderSlaveID2alias[can->order][i];
-                    T::alias2status[a] |= 0x4000;
-                    drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
+                    drivers[a - 1].tx.next()->StatusWord |= 0x4000;
                 }
                 ++i;
             }
@@ -764,8 +763,31 @@ void canopenTX(int const masterID, unsigned char* const data, int const length, 
     }
 }
 
+/* template<typename T>
+int canopenElmoRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
+    static unsigned int count[32] = {
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+    };
+    ++count[alias];
+    if(count[alias] % 2 == 0){  // RxPDO1
+        *slaveID += 0x200;
+        *(           int*)(data + 0) = drivers[alias - 1].rx.previous()->TargetPosition;
+        *(           int*)(data + 4) = drivers[alias - 1].rx.previous()->TargetVelocity;
+        return 8;
+    }else{                      // RxPDO3
+        *slaveID += 0x400;
+        *(         short*)(data + 0) = drivers[alias - 1].rx.previous()->TargetTorque;
+        *(unsigned short*)(data + 2) = drivers[alias - 1].rx.previous()->ControlWord;
+        *(          char*)(data + 4) = drivers[alias - 1].rx.previous()->Mode;
+        return 5;
+    }
+}
+
 template<typename T>
-void canopenTX_(int const masterID, unsigned char* const data, int const length, T* const can){
+void canopenElmoTX(int const masterID, unsigned char* const data, int const length, T* const can){
     int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
     if(masterID > 0x380){       // TxPDO3
         if(length != 8){
@@ -790,8 +812,7 @@ void canopenTX_(int const masterID, unsigned char* const data, int const length,
             while(i < 32){
                 if((x & 1 << i) > 0){
                     int a = T::orderSlaveID2alias[can->order][i];
-                    T::alias2status[a] |= 0x4000;
-                    drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
+                    drivers[a - 1].tx.next()->StatusWord |= 0x4000;
                 }
                 ++i;
             }
@@ -805,6 +826,49 @@ void canopenTX_(int const masterID, unsigned char* const data, int const length,
         }
         drivers[alias - 1].tx.next()->ActualPosition = *(           int*)(data + 0);
         drivers[alias - 1].tx.next()->ActualVelocity = *(           int*)(data + 4);
+    }
+} */
+
+template<typename T>
+int canopenElmoRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
+    *slaveID += 0x400;
+    *(         short*)(data + 0) = drivers[alias - 1].rx.previous()->TargetTorque;
+    *(unsigned short*)(data + 2) = drivers[alias - 1].rx.previous()->ControlWord;
+    *(          char*)(data + 4) = drivers[alias - 1].rx.previous()->Mode;
+    return 5;
+}
+
+template<typename T>
+void canopenElmoTX(int const masterID, unsigned char* const data, int const length, T* const can){
+    if(length != 8){
+        return;
+    }
+    int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
+    drivers[alias - 1].tx.next()->ActualPosition = *(           int*)(data + 0);
+    drivers[alias - 1].tx.next()->ActualTorque   = *(         short*)(data + 4);
+    drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)(data + 6);
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    long current = TIMEVAL2US(tv);
+    static long previous[8] = {current, current, current, current, current, current, current, current};
+    can->mask |= 1 << slaveID;
+    if(can->mask == can->MASK){
+        can->txSwap->advanceNodePtr();
+        can->mask = 0;
+        previous[can->order] = current;
+    }else if(current - previous[can->order] > 20 * can->period / 1000){
+        unsigned int x = can->mask ^ can->MASK;
+        int i = 0;
+        while(i < 32){
+            if((x & 1 << i) > 0){
+                int a = T::orderSlaveID2alias[can->order][i];
+                drivers[a - 1].tx.next()->StatusWord |= 0x4000;
+            }
+            ++i;
+        }
+        can->txSwap->advanceNodePtr();
+        can->mask = 0;
+        previous[can->order] = current;
     }
 }
 
@@ -922,7 +986,7 @@ public:
     static void cleanup_(void* arg);
     static void* tx__(void* arg);
     static void* tx_(void* arg);
-    void transfer(int const alias, long const period, unsigned short const maxCurr, CANopenData rx);
+    void transfer(int const alias, long const period, int const division, unsigned short const maxCurr, CANopenData rx);
     int canopenConfig();
     static int run(std::vector<CAN>& cans);
     ~CAN();

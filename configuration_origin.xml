@@ -1011,24 +1011,25 @@
             </Dictionary>
         </Device>
         <Device type="CANopen Elmo">
-            <RxPDOs index="0x1600">
+            <!--<RxPDOs index="0x1600">
                 <Object>TargetPosition</Object>
                 <Object>TargetVelocity</Object>
-            </RxPDOs>
+            </RxPDOs>-->
             <RxPDOs index="0x1602">
                 <Object>TargetTorque</Object>
                 <Object>ControlWord</Object>
                 <Object>Mode</Object>
             </RxPDOs>
-            <TxPDOs index="0x1a00">
+            <!--<TxPDOs index="0x1a00">
                 <Object>ActualPosition</Object>
                 <Object>ActualVelocity</Object>
-            </TxPDOs>
+            </TxPDOs>-->
             <TxPDOs index="0x1a02">
+                <Object>ActualPosition</Object>
                 <Object>ActualTorque</Object>
                 <Object>StatusWord</Object>
-                <Object>ErrorCode</Object>
-                <Object>Temperature</Object>
+                <!--<Object>ErrorCode</Object>
+                <Object>Temperature</Object>-->
             </TxPDOs>
             <Dictionary>
                 <Object index="0x607a" subindex="0x00" signed="1" bit_length="32" operation="0">TargetPosition</Object>

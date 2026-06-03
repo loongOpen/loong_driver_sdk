@@ -513,7 +513,7 @@ void* CAN::tx_(void* arg){
     return nullptr;
 }
 
-void CAN::transfer(int const alias, long const period, unsigned short const maxCurr, CANopenData rx){
+void CAN::transfer(int const alias, long const period, int const division, unsigned short const maxCurr, CANopenData rx){
     int slaveID = 0;
     if(alias != 0){
         slaveID = alias2slaveID.find(alias)->second;
@@ -523,10 +523,10 @@ void CAN::transfer(int const alias, long const period, unsigned short const maxC
             *(unsigned short*)(rx.data + 4) = id;
         }
         if(rx.data[2] == 0x18 && rx.data[3] == 0x05){
-            *(unsigned short*)(rx.data + 4) = 2 * period / 1000000;
+            *(unsigned short*)(rx.data + 4) = division * period / 1000000;
         }
         if(rx.data[1] == 0xc2 && rx.data[2] == 0x60 && rx.data[3] == 0x01){
-            *                 (rx.data + 4) = 2 * period / 1000000;
+            *                 (rx.data + 4) = division * period / 1000000;
         }
         if(rx.data[1] == 0x72 && rx.data[2] == 0x60 && rx.data[3] == 0x00){
             *(unsigned short*)(rx.data + 4) = maxCurr;
@@ -576,7 +576,7 @@ int CAN::canopenConfig(){
         }
         tinyxml2::XMLElement* deviceXML = configXML->device("CAN", alias2type.find(alias)->second.c_str());
         std::vector<std::vector<std::string>> rxPDOs = configXML->pdos(deviceXML, "RxPDOs"), txPDOs = configXML->pdos(deviceXML, "TxPDOs");
-        std::vector<unsigned short> rxLabels, txLabels;
+        std::vector<unsigned short> rxIndices, txIndices;
         int m = 0;
         while(m < rxPDOs.size()){
             unsigned short index = strtoul(rxPDOs[m][0].c_str(), nullptr, 16);
@@ -584,7 +584,7 @@ int CAN::canopenConfig(){
             *(unsigned short*)(correspondence.rx.data + 1) = index;
             *(unsigned short*)(correspondence.tx.data + 1) = index;
             correspondences.push_back(correspondence);
-            rxLabels.push_back(index);
+            rxIndices.push_back(index);
             int n = 1;
             while(n < rxPDOs[m].size()){
                 std::vector<std::string> entry = configXML->entry(deviceXML, rxPDOs[m][n].c_str());
@@ -613,7 +613,7 @@ int CAN::canopenConfig(){
             *(unsigned short*)(correspondence.rx.data + 1) = index;
             *(unsigned short*)(correspondence.tx.data + 1) = index;
             correspondences.push_back(correspondence);
-            txLabels.push_back(index);
+            txIndices.push_back(index);
             int n = 1;
             while(n < txPDOs[m].size()){
                 std::vector<std::string> entry = configXML->entry(deviceXML, txPDOs[m][n].c_str());
@@ -636,20 +636,20 @@ int CAN::canopenConfig(){
             ++m;
         }
         m = 0;
-        while(m < rxLabels.size()){
-            correspondences.push_back(Correspondences[27 + rxLabels[m] - 0x1600]);
+        while(m < rxIndices.size()){
+            correspondences.push_back(Correspondences[27 + rxIndices[m] - 0x1600]);
             ++m;
         }
         m = 0;
-        while(m < txLabels.size()){
-            correspondences.push_back(Correspondences[31 + txLabels[m] - 0x1a00]);
+        while(m < txIndices.size()){
+            correspondences.push_back(Correspondences[31 + txIndices[m] - 0x1a00]);
             ++m;
         }
         correspondences.push_back(Correspondences[35]);
         j = 0;
         while(j < correspondences.size()){
             do{
-                transfer(alias, period, maxCurrent[canopenAliases[i] - 1], correspondences[j].rx);
+                transfer(alias, period, txIndices.size(), maxCurrent[canopenAliases[i] - 1], correspondences[j].rx);
                 checkMutex.lock();
                 checkSlaveIDs.clear();
                 if(correspondences[j].tx.functionCode != 0x000){
@@ -663,7 +663,7 @@ int CAN::canopenConfig(){
         ++i;
     }
     /* while(true){
-        transfer(0, period, 0, Correspondence0.rx);
+        transfer(0, period, 1, 1000, Correspondence0.rx);
         usleep(period / 1000);
         int i = 0;
         while(i < canopenAliases.size()){
@@ -673,7 +673,7 @@ int CAN::canopenConfig(){
                 if(tryCount > 4){
                     break;
                 }
-                transfer(canopenAliases[i], period, maxCurrent[canopenAliases[i] - 1], Correspondence_.rx);
+                transfer(canopenAliases[i], period, 1, maxCurrent[canopenAliases[i] - 1], Correspondence_.rx);
                 checkMutex.lock();
                 checkData = Correspondence_.tx;
                 checkSlaveIDs.clear();
@@ -690,7 +690,7 @@ int CAN::canopenConfig(){
         }
         break;
     } */
-    transfer(0, period, 0, Correspondence0.rx);
+    transfer(0, period, 1, 1000, Correspondence0.rx);
     i = 0;
     while(i < canopenAliases.size()){
         int alias = canopenAliases[i], slaveID = alias2slaveID.find(alias)->second;
@@ -701,9 +701,9 @@ int CAN::canopenConfig(){
         while(j < masterIDs.size()){
             if(orderMasterID2slaveID[order][masterIDs[j]] == slaveID){
                 if(subType == "Eyou"){
-                    txFuncs[order][masterIDs[j]] = canopenTX<CAN>;
+                    txFuncs[order][masterIDs[j]] = canopenEyouTX<CAN>;
                 }else if(subType == "Elmo"){
-                    txFuncs[order][masterIDs[j]] = canopenTX_<CAN>;
+                    txFuncs[order][masterIDs[j]] = canopenElmoTX<CAN>;
                 }else{
                     printf("invalid CANopen driver subType %s\n", subType.c_str());
                     return -1;
@@ -711,7 +711,14 @@ int CAN::canopenConfig(){
             }
             ++j;
         }
-        rxFuncs[order][slaveID] = canopenRX<CAN>;
+        if(subType == "Eyou"){
+            rxFuncs[order][slaveID] = canopenEyouRX<CAN>;
+        }else if(subType == "Elmo"){
+            rxFuncs[order][slaveID] = canopenElmoRX<CAN>;
+        }else{
+            printf("invalid CANopen driver subType %s\n", subType.c_str());
+            return -1;
+        }
         ++i;
     }
     return 0;
