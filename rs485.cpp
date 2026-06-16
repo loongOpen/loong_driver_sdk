@@ -199,6 +199,34 @@ void dhTX(modbus_t* const ctx, int const alias){
     }
 }
 
+void agibotRX(modbus_t* const ctx, int const alias){
+    unsigned short data[6] = {0x0000, 0x007f, 0x007f, 0x007f, 0x007f, 0x0001};
+    if(alias == 200){
+        data[0] = digits[0].rx.previous()->TargetPosition;
+    }else{
+        data[0] = digits[dofLeftEffector].rx.previous()->TargetPosition;
+    }
+    data[0] = (90 - data[0]) * 255 / 90;
+    modbus_set_slave(ctx, alias);
+    if(modbus_write_registers(ctx, 10, 6, data) != 6){
+        return;
+    }
+}
+
+void agibotTX(modbus_t* const ctx, int const alias){
+    unsigned char data[2] = {0, 0};
+    modbus_set_slave(ctx, alias);
+    if(modbus_read_registers(ctx, 22, 1, (unsigned short*)data) != 1){
+        return;
+    }
+    data[0] = (255 - data[0]) * 90 / 255;
+    if(alias == 200){
+        digits[0].tx.next()->ActualPosition = data[0];
+    }else{
+        digits[dofLeftEffector].tx.next()->ActualPosition = data[0];
+    }
+}
+
 unsigned int const TargetPosRegs[] = {0x05d8, 0x05d6, 0x05d4, 0x05d2, 0x05d0, 0x05ce};
 
 void inspireRX(modbus_t* const ctx, int const alias){
@@ -505,6 +533,9 @@ int RS485::config(){
             leftTX = dhTX;
             modbus_set_slave(ctx, 200);
             modbus_write_register(ctx, 0x0100, 0x0001);
+        }else if(type == "AGIBOT"){
+            leftRX = agibotRX;
+            leftTX = agibotTX;
         }else if(type == "Inspire"){
             leftRX = inspireRX;
             leftTX = inspireTX;
@@ -555,6 +586,9 @@ int RS485::config(){
             rightTX = dhTX;
             modbus_set_slave(ctx, 201);
             modbus_write_register(ctx, 0x0100, 0x0001);
+        }else if(type == "AGIBOT"){
+            rightRX = agibotRX;
+            rightTX = agibotTX;
         }else if(type == "Inspire"){
             rightRX = inspireRX;
             rightTX = inspireTX;

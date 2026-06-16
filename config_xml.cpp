@@ -222,6 +222,7 @@ std::string ConfigXML::typeCategory(char const* bus, char const* type){
         }
         categoryElement = categoryElement->NextSiblingElement("Category");
     }
+    printf("the category is not specified of device type %s\n", type);
     return "";
 }
 
@@ -237,6 +238,7 @@ std::string ConfigXML::typeAttribute(char const* bus, char const* type, char con
         }
         categoryElement = categoryElement->NextSiblingElement("Category");
     }
+    printf("the attribute %s is not found of device type %s\n", name, type);
     return "";
 }
 
