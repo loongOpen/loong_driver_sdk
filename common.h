@@ -131,6 +131,27 @@ public:
     ~MotorParameters();
 };
 
+struct IMURXData{
+    int ControlCode;
+};
+
+struct IMUTXData{
+    float rpy[3];
+    float gyr[3];
+    float acc[3];
+};
+
+class IMUParameters{
+public:
+    IMUParameters();
+#ifndef NIIC
+    int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
+#else
+    int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
+#endif
+    ~IMUParameters();
+};
+
 struct DigitRXData{
     unsigned short TargetPosition;
 };
@@ -335,7 +356,7 @@ public:
 #endif
     Parameters parameters;
     WrapperPair(){
-        busCode = -1;   // 0: ECAT; 1: CAN; 2: CANopen; 3: CANEmu; 4: RS-485
+        busCode = -1;   // 0: ECAT; 1: CAN; 2: CANopen; 3: CANEmu; 4: RS-485; 5: RS-232
         order = -1;
         domain = -1;
         slave = -1;

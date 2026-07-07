@@ -18,10 +18,11 @@
 #pragma once
 
 #include "common.h"
+#include <map>
 
 namespace DriverSDK{
 using imuValidationFunction = bool (*)(unsigned char const*);
-using imuParsingFunction = float (*)(SwapList const*);
+using imuParsingFunction = void (*)(SwapList const*, int const);
 
 struct ChainNode{
     int nr;
@@ -30,15 +31,17 @@ struct ChainNode{
 
 class RS232{
 public:
-    char* device;
-    int fd, baudrate, frameLength;
+    int order, baudrate, fd, frameLength;
+    std::map<int, std::string> alias2type;
+    char* device, * type;
     unsigned char header0, header1;
-    std::atomic<ChainNode*> ptr;
-    SwapList* txSwap;
+    SwapList* rxSwap, * txSwap, * txSwap_;
     pthread_t pth;
     imuValidationFunction valid;
-    imuParsingFunction rpy[3], gyr[3], acc[3];
+    imuParsingFunction parse;
+    RS232(int const order, char const* device);
     RS232(char const* device, int const baudrate, char const* type);
+    int config();
     static void cleanup(void* arg);
     static void* recv(void* arg);
     int run();

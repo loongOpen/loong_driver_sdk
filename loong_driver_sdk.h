@@ -83,6 +83,7 @@ public:
     void setMaxCurr(std::vector<unsigned short> const& maxCurr);
     int setMode(std::vector<char> const& mode);
     void init(char const* xmlFile);
+    int getIMUNr();
     int getLeftDigitNr();
     int getRightDigitNr();
     int getTotalMotorNr();
@@ -90,6 +91,7 @@ public:
     int setCntBias(std::vector<int> const& cntBias);
     int fillSDO(motorSDOClass& data, char const* object);
     void getIMU(imuStruct& data);
+    int getIMU(std::vector<imuStruct>& data);
     int getSensor(std::vector<sensorStruct>& data);
     int setDigitTarget(std::vector<digitTargetStruct> const& data);
     int getDigitActual(std::vector<digitActualStruct>& data);

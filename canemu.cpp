@@ -45,7 +45,6 @@ int CANEmu::alias2channel[256];
 CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
     static bool initialized = false;
     if(!initialized){
-        type2parameters.clear();
         alias2status = new unsigned short[dofAll + 1];
         alias2parameters = new DriverParameters*[dofAll + 1];
         int i = 0, j;
@@ -257,19 +256,17 @@ int CANEmu::run(std::vector<CANEmu>& canemus){
 
 CANEmu::~CANEmu(){
     std::lock_guard<std::mutex> guard(resourceMutex);
+    auto itr = type2parameters.begin();
+    while(itr != type2parameters.end()){
+        delete itr->second;
+        ++itr;
+    }
+    type2parameters.clear();
     if(alias2status != nullptr){
         delete[] alias2status;
         alias2status = nullptr;
     }
     if(alias2parameters != nullptr){
-        int i = 1;
-        while(i <= dofAll){
-            if(alias2parameters[i] != nullptr){
-                delete alias2parameters[i];
-                alias2parameters[i] = nullptr;
-            }
-            ++i;
-        }
         delete[] alias2parameters;
         alias2parameters = nullptr;
     }

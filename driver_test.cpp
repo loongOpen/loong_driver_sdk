@@ -50,8 +50,8 @@ int main(int argc, char** argv){
     driverSDK.setMode(mode);
     driverSDK.init("configuration.xml");
     std::vector<int> activeMotors = driverSDK.getActiveMotors();
-    int i = 0, j = 0, motorNr = driverSDK.getTotalMotorNr(), digitNr = driverSDK.getLeftDigitNr() + driverSDK.getRightDigitNr();
-    printf("digitNr %d\nmotorNr %ld/%d:\t", digitNr, activeMotors.size(), motorNr);
+    int i = 0, j = 0, motorNr = driverSDK.getTotalMotorNr(), digitNr = driverSDK.getLeftDigitNr() + driverSDK.getRightDigitNr(), imuNr = driverSDK.getIMUNr();
+    printf("imuNr %d\ndigitNr %d\nmotorNr %ld/%d:\t", imuNr, digitNr, activeMotors.size(), motorNr);
     while(i < activeMotors.size()){
         printf("%d ", activeMotors[i] + 1);
         ++i;
@@ -68,7 +68,12 @@ int main(int argc, char** argv){
         driverSDK.fillSDO(sdoData[i], "ActualPosition");
         ++i;
     }
-    DriverSDK::imuStruct imuData;
+    std::vector<DriverSDK::imuStruct> imuData;
+    i = 0;
+    while(i < imuNr){
+        imuData.push_back(DriverSDK::imuStruct{});
+        ++i;
+    }
     std::vector<DriverSDK::digitTargetStruct> digitTargetData;
     std::vector<DriverSDK::digitActualStruct> digitActualData;
     i = 0;
@@ -106,7 +111,11 @@ int main(int argc, char** argv){
         driverSDK.advance();
         usleep(4000);
         driverSDK.getIMU(imuData);
-        printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
+        j = 0;
+        while(j < imuNr){
+            printf("imu%02d:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", j + 1, imuData[j].rpy[0], imuData[j].rpy[1], imuData[j].rpy[2], imuData[j].gyr[0], imuData[j].gyr[1], imuData[j].gyr[2], imuData[j].acc[0], imuData[j].acc[1], imuData[j].acc[2]);
+            ++j;
+        }
         driverSDK.getSensor(sensorData);
         j = 0;
         while(j < 2){
@@ -135,7 +144,11 @@ int main(int argc, char** argv){
     while(count > 0){
         while(i < 3200){
             driverSDK.getIMU(imuData);
-            printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
+            j = 0;
+            while(j < imuNr){
+                printf("imu%02d:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", j + 1, imuData[j].rpy[0], imuData[j].rpy[1], imuData[j].rpy[2], imuData[j].gyr[0], imuData[j].gyr[1], imuData[j].gyr[2], imuData[j].acc[0], imuData[j].acc[1], imuData[j].acc[2]);
+                ++j;
+            }
             driverSDK.getSensor(sensorData);
             j = 0;
             while(j < 2){
@@ -158,7 +171,11 @@ int main(int argc, char** argv){
         usleep(4000);
         while(i > 0){
             driverSDK.getIMU(imuData);
-            printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
+            j = 0;
+            while(j < imuNr){
+                printf("imu%02d:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", j + 1, imuData[j].rpy[0], imuData[j].rpy[1], imuData[j].rpy[2], imuData[j].gyr[0], imuData[j].gyr[1], imuData[j].gyr[2], imuData[j].acc[0], imuData[j].acc[1], imuData[j].acc[2]);
+                ++j;
+            }
             driverSDK.getSensor(sensorData);
             j = 0;
             while(j < 2){
@@ -188,7 +205,11 @@ int main(int argc, char** argv){
     i = 0;
     while(i < 1600){
         driverSDK.getIMU(imuData);
-        printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
+        j = 0;
+        while(j < imuNr){
+            printf("imu%02d:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", j + 1, imuData[j].rpy[0], imuData[j].rpy[1], imuData[j].rpy[2], imuData[j].gyr[0], imuData[j].gyr[1], imuData[j].gyr[2], imuData[j].acc[0], imuData[j].acc[1], imuData[j].acc[2]);
+            ++j;
+        }
         driverSDK.getSensor(sensorData);
         j = 0;
         while(j < 2){
@@ -209,7 +230,11 @@ int main(int argc, char** argv){
     i = 0;
     while(i < 3200){
         driverSDK.getIMU(imuData);
-        printf("imu:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", imuData.rpy[0], imuData.rpy[1], imuData.rpy[2], imuData.gyr[0], imuData.gyr[1], imuData.gyr[2], imuData.acc[0], imuData.acc[1], imuData.acc[2]);
+        j = 0;
+        while(j < imuNr){
+            printf("imu%02d:\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", j + 1, imuData[j].rpy[0], imuData[j].rpy[1], imuData[j].rpy[2], imuData[j].gyr[0], imuData[j].gyr[1], imuData[j].gyr[2], imuData[j].acc[0], imuData[j].acc[1], imuData[j].acc[2]);
+            ++j;
+        }
         driverSDK.getSensor(sensorData);
         j = 0;
         while(j < 2){

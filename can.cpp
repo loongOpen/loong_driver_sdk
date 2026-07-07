@@ -27,7 +27,7 @@ extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> canAlias2type;
 extern std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs;
 extern std::vector<std::map<int, int>> canAlias2slaveID;
-extern int dofEffector;
+extern int dofEffector, imuCount;
 extern std::vector<unsigned short> processorsCAN;
 extern std::vector<unsigned short> maxCurrent;
 
@@ -59,7 +59,6 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         adjustCPU(&rxCPU,  processorsCAN[0]);
         adjustCPU(&txCPU,  processorsCAN[1]);
         adjustCPU(&txCPU_, processorsCAN[2]);
-        type2parameters.clear();
         alias2status = new unsigned short[dofAll + 1];
         alias2parameters = new DriverParameters*[dofAll + 1];
         int i = 0, j;
@@ -106,8 +105,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         }
         initialized = true;
     }
-    rxSwap = txSwap = rxSwap_ = txSwap_ = nullptr;
-    MASK = mask = MASK_ = mask_ = 0;
+    rxSwap = txSwap = rxSwap_ = txSwap_ = rxSwap__ = txSwap__ = nullptr;
+    MASK = mask = MASK_ = mask_ = MASK__ = mask__ = 0;
     rollingCounter = 0xff;
     alias2type = canAlias2type[order];
     alias2masterIDs = canAlias2masterIDs[order];
@@ -139,6 +138,7 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         int i = 0;
         while(i < masterIDs.size()){
             printf(" %d", masterIDs[i]);
+            masterIDs[i] &= 0x7ff;
             orderMasterID2slaveID[order][masterIDs[i]] = slaveID;
             if(txFuncs[order][masterIDs[i]] != nullTXCAN){
                 printf("\ninvalid can bus configuration\n");
@@ -156,6 +156,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
                 txFuncs[order][masterIDs[i]] = agibotTX<CAN>;
             }else if(type == "LinkerBot"){
                 txFuncs[order][masterIDs[i]] = linkerBotTX<CAN>;
+            }else if(type == "YESENSE"){
+                txFuncs[order][masterIDs[i]] = yesenseTX<CAN>;
             }
             ++i;
         }
@@ -178,6 +180,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
             rxFuncs[order][slaveID] = agibotRX<CAN>;
         }else if(type == "LinkerBot"){
             rxFuncs[order][slaveID] = linkerBotRX<CAN>;
+        }else if(type == "YESENSE"){
+            rxFuncs[order][slaveID] = yesenseRX<CAN>;
         }
         ++itr;
     }
@@ -208,10 +212,12 @@ int CAN::config(){
             }
         }
     }
-    rxSwap  = new SwapList(dofAll      * sizeof(DriverRXData));
-    txSwap  = new SwapList(dofAll      * sizeof(DriverTXData));
-    rxSwap_ = new SwapList(dofEffector * sizeof( DigitRXData));
-    txSwap_ = new SwapList(dofEffector * sizeof( DigitTXData));
+    rxSwap   = new SwapList(dofAll      * sizeof(DriverRXData));
+    txSwap   = new SwapList(dofAll      * sizeof(DriverTXData));
+    rxSwap_  = new SwapList(dofEffector * sizeof( DigitRXData));
+    txSwap_  = new SwapList(dofEffector * sizeof( DigitTXData));
+    rxSwap__ = new SwapList(imuCount    * sizeof(   IMURXData));
+    txSwap__ = new SwapList(imuCount    * sizeof(   IMUTXData));
     int k = 0;
     auto itr = alias2slaveID.begin();
     while(itr != alias2slaveID.end()){
@@ -276,6 +282,25 @@ int CAN::config(){
                 ++i;
             }
             MASK_ |= 1 << slaveID % 32;
+        }else if(category == "imu"){
+            int index = alias - 240;
+            if(index < 0 || index > 15){
+                printf("\tinvalid imu alias %d\n", alias);
+                return -1;
+            }
+#ifndef NIIC
+            if(imus[index].init("CAN", 1, order, 0, slaveID, alias, type, index * sizeof(IMURXData), index * sizeof(IMUTXData), nullptr, nullptr) != 0){
+#else
+            if(imus[index].init("CAN", 1, order, 0, slaveID, alias, type, index * sizeof(IMURXData), index * sizeof(IMUTXData)) != 0){
+#endif
+                printf("\timus[%d] init failed\n", index);
+                return -1;
+            }
+            if(imus[index].config("CAN", order, 0, rxSwap__, txSwap__) != 0){
+                printf("\timus[%d] config failed\n", index);
+                return -1;
+            }
+            MASK__ |= 1 << slaveID % 32;
         }
         ++itr;
     }
@@ -424,6 +449,7 @@ void* CAN::tx(void* arg){
                 ++i;
                 continue;
             }
+            masterID &= 0x7ff;
             txFuncs[order][masterID](masterID, data, length, &cans[order]);
             ++i;
         }
@@ -466,6 +492,7 @@ void* CAN::tx__(void* arg){
                 ++i;
                 continue;
             }
+            masterID &= 0x7ff;
             txFuncs[can.order][masterID](masterID, frames[i].data, length, &can);
             ++i;
         }
@@ -836,19 +863,17 @@ CAN::~CAN(){
         pthread_cancel(txPth_);
         txPth_ = 0;
     }
+    auto itr = type2parameters.begin();
+    while(itr != type2parameters.end()){
+        delete itr->second;
+        ++itr;
+    }
+    type2parameters.clear();
     if(alias2status != nullptr){
         delete[] alias2status;
         alias2status = nullptr;
     }
     if(alias2parameters != nullptr){
-        int i = 1;
-        while(i <= dofAll){
-            if(alias2parameters[i] != nullptr){
-                delete alias2parameters[i];
-                alias2parameters[i] = nullptr;
-            }
-            ++i;
-        }
         delete[] alias2parameters;
         alias2parameters = nullptr;
     }
@@ -871,6 +896,14 @@ CAN::~CAN(){
     if(txSwap_ != nullptr){
         delete txSwap_;
         txSwap_ = nullptr;
+    }
+    if(rxSwap__ != nullptr){
+        delete rxSwap__;
+        rxSwap__ = nullptr;
+    }
+    if(txSwap__ != nullptr){
+        delete txSwap__;
+        txSwap__ = nullptr;
     }
 }
 }

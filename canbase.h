@@ -34,6 +34,7 @@ using canEmuTXFunction = void (*)(int const, unsigned char* const, int const, CA
 extern int dofAll, dofLeftEffector;
 extern WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
 extern WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
+extern WrapperPair<IMURXData, IMUTXData, IMUParameters>* imus;
 
 struct CANopenData{
     int functionCode, rtr, length;
@@ -225,8 +226,8 @@ int encosRX(int const order, int const alias, int* const slaveID, unsigned char*
     if((T::alias2status[alias] & 0x007f) != 0x0007){
          p = float2para(0.0, parameters->minP,  parameters->maxP,  16);
          v = float2para(0.0, parameters->minV,  parameters->maxV,  12);
-        kp = float2para(0.0, parameters->minKp, parameters->maxKp, 12);
-        kd = float2para(0.0, parameters->minKd, parameters->maxKd,  9);
+        kp = 1;
+        kd = 1;
          t = float2para(0.0, parameters->minT,  parameters->maxT,  12);
     }else{
          p = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetPosition, parameters->minP,  parameters->maxP,  16);
@@ -280,7 +281,7 @@ void encosTX(int const masterID, unsigned char* const data, int const length, T*
     struct timeval tv;
     gettimeofday(&tv, nullptr);
     long current = TIMEVAL2US(tv);
-    static long previous[8] = {current, current, current, current, current, current, current, current};
+    static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
         if((T::alias2status[alias] & 0x007f) == 0x0000){
@@ -415,7 +416,7 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
     struct timeval tv;
     gettimeofday(&tv, nullptr);
     long current = TIMEVAL2US(tv);
-    static long previous[8] = {current, current, current, current, current, current, current, current};
+    static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
         if((T::alias2status[alias] & 0x007f & ~(0x0001 ^ 0x0007)) == 0x0000){
@@ -522,7 +523,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
     }
     unsigned char* const data_ = data + 64;
     int length = std::numeric_limits<int>::min(), index = (*slaveID - 1) * 8;
-    static bool enabled[8] = {false, false, false, false, false, false, false, false};
+    static bool enabled[10] = {false, false, false, false, false, false, false, false, false, false};
     if(*slaveID == 1){
         enabled[order] = true;
     }
@@ -624,7 +625,7 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
     struct timeval tv;
     gettimeofday(&tv, nullptr);
     long current = TIMEVAL2US(tv);
-    static long previous[8] = {current, current, current, current, current, current, current, current};
+    static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
         can->txSwap->advanceNodePtr();
@@ -734,7 +735,7 @@ void canopenEyouTX(int const masterID, unsigned char* const data, int const leng
         struct timeval tv;
         gettimeofday(&tv, nullptr);
         long current = TIMEVAL2US(tv);
-        static long previous[8] = {current, current, current, current, current, current, current, current};
+        static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
         can->mask |= 1 << slaveID;
         if(can->mask == can->MASK){
             can->txSwap->advanceNodePtr();
@@ -800,7 +801,7 @@ void canopenElmoTX(int const masterID, unsigned char* const data, int const leng
         struct timeval tv;
         gettimeofday(&tv, nullptr);
         long current = TIMEVAL2US(tv);
-        static long previous[8] = {current, current, current, current, current, current, current, current};
+        static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
         can->mask |= 1 << slaveID;
         if(can->mask == can->MASK){
             can->txSwap->advanceNodePtr();
@@ -850,7 +851,7 @@ void canopenElmoTX(int const masterID, unsigned char* const data, int const leng
     struct timeval tv;
     gettimeofday(&tv, nullptr);
     long current = TIMEVAL2US(tv);
-    static long previous[8] = {current, current, current, current, current, current, current, current};
+    static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
         can->txSwap->advanceNodePtr();
@@ -938,6 +939,44 @@ void linkerBotTX(int const masterID, unsigned char* const data, int const length
     }
 }
 
+template<typename T>
+int yesenseRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
+    return std::numeric_limits<int>::min();
+}
+
+template<typename T>
+void yesenseTX(int const masterID, unsigned char* const data, int const length, T* const can){
+    int const slaveID = T::orderMasterID2slaveID[can->order][masterID], alias = T::orderSlaveID2alias[can->order][slaveID];
+    if(masterID > 0x500){
+        if(length != 6){
+            return;
+        }
+        imus[alias - 240].tx.next()->acc[0] =   *((unsigned short*)data + 1) * 0.01 - 320.0;
+        imus[alias - 240].tx.next()->acc[1] = -(*((unsigned short*)data + 0) * 0.01 - 320.0);
+        imus[alias - 240].tx.next()->acc[2] =   *((unsigned short*)data + 2) * 0.01 - 320.0;
+    }else if(masterID > 0x200){
+        if(length != 8){
+            return;
+        }
+        imus[alias - 240].tx.next()->gyr[0] =  ((*(int*)(data + 2) >> 4 & 0x000fffff) * 0.0078125 - 4000.0) * Pi / 180.0;
+        imus[alias - 240].tx.next()->gyr[1] = -((*(int*)(data + 0) >> 0 & 0x000fffff) * 0.0078125 - 4000.0) * Pi / 180.0;
+        imus[alias - 240].tx.next()->gyr[2] =  ((*(int*)(data + 5) >> 0 & 0x000fffff) * 0.0078125 - 4000.0) * Pi / 180.0;
+    }else if(masterID > 0x100){
+        if(length != 6){
+            return;
+        }
+        imus[alias - 240].tx.next()->rpy[0] =  (*((unsigned short*)data + 0) * 0.0078125 - 250.0) * Pi / 180.0;
+        imus[alias - 240].tx.next()->rpy[1] = -(*((unsigned short*)data + 1) * 0.0078125 - 250.0) * Pi / 180.0;
+        imus[alias - 240].tx.next()->rpy[2] =  (*((unsigned short*)data + 2) * 0.0078125 - 250.0) * Pi / 180.0;
+    }else{
+        can->mask__ |= 1 << slaveID % 32;
+        if(can->mask__ == can->MASK__){
+            can->txSwap__->advanceNodePtr();
+            can->mask__ = 0;
+        }
+    }
+}
+
 class CANBase{
 public:
     int order, canhal, autoRestart, baudrate, canfd, dbaudrate, division, sock, slaveCount;
@@ -966,7 +1005,7 @@ public:
     std::map<int, std::string> alias2type;
     std::map<int, std::vector<int>> alias2masterIDs;
     std::map<int, int> alias2slaveID;
-    SwapList* rxSwap, * txSwap, * rxSwap_, * txSwap_;
+    SwapList* rxSwap, * txSwap, * rxSwap_, * txSwap_, * rxSwap__, * txSwap__;
     static pthread_t rxPth, txPth, txPth_;
     static int rxCPU, txCPU, txCPU_;
     static std::map<std::string, DriverParameters*> type2parameters;
@@ -976,7 +1015,7 @@ public:
     static int orderMasterID2slaveID[8][2048];
     static canRXFunction rxFuncs[8][256];
     static canTXFunction txFuncs[8][2048];
-    unsigned int MASK, mask, MASK_, mask_;
+    unsigned int MASK, mask, MASK_, mask_, MASK__, mask__;
     unsigned char rollingCounter;
     CAN(int const order, char const* device);
     int config();

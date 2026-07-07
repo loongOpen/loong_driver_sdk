@@ -50,8 +50,7 @@ float kunweiTech(int const value){
 
 ECAT::ECAT(int const order){
     domainSizes = nullptr;
-    rxPDOSwaps = nullptr;
-    txPDOSwaps = nullptr;
+    rxPDOSwaps = txPDOSwaps = nullptr;
     sdoMsg = nullptr;
     regMsg = nullptr;
     sdoRequestable = false;

@@ -46,7 +46,7 @@ extern WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
 extern WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
 extern WrapperPair<ConverterRXData, ConverterTXData, EffectorParameters> converters[2];
 extern WrapperPair<SensorRXData, SensorTXData, SensorParameters> sensors[2];
-extern WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters> transferrers[8];
+extern WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters> transferrers[10];
 extern std::vector<unsigned short> processorsECAT;
 extern std::vector<unsigned short> maxCurrent;
 extern std::atomic<int> ecatStalled;
@@ -70,8 +70,7 @@ ECAT::ECAT(int const order){
     domains = nullptr;
     domainPtrs = nullptr;
     domainSizes = nullptr;
-    rxPDOSwaps = nullptr;
-    txPDOSwaps = nullptr;
+    rxPDOSwaps = txPDOSwaps = nullptr;
     sdoRequestable = false;
     regRequestable = false;
     master = nullptr;
@@ -762,7 +761,7 @@ int ECAT::config(){
             ++j;
         }
         j = 0;
-        while(j < 8){
+        while(j < 10){
             switch(transferrers[j].config("ECAT", order, i, rxPDOSwaps[i], txPDOSwaps[i])){
             case 2:
                 break;
@@ -1022,7 +1021,7 @@ void* ECAT::rxtx(void* arg){
                     ++j;
                 }
                 j = 0;
-                while(j < 8){
+                while(j < 10){
                     if(transferrers[j].order != ecat->order || transferrers[j].domain != i){
                         ++j;
                         continue;

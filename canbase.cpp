@@ -331,7 +331,6 @@ int CANBase::open(int const masterID){
 }
 
 int CANBase::send(int const slaveID, unsigned char const* data, int const rtr, int const length){
-    int ret;
     struct can_frame frame;
     if(length > sizeof(frame.data)){
         printf("send: cans[%d] send data length cannot be greater than %ld\n", order, sizeof(frame.data));
@@ -343,8 +342,8 @@ int CANBase::send(int const slaveID, unsigned char const* data, int const rtr, i
     }
     frame.can_dlc = length;
     memcpy(frame.data, data, length);
-    static unsigned int count[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    ret = write(sock, &frame, sizeof(frame));
+    static unsigned int count[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int ret = write(sock, &frame, sizeof(frame));
     if(ret != sizeof(frame)){
         ++count[order];
         if(count[order] % (2 * slaveCount) == 0){
@@ -361,15 +360,14 @@ int CANBase::send(int const slaveID, unsigned char const* data, int const rtr, i
 }
 
 int CANBase::recv(unsigned char* const data, int const length, int* const masterID){
-    int ret;
     struct can_frame frame;
-    ret = read(sock, &frame, sizeof(frame));
+    int ret = read(sock, &frame, sizeof(frame));
     if(ret < 1){
         printf("recv: cans[%d] read() ret = %d\n", order, ret);
         return ret;
     }
     if(masterID != nullptr){
-        *masterID = frame.can_id;
+        *masterID = frame.can_id & CAN_EFF_MASK;
     }
     if(length < frame.can_dlc){
         printf("recv: cans[%d] recv data buffer is too small\n", order);
@@ -382,7 +380,6 @@ int CANBase::recv(unsigned char* const data, int const length, int* const master
 }
 
 int CANBase::sendfd(int const slaveID, unsigned char const* data, int const rtr, int const length){
-    int ret;
     struct canfd_frame frame;
     if(length > sizeof(frame.data)){
         printf("sendfd: cans[%d] send data length cannot be greater than %ld\n", order, sizeof(frame.data));
@@ -404,8 +401,8 @@ int CANBase::sendfd(int const slaveID, unsigned char const* data, int const rtr,
         }
     }
     memcpy(frame.data, data, length);
-    static unsigned int count[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    ret = write(sock, &frame, sizeof(frame));
+    static unsigned int count[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int ret = write(sock, &frame, sizeof(frame));
     if(ret != sizeof(frame)){
         ++count[order];
         if(count[order] % (2 * slaveCount) == 0){
@@ -422,15 +419,14 @@ int CANBase::sendfd(int const slaveID, unsigned char const* data, int const rtr,
 }
 
 int CANBase::recvfd(unsigned char* const data, int const length, int* const masterID){
-    int ret;
     struct canfd_frame frame;
-    ret = read(sock, &frame, sizeof(frame));
+    int ret = read(sock, &frame, sizeof(frame));
     if(ret < 1){
         printf("recvfd: cans[%d] read() ret = %d\n", order, ret);
         return ret;
     }
     if(masterID != nullptr){
-        *masterID = frame.can_id;
+        *masterID = frame.can_id & CAN_EFF_MASK;
     }
     if(length < frame.len){
         printf("recvfd: cans[%d] recv data buffer is too small\n", order);

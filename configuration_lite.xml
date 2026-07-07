@@ -597,6 +597,8 @@
         </Device>
     </Devices>
     <Categories>
+        <Category name="imu">
+        </Category>
         <Category name="battery">
         </Category>
         <Category name="driver">
@@ -948,6 +950,9 @@
         </Device>
     </Devices>
     <Categories>
+        <Category name="imu">
+            <Type>YESENSE</Type>
+        </Category>
         <Category name="battery">
         </Category>
         <Category name="driver">
@@ -982,7 +987,7 @@
         <Master order="2" device="can2" canhal="false" auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
         <Master order="3" device="can3" canhal="false" auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
         <Master order="4" device="can4" canhal="false" auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
-        <Master order="5" device="can5" canhal="false" auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
+        <Master order="5" device="can5" canhal="false" auto_restart="false" baudrate="500000"  canfd="false" dbaudrate="5000000" division="1"/>
     </Masters>
     <!--<Masters period="2000000" rx_cpu="-1" tx_cpu="-1" tx_cpu_="-1">
         <Master order="4" device="can5_ins0ch4" canhal="true"  auto_restart="false" baudrate="1000000" canfd="false" dbaudrate="5000000" division="1"/>
@@ -1066,6 +1071,8 @@
         <Slave master="4" master_ids="21"                slave_id="5"  alias="31"  type="Damiao DM-J4310-2EC"      >0</Slave>
         <Slave master="4" master_ids="388 900 1412 1796" slave_id="4"  alias="30"  type="CANopen Eyou"             >0</Slave><!-- master_ids="384+slave_id 896+slave_id 1408+slave_id 1792+slave_id" -->
         <Slave master="4" master_ids="389 901 1413 1797" slave_id="5"  alias="31"  type="CANopen Eyou"             >0</Slave>
+        <!-- IMU -->
+        <Slave master="5" master_ids="217066841 217066073 217065817 217067609" slave_id="89" alias="242" type="YESENSE">0</Slave><!-- master_ids="217066752+slave_id 217065984+slave_id 217065728+slave_id" 217067520+slave_id -->
     </Slaves>
 </CAN>
 <RS485Emu>
@@ -1084,8 +1091,10 @@
         <Slave master="1" alias="201" type="Inspire_"    >0</Slave>
     </Slaves>
 </RS485Emu>
-<RS485>
+<RS485><!-- Modbus -->
     <Categories>
+        <Category name="imu">
+        </Category>
         <Category name="battery">
         </Category>
         <Category name="driver">
@@ -1122,6 +1131,34 @@
         <Slave master="1" alias="201" type="Inspire_"    >0</Slave>
     </Slaves>
 </RS485>
+<RS232><!-- TTY -->
+    <Categories>
+        <Category name="imu">
+            <Type>Xsens</Type>
+            <Type>HiPNUC</Type>
+            <Type>Forsense</Type>
+            <Type>YESENSE</Type>
+            <Type>YESENSE_</Type>
+            <Type>Lins-Tech</Type>
+        </Category>
+        <Category name="battery">
+        </Category>
+        <Category name="driver">
+        </Category>
+        <Category name="effector">
+        </Category>
+        <Category name="sensor">
+        </Category>
+    </Categories>
+    <Masters>
+        <Master order="0" device="/dev/ttyUSB0" baudrate="460800"/>
+        <Master order="1" device="/dev/ttyUSB1" baudrate="115200"/>
+    </Masters>
+    <Slaves>
+        <Slave master="0" alias="240" type="Forsense">1</Slave>
+        <Slave master="1" alias="241" type="HiPNUC"  >0</Slave>
+    </Slaves>
+</RS232>
 <Motors>
     <!-- Left Leg -->
     <Motor limb="0" motor="0" alias="1">
@@ -1592,5 +1629,5 @@
         <MaximumPosition>0.69813172</MaximumPosition>
     </Motor><!-- CANopen Eyou -->
 </Motors>
-<IMU device="/dev/ttyUSB0" baudrate="460800" type="Forsense"/><!-- type="Xsens/HiPNUC/Forsense/YESENSE/YESENSE_/Lins-Tech" -->
+<!--<IMU device="/dev/ttyUSB0" baudrate="460800" type="Forsense"/>--><!-- type="Xsens/HiPNUC/Forsense/YESENSE/YESENSE_/Lins-Tech" -->
 </Config>

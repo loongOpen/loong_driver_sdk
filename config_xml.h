@@ -50,8 +50,8 @@ public:
     std::vector<std::vector<std::string>> pdos(tinyxml2::XMLElement* const deviceElement, char const* rxtx);
     std::vector<std::string> entry(tinyxml2::XMLElement* const deviceElement, char const* object);
     std::vector<std::map<int, std::string>> alias2type(char const* bus, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>>* const aliases2domainType, bool emu = false);
-    std::vector<std::map<int, int>> alias2attribute(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domainType);
-    std::vector<std::map<int, std::vector<int>>> alias2attribute_(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domainType);
+    std::vector<std::map<int, int>> alias2attribute(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domainType = nullptr);
+    std::vector<std::map<int, std::vector<int>>> alias2attribute_(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domainType = nullptr);
     tinyxml2::XMLError save();
     ~ConfigXML();
 };

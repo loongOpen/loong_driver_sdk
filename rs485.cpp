@@ -400,8 +400,7 @@ void humanoidShanghaiTX(modbus_t* const ctx, int const alias){
 
 RS485::RS485(int const order, char const* deviceR, char const* deviceS){
     device = nullptr;
-    rxSwap = nullptr;
-    txSwap = nullptr;
+    rxSwap = txSwap = nullptr;
     ctx = nullptr;
     fdR = -1;
     fdS = -1;
@@ -427,10 +426,8 @@ RS485::RS485(int const order, char const* deviceR, char const* deviceS){
 }
 
 RS485::RS485(int const order, char const* device){
-    deviceR = nullptr;
-    deviceS = nullptr;
-    rxSwap = nullptr;
-    txSwap = nullptr;
+    deviceR = deviceS = nullptr;
+    rxSwap = txSwap = nullptr;
     ctx = nullptr;
     fdR = -1;
     fdS = -1;

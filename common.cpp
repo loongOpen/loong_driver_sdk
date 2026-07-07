@@ -321,6 +321,20 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
 MotorParameters::~MotorParameters(){
 }
 
+IMUParameters::IMUParameters(){
+}
+
+#ifndef NIIC
+int IMUParameters::load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler){
+#else
+int IMUParameters::load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler){
+#endif
+    return 0;
+}
+
+IMUParameters::~IMUParameters(){
+}
+
 EffectorParameters::EffectorParameters(){
 }
 

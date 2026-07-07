@@ -15,9 +15,9 @@
  * Designed and built with love @zhihu by @cjrcl.
  */
 
+#include "config_xml.h"
 #include "rs232.h"
 #include <unistd.h>
-#include <string.h>
 #include <fcntl.h>
 #include <termios.h>
 #include <pthread.h>
@@ -26,6 +26,11 @@
 #endif
 
 namespace DriverSDK{
+extern ConfigXML* configXML;
+extern std::vector<std::map<int, std::string>> rs232alias2type;
+extern int imuCount;
+extern WrapperPair<IMURXData, IMUTXData, IMUParameters>* imus;
+
 bool validXsens(unsigned char const* buff){
     if(!((buff[ 4] == 0x20 && buff[ 5] == 0x10 && buff[ 6] == 0x10) ||
          (buff[ 4] == 0x20 && buff[ 5] == 0x30 && buff[ 6] == 0x0c))||
@@ -150,288 +155,176 @@ bool validLinstech(unsigned char const* buff){
     return sum == buff[40];
 }
 
-float rpy0xsens(SwapList const* txSwap){
-    return quadchar2float(txSwap->nodePtr.load()->memPtr +  7) * Pi / 180.0;
+void parseXsens(SwapList const* txSwap_, int const index){
+    imus[index].tx.next()->rpy[0] = quadchar2float(txSwap_->nodePtr.load()->memPtr +  7) * Pi / 180.0;
+    imus[index].tx.next()->rpy[1] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 11) * Pi / 180.0;
+    imus[index].tx.next()->rpy[2] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 15) * Pi / 180.0;
+    imus[index].tx.next()->gyr[0] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 37);
+    imus[index].tx.next()->gyr[1] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 41);
+    imus[index].tx.next()->gyr[2] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 45);
+    imus[index].tx.next()->acc[0] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 22);
+    imus[index].tx.next()->acc[1] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 26);
+    imus[index].tx.next()->acc[2] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 30);
 }
 
-float rpy1xsens(SwapList const* txSwap){
-    return quadchar2float(txSwap->nodePtr.load()->memPtr + 11) * Pi / 180.0;
+void parseHipnuc(SwapList const* txSwap_, int const index){
+    imus[index].tx.next()->rpy[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 58) * Pi / 180.0;
+    imus[index].tx.next()->rpy[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 54) * Pi / 180.0;
+    imus[index].tx.next()->rpy[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 62) * Pi / 180.0;
+    imus[index].tx.next()->gyr[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 30) * Pi / 180.0;
+    imus[index].tx.next()->gyr[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 34) * Pi / 180.0;
+    imus[index].tx.next()->gyr[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 38) * Pi / 180.0;
+    imus[index].tx.next()->acc[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 18) * 9.81;
+    imus[index].tx.next()->acc[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 22) * 9.81;
+    imus[index].tx.next()->acc[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 26) * 9.81;
 }
 
-float rpy2xsens(SwapList const* txSwap){
-    return quadchar2float(txSwap->nodePtr.load()->memPtr + 15) * Pi / 180.0;
+void parseForsense(SwapList const* txSwap_, int const index){
+    imus[index].tx.next()->rpy[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 14) * Pi / 180.0;
+    imus[index].tx.next()->rpy[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 10) * Pi / 180.0;
+    imus[index].tx.next()->rpy[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 18) * Pi / 180.0;
+    imus[index].tx.next()->gyr[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 34) * Pi / 180.0;
+    imus[index].tx.next()->gyr[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 38) * Pi / 180.0;
+    imus[index].tx.next()->gyr[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 42) * Pi / 180.0;
+    imus[index].tx.next()->acc[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 22) * 9.81;
+    imus[index].tx.next()->acc[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 26) * 9.81;
+    imus[index].tx.next()->acc[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 30) * 9.81;
 }
 
-float gyr0xsens(SwapList const* txSwap){
-    return quadchar2float(txSwap->nodePtr.load()->memPtr + 37);
+void parseYesense(SwapList const* txSwap_, int const index){
+    imus[index].tx.next()->rpy[0] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 39) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->rpy[1] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 35) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->rpy[2] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 43) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[0] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 21) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[1] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 25) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[2] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 29) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->acc[0] = quadchar2int_(txSwap_->nodePtr.load()->memPtr +  7) / 1000000.0;
+    imus[index].tx.next()->acc[1] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 11) / 1000000.0;
+    imus[index].tx.next()->acc[2] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 15) / 1000000.0;
 }
 
-float gyr1xsens(SwapList const* txSwap){
-    return quadchar2float(txSwap->nodePtr.load()->memPtr + 41);
+void parseLinstech(SwapList const* txSwap_, int const index){
+    imus[index].tx.next()->rpy[0] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 26) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->rpy[1] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 30) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->rpy[2] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 34) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[0] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 14) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[1] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 18) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[2] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 22) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->acc[0] = quadchar2int(txSwap_->nodePtr.load()->memPtr +  2) / 10000.0 * 9.81;
+    imus[index].tx.next()->acc[1] = quadchar2int(txSwap_->nodePtr.load()->memPtr +  6) / 10000.0 * 9.81;
+    imus[index].tx.next()->acc[2] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 10) / 10000.0 * 9.81;
 }
 
-float gyr2xsens(SwapList const* txSwap){
-    return quadchar2float(txSwap->nodePtr.load()->memPtr + 45);
-}
-
-float acc0xsens(SwapList const* txSwap){
-    return quadchar2float(txSwap->nodePtr.load()->memPtr + 22);
-}
-
-float acc1xsens(SwapList const* txSwap){
-    return quadchar2float(txSwap->nodePtr.load()->memPtr + 26);
-}
-
-float acc2xsens(SwapList const* txSwap){
-    return quadchar2float(txSwap->nodePtr.load()->memPtr + 30);
-}
-
-float rpy0hipnuc(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 58) * Pi / 180.0;
-}
-
-float rpy1hipnuc(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 54) * Pi / 180.0;
-}
-
-float rpy2hipnuc(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 62) * Pi / 180.0;
-}
-
-float gyr0hipnuc(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 30) * Pi / 180.0;
-}
-
-float gyr1hipnuc(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 34) * Pi / 180.0;
-}
-
-float gyr2hipnuc(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 38) * Pi / 180.0;
-}
-
-float acc0hipnuc(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 18) * 9.81;
-}
-
-float acc1hipnuc(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 22) * 9.81;
-}
-
-float acc2hipnuc(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 26) * 9.81;
-}
-
-float rpy0forsense(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 14) * Pi / 180.0;
-}
-
-float rpy1forsense(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 10) * Pi / 180.0;
-}
-
-float rpy2forsense(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 18) * Pi / 180.0;
-}
-
-float gyr0forsense(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 34) * Pi / 180.0;
-}
-
-float gyr1forsense(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 38) * Pi / 180.0;
-}
-
-float gyr2forsense(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 42) * Pi / 180.0;
-}
-
-float acc0forsense(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 22) * 9.81;
-}
-
-float acc1forsense(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 26) * 9.81;
-}
-
-float acc2forsense(SwapList const* txSwap){
-    return quadchar2float_(txSwap->nodePtr.load()->memPtr + 30) * 9.81;
-}
-
-float rpy0yesense(SwapList const* txSwap){
-    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 39) / 1000000.0 * Pi / 180.0;
-}
-
-float rpy1yesense(SwapList const* txSwap){
-    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 35) / 1000000.0 * Pi / 180.0;
-}
-
-float rpy2yesense(SwapList const* txSwap){
-    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 43) / 1000000.0 * Pi / 180.0;
-}
-
-float gyr0yesense(SwapList const* txSwap){
-    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 21) / 1000000.0 * Pi / 180.0;
-}
-
-float gyr1yesense(SwapList const* txSwap){
-    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 25) / 1000000.0 * Pi / 180.0;
-}
-
-float gyr2yesense(SwapList const* txSwap){
-    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 29) / 1000000.0 * Pi / 180.0;
-}
-
-float acc0yesense(SwapList const* txSwap){
-    return quadchar2int_(txSwap->nodePtr.load()->memPtr +  7) / 1000000.0;
-}
-
-float acc1yesense(SwapList const* txSwap){
-    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 11) / 1000000.0;
-}
-
-float acc2yesense(SwapList const* txSwap){
-    return quadchar2int_(txSwap->nodePtr.load()->memPtr + 15) / 1000000.0;
-}
-
-float rpy0linstech(SwapList const* txSwap){
-    return quadchar2int(txSwap->nodePtr.load()->memPtr + 26) / 10000.0 * Pi / 180.0;
-}
-
-float rpy1linstech(SwapList const* txSwap){
-    return quadchar2int(txSwap->nodePtr.load()->memPtr + 30) / 10000.0 * Pi / 180.0;
-}
-
-float rpy2linstech(SwapList const* txSwap){
-    return quadchar2int(txSwap->nodePtr.load()->memPtr + 34) / 10000.0 * Pi / 180.0;
-}
-
-float gyr0linstech(SwapList const* txSwap){
-    return quadchar2int(txSwap->nodePtr.load()->memPtr + 14) / 10000.0 * Pi / 180.0;
-}
-
-float gyr1linstech(SwapList const* txSwap){
-    return quadchar2int(txSwap->nodePtr.load()->memPtr + 18) / 10000.0 * Pi / 180.0;
-}
-
-float gyr2linstech(SwapList const* txSwap){
-    return quadchar2int(txSwap->nodePtr.load()->memPtr + 22) / 10000.0 * Pi / 180.0;
-}
-
-float acc0linstech(SwapList const* txSwap){
-    return quadchar2int(txSwap->nodePtr.load()->memPtr +  2) / 10000.0 * 9.81;
-}
-
-float acc1linstech(SwapList const* txSwap){
-    return quadchar2int(txSwap->nodePtr.load()->memPtr +  6) / 10000.0 * 9.81;
-}
-
-float acc2linstech(SwapList const* txSwap){
-    return quadchar2int(txSwap->nodePtr.load()->memPtr + 10) / 10000.0 * 9.81;
+RS232::RS232(int const order, char const* device){
+    rxSwap = txSwap = txSwap_ = nullptr;
+    fd = -1;
+    pth = 0;
+    this->order = order;
+    alias2type = rs232alias2type[order];
+    if(alias2type.size() == 0){
+        return;
+    }
+    printf("rs232s[%d]\n", order);
+    auto itr = alias2type.begin();
+    std::string const& type = itr->second;
+    printf("\talias %d, type %s\n", itr->first, type.c_str());
+    this->device = (char*)malloc(strlen(device) + 1);
+    strcpy(this->device, device);
+    baudrate = configXML->masterAttribute("RS232", order, "baudrate");
+    this->type = (char*)malloc(strlen(type.c_str()) + 1);
+    strcpy(this->type, type.c_str());
 }
 
 RS232::RS232(char const* device, int const baudrate, char const* type){
+    rxSwap = txSwap = txSwap_ = nullptr;
     fd = -1;
     pth = 0;
+    order = 0;
+    alias2type.insert(std::make_pair(240, std::string(type)));
+    printf("rs232s[0]\n\talias 240, type %s\n", type);
     this->device = (char*)malloc(strlen(device) + 1);
     strcpy(this->device, device);
     this->baudrate = baudrate;
+    this->type = (char*)malloc(strlen(type) + 1);
+    strcpy(this->type, type);
+}
+
+int RS232::config(){
+    if(alias2type.size() == 0){
+        return 0;
+    }
+    if(strlen(device) == 0){
+        return 1;
+    }
     if(strcmp(type, "Xsens") == 0){
         frameLength = 50;
         header0 = 0xfa;
         header1 = 0xff;
         valid = validXsens;
-        rpy[0] = rpy0xsens;
-        rpy[1] = rpy1xsens;
-        rpy[2] = rpy2xsens;
-        gyr[0] = gyr0xsens;
-        gyr[1] = gyr1xsens;
-        gyr[2] = gyr2xsens;
-        acc[0] = acc0xsens;
-        acc[1] = acc1xsens;
-        acc[2] = acc2xsens;
+        parse = parseXsens;
     }else if(strcmp(type, "HiPNUC") == 0){
         frameLength = 82;
         header0 = 0x5a;
         header1 = 0xa5;
         valid = validHipnuc;
-        rpy[0] = rpy0hipnuc;
-        rpy[1] = rpy1hipnuc;
-        rpy[2] = rpy2hipnuc;
-        gyr[0] = gyr0hipnuc;
-        gyr[1] = gyr1hipnuc;
-        gyr[2] = gyr2hipnuc;
-        acc[0] = acc0hipnuc;
-        acc[1] = acc1hipnuc;
-        acc[2] = acc2hipnuc;
+        parse = parseHipnuc;
     }else if(strcmp(type, "Forsense") == 0){
         frameLength = 54;
         header0 = 0xaa;
         header1 = 0x55;
         valid = validForsense;
-        rpy[0] = rpy0forsense;
-        rpy[1] = rpy1forsense;
-        rpy[2] = rpy2forsense;
-        gyr[0] = gyr0forsense;
-        gyr[1] = gyr1forsense;
-        gyr[2] = gyr2forsense;
-        acc[0] = acc0forsense;
-        acc[1] = acc1forsense;
-        acc[2] = acc2forsense;
+        parse = parseForsense;
     }else if(strcmp(type, "YESENSE") == 0){
         frameLength = 67;
         header0 = 0x59;
         header1 = 0x53;
         valid = validYesense;
-        rpy[0] = rpy0yesense;
-        rpy[1] = rpy1yesense;
-        rpy[2] = rpy2yesense;
-        gyr[0] = gyr0yesense;
-        gyr[1] = gyr1yesense;
-        gyr[2] = gyr2yesense;
-        acc[0] = acc0yesense;
-        acc[1] = acc1yesense;
-        acc[2] = acc2yesense;
+        parse = parseYesense;
     }else if(strcmp(type, "YESENSE_") == 0){
         frameLength = 49;
         header0 = 0x59;
         header1 = 0x53;
         valid = validYesense_;
-        rpy[0] = rpy0yesense;
-        rpy[1] = rpy1yesense;
-        rpy[2] = rpy2yesense;
-        gyr[0] = gyr0yesense;
-        gyr[1] = gyr1yesense;
-        gyr[2] = gyr2yesense;
-        acc[0] = acc0yesense;
-        acc[1] = acc1yesense;
-        acc[2] = acc2yesense;
+        parse = parseYesense;
     }else if(strcmp(type, "Lins-Tech") == 0){
         frameLength = 41;
         header0 = 0x7f;
         header1 = 0x94;
         valid = validLinstech;
-        rpy[0] = rpy0linstech;
-        rpy[1] = rpy1linstech;
-        rpy[2] = rpy2linstech;
-        gyr[0] = gyr0linstech;
-        gyr[1] = gyr1linstech;
-        gyr[2] = gyr2linstech;
-        acc[0] = acc0linstech;
-        acc[1] = acc1linstech;
-        acc[2] = acc2linstech;
+        parse = parseLinstech;
     }else{
-        printf("invalid imu type %s\n", type);
-        exit(-1);
+        printf("\tinvalid imu type %s\n", type);
+        return -1;
     }
-    txSwap = new SwapList(frameLength);
+    rxSwap = new SwapList(imuCount * sizeof(IMURXData));
+    txSwap = new SwapList(imuCount * sizeof(IMUTXData));
+    auto itr = alias2type.begin();
+    int index = itr->first - 240;
+    if(index < 0 || index > 15){
+        printf("\tinvalid imu alias %d\n", itr->first);
+        return -1;
+    }
+#ifndef NIIC
+    if(imus[index].init("RS232", 5, order, 0, 0, itr->first, itr->second, index * sizeof(IMURXData), index * sizeof(IMUTXData), nullptr, nullptr) != 0){
+#else
+    if(imus[index].init("RS232", 5, order, 0, 0, itr->first, itr->second, index * sizeof(IMURXData), index * sizeof(IMUTXData)) != 0){
+#endif
+        printf("\timus[%d] init failed\n", index);
+        return -1;
+    }
+    if(imus[index].config("RS232", order, 0, rxSwap, txSwap) != 0){
+        printf("\timus[%d] config failed\n", index);
+        return -1;
+    }
+    txSwap_ = new SwapList(frameLength);
     int i = 0;
     while(i < 3){
-        txSwap->nodePtr.load()->memPtr[0] = header0;
-        txSwap->nodePtr.load()->memPtr[1] = header1;
-        txSwap->advanceNodePtr();
+        txSwap_->nodePtr.load()->memPtr[0] = header0;
+        txSwap_->nodePtr.load()->memPtr[1] = header1;
+        txSwap_->advanceNodePtr();
         ++i;
     }
+    return 0;
 }
 
 void RS232::cleanup(void* arg){
@@ -445,31 +338,31 @@ void RS232::cleanup(void* arg){
 }
 
 void* RS232::recv(void* arg){
-    RS232* imu = (RS232*)arg;
+    RS232* rs232 = (RS232*)arg;
     int    speedArray[] = {B921600, B576000, B460800, B230400, B115200, B57600, B38400, B19200, B9600, B4800, B2400, B1200, B300};
     int baudrateArray[] = { 921600,  576000,  460800,  230400,  115200,  57600,  38400,  19200,  9600,  4800,  2400,  1200,  300};
     int i = 0, j;
     while(i < 13){
-        if(baudrateArray[i] == imu->baudrate){
+        if(baudrateArray[i] == rs232->baudrate){
             break;
         }
         ++i;
     }
     if(i == 13){
-        printf("invalid baudrate %d\n", imu->baudrate);
+        printf("invalid rs232s[%d] baudrate %d\n", rs232->order, rs232->baudrate);
         exit(-1);
     }
 #ifndef NIIC
-    imu->fd = open(imu->device, O_RDONLY | O_NOCTTY);
+    rs232->fd = open(rs232->device, O_RDONLY | O_NOCTTY);
 #else
-    imu->fd = __RT(open(imu->device, O_RDONLY | O_NOCTTY));
+    rs232->fd = __RT(open(rs232->device, O_RDONLY | O_NOCTTY));
 #endif
-    if(imu->fd < 0){
-        printf("opening device %s failed\n", imu->device);
+    if(rs232->fd < 0){
+        printf("opening rs232s[%d] device %s failed\n", rs232->order, rs232->device);
         exit(-1);
     }
     struct termios opt;
-    tcgetattr(imu->fd, &opt);
+    tcgetattr(rs232->fd, &opt);
     cfsetispeed(&opt, speedArray[i]);
     cfsetospeed(&opt, speedArray[i]);
     opt.c_cflag &= ~CSIZE;
@@ -486,20 +379,20 @@ void* RS232::recv(void* arg){
     opt.c_oflag &= ~(OCRNL | ONLCR);
     opt.c_cc[VTIME] = 0;
     opt.c_cc[VMIN] = 1;
-    tcsetattr(imu->fd, TCSANOW, &opt);
-    tcflush(imu->fd, TCIOFLUSH);
-    printf("opened imu %s baudrate %d\n", imu->device, imu->baudrate);
-    unsigned char buff[2 * imu->frameLength], * buffA = buff, * buffB = buff + imu->frameLength;
+    tcsetattr(rs232->fd, TCSANOW, &opt);
+    tcflush(rs232->fd, TCIOFLUSH);
+    printf("opened rs232s[%d] %s baudrate %d\n", rs232->order, rs232->device, rs232->baudrate);
+    unsigned char buff[2 * rs232->frameLength], * buffA = buff, * buffB = buff + rs232->frameLength;
     ChainNode* node0 = new ChainNode(), * node = node0;
     i = 0;
-    while(i < 2 * imu->frameLength - 1){
+    while(i < 2 * rs232->frameLength - 1){
         node->nr = i;
         node->next = new ChainNode();
         node->next->previous = node;
         node = node->next;
         ++i;
     }
-    node->nr = 2 * imu->frameLength - 1;
+    node->nr = 2 * rs232->frameLength - 1;
     node->next = node0;
     node0->previous = node;
     node = node0;
@@ -507,43 +400,43 @@ void* RS232::recv(void* arg){
     j = 0;
     do{
 #ifndef NIIC
-        j += read(imu->fd, buffA + j, imu->frameLength - j);
+        j += read(rs232->fd, buffA + j, rs232->frameLength - j);
 #else
-        j += __RT(read(imu->fd, buffA + j, imu->frameLength - j));
+        j += __RT(read(rs232->fd, buffA + j, rs232->frameLength - j));
 #endif
-    }while(j < imu->frameLength);
+    }while(j < rs232->frameLength);
     struct timespec step{0, 1000};
     i = 2;
     while(true){
-        if(node->nr == imu->frameLength - 1){
+        if(node->nr == rs232->frameLength - 1){
             j = 0;
             do{
 #ifndef NIIC
-                j += read(imu->fd, buffB + j, imu->frameLength - j);
+                j += read(rs232->fd, buffB + j, rs232->frameLength - j);
 #else
-                j += __RT(read(imu->fd, buffB + j, imu->frameLength - j));
+                j += __RT(read(rs232->fd, buffB + j, rs232->frameLength - j));
 #endif
-            }while(j < imu->frameLength);
-        }else if(node->nr == 2 * imu->frameLength - 1){
+            }while(j < rs232->frameLength);
+        }else if(node->nr == 2 * rs232->frameLength - 1){
             j = 0;
             do{
 #ifndef NIIC
-                j += read(imu->fd, buffA + j, imu->frameLength - j);
+                j += read(rs232->fd, buffA + j, rs232->frameLength - j);
 #else
-                j += __RT(read(imu->fd, buffA + j, imu->frameLength - j));
+                j += __RT(read(rs232->fd, buffA + j, rs232->frameLength - j));
 #endif
-            }while(j < imu->frameLength);
+            }while(j < rs232->frameLength);
         }
         node = node->next;
-        if(i < imu->frameLength){
-            imu->txSwap->nodePtr.load()->next->memPtr[i] = buff[node->nr];
+        if(i < rs232->frameLength){
+            rs232->txSwap_->nodePtr.load()->next->memPtr[i] = buff[node->nr];
             ++i;
         }
-        if(buff[node->previous->nr] == imu->header0 && buff[node->nr] == imu->header1){
-            if(imu->valid(imu->txSwap->nodePtr.load()->next->memPtr)){
-                imu->txSwap->advanceNodePtr();
+        if(buff[node->previous->nr] == rs232->header0 && buff[node->nr] == rs232->header1){
+            if(rs232->valid(rs232->txSwap_->nodePtr.load()->next->memPtr)){
+                rs232->txSwap_->advanceNodePtr();
             }
-            memset(imu->txSwap->nodePtr.load()->next->memPtr + 2, 0, imu->frameLength - 2);
+            memset(rs232->txSwap_->nodePtr.load()->next->memPtr + 2, 0, rs232->frameLength - 2);
             i = 2;
 #ifndef NIIC
             nanosleep(&step, nullptr);
@@ -564,6 +457,9 @@ int RS232::run(){
         initialized = true;
     }
 #endif
+    if(alias2type.size() == 0){
+        return 0;
+    }
     if(strlen(device) == 0){
         return 1;
     }
@@ -572,14 +468,14 @@ int RS232::run(){
 #else
     if(__RT(pthread_create(&pth, nullptr, &recv, this)) != 0){
 #endif
-        printf("creating imu recv thread failed\n");
+        printf("creating rs232s[%d] recv thread failed\n", order);
         return -1;
     }
     if(pthread_detach(pth) != 0){
-        printf("detaching imu recv thread failed\n");
+        printf("detaching rs232s[%d] recv thread failed\n", order);
         return -1;
     }
-    printf("imu recv\n");
+    printf("rs232s[%d] recv\n", order);
     return 0;
 }
 
@@ -596,13 +492,25 @@ RS232::~RS232(){
 #endif
         fd = -1;
     }
+    if(rxSwap != nullptr){
+        delete rxSwap;
+        rxSwap = nullptr;
+    }
     if(txSwap != nullptr){
         delete txSwap;
         txSwap = nullptr;
     }
+    if(txSwap_ != nullptr){
+        delete txSwap_;
+        txSwap_ = nullptr;
+    }
     if(device != nullptr){
         free(device);
         device = nullptr;
+    }
+    if(type != nullptr){
+        free(type);
+        type = nullptr;
     }
 }
 }
