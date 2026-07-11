@@ -1027,6 +1027,9 @@
             <Type>CANopen Eyou</Type>
         </Category>
         <Category name="effector">
+            <Type dof="1">AGIBOT</Type>
+            <Type dof="1">HumanoidShanghai</Type>
+            <Type dof="6">LinkerBot</Type>
         </Category>
         <Category name="sensor">
         </Category>

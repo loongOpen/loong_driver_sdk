@@ -37,14 +37,14 @@ std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> ecatAli
 std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs, canEmuAlias2masterIDs;
 std::vector<std::map<int, int>> canAlias2slaveID, canEmuAlias2slaveID, ecatAlias2domain;
 std::vector<std::vector<int>> ecatDomainDivisions;
-int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector, imuCount;
+int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector, imuCount, transferrerCount;
 sensorFunction sensorFuncs[2] = {nullSensor, nullSensor};
 WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
-WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
 WrapperPair<IMURXData, IMUTXData, IMUParameters>* imus;
+WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
 WrapperPair<ConverterRXData, ConverterTXData, EffectorParameters> converters[2];
 WrapperPair<SensorRXData, SensorTXData, SensorParameters> sensors[2];
-WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters> transferrers[10];
+WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters>* transferrers;
 std::vector<unsigned short> processorsECAT, processorsCAN;
 std::vector<char> operatingMode;
 std::vector<unsigned short> maxCurrent;
@@ -96,8 +96,8 @@ DriverSDK::impClass::impClass(){
     configXML = nullptr;
     dofLeg = dofArm = dofWaist = dofNeck = dofAll = dofLeftEffector = dofRightEffector = dofEffector = 0;
     drivers = nullptr;
-    digits = nullptr;
     imus = nullptr;
+    digits = nullptr;
     int i = 0;
     while(i < 6){
         processorsECAT.push_back(sysconf(_SC_NPROCESSORS_ONLN) - 1);
@@ -296,7 +296,10 @@ int DriverSDK::impClass::init(char const* xmlFile){
     dofWaist = motorAlias[4].size();
     dofNeck  = motorAlias[5].size();
     dofAll   = 2 * dofLeg + 2 * dofArm + dofWaist + dofNeck;
-    if(dofAll > 0){
+    if(dofAll > 31){
+        printf("31 dofs at most\n");
+        return -1;
+    }else if(dofAll > 0){
         drivers = new WrapperPair<DriverRXData, DriverTXData, MotorParameters>[dofAll];
     }
     ecatAlias2type     = configXML->alias2type("ECAT", &ecatAliases2domainType);
@@ -476,6 +479,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
         printf("canemus[%d] created\n", i);
         ++i;
     }
+    transferrerCount = 0;
     i = 0;
     while(i < ecats.size()){
         int res = ecats[i].check();
@@ -488,6 +492,9 @@ int DriverSDK::impClass::init(char const* xmlFile){
             continue;
         }
         ++i;
+    }
+    if(transferrerCount > 0){
+        transferrers = new WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters>[transferrerCount];
     }
     i = 0;
     while(i < ecats.size()){
@@ -695,7 +702,7 @@ void DriverSDK::impClass::ecatUpdate(){
             transferrerRXData->IDE = 0;
             auto itr = canemus[i].alias2slaveID.begin();
             while(itr != canemus[i].alias2slaveID.end()){
-                int alias = itr->first, slaveID = itr->second, rtr = 0, length = CANEmu::rxFuncs[i][slaveID](i, alias, &slaveID, data, &rtr), channel = CANEmu::alias2channel[alias];
+                int alias = itr->first, slaveID = itr->second, rtr = 0, eff = 0, length = CANEmu::rxFuncs[i][slaveID](i, alias, &slaveID, data, &rtr, &eff), channel = CANEmu::alias2channel[alias];
                 if(length == std::numeric_limits<int>::min()){
                     ++itr;
                     continue;
@@ -749,13 +756,17 @@ void DriverSDK::impClass::sdoRequestableUpdate(){
 }
 
 DriverSDK::impClass::~impClass(){
-    if(imus != nullptr){
-        delete[] imus;
-        imus = nullptr;
+    if(transferrers != nullptr){
+        delete[] transferrers;
+        transferrers = nullptr;
     }
     if(digits != nullptr){
         delete[] digits;
         digits = nullptr;
+    }
+    if(imus != nullptr){
+        delete[] imus;
+        imus = nullptr;
     }
     if(drivers != nullptr){
         delete[] drivers;

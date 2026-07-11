@@ -40,13 +40,13 @@ extern std::vector<std::map<int, std::string>> ecatAlias2type;
 extern std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> ecatAliases2domainType;
 extern std::vector<std::map<int, int>> ecatAlias2domain;
 extern std::vector<std::vector<int>> ecatDomainDivisions;
-extern int dofAll, dofLeftEffector, dofEffector;
+extern int dofAll, dofLeftEffector, dofEffector, transferrerCount;
 extern sensorFunction sensorFuncs[2];
 extern WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
 extern WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
 extern WrapperPair<ConverterRXData, ConverterTXData, EffectorParameters> converters[2];
 extern WrapperPair<SensorRXData, SensorTXData, SensorParameters> sensors[2];
-extern WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters> transferrers[10];
+extern WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters>* transferrers;
 extern std::vector<unsigned short> processorsECAT;
 extern std::vector<unsigned short> maxCurrent;
 extern std::atomic<int> ecatStalled;
@@ -142,7 +142,7 @@ int ECAT::init(){
     }
     effectorAlias = 199;
     sensorAlias = 219;
-    transferrerCount = 0;
+    localTransferrerCount = 0;
     return 0;
 }
 
@@ -182,7 +182,8 @@ int ECAT::readAlias(unsigned short const slave, std::string const& category, uns
             }while(itr == alias2type.end() && sensorAlias < 221);
             return sensorAlias;
         }else if(category == "transferrer"){
-            return -++transferrerCount;
+            ++localTransferrerCount;
+            return -(transferrerCount + localTransferrerCount);
         }
     }
     return 0;
@@ -305,18 +306,19 @@ int ECAT::check(){
         alias2slave.insert(std::make_pair(alias, i));
         ++i;
     }
-    if(transferrerCount != aliases2domainType.size()){
-        printf("master %d the count of transferrers %d contradicts that(%ld) in xml\n", order, transferrerCount, aliases2domainType.size());
+    if(localTransferrerCount != aliases2domainType.size()){
+        printf("master %d the count of transferrers %d contradicts that(%ld) in xml\n", order, localTransferrerCount, aliases2domainType.size());
         clean();
         init();
         return -2;
     }
-    if(alias2slave.size() - transferrerCount != alias2type.size()){
-        printf("master %d the count of devices %ld contradicts that(%ld) in xml\n", order, alias2slave.size() - transferrerCount, alias2type.size());
+    if(alias2slave.size() - localTransferrerCount != alias2type.size()){
+        printf("master %d the count of devices %ld contradicts that(%ld) in xml\n", order, alias2slave.size() - localTransferrerCount, alias2type.size());
         clean();
         init();
         return -2;
     }
+    transferrerCount += localTransferrerCount;
     return 0;
 }
 
@@ -1021,7 +1023,7 @@ void* ECAT::rxtx(void* arg){
                     ++j;
                 }
                 j = 0;
-                while(j < 10){
+                while(j < transferrerCount){
                     if(transferrers[j].order != ecat->order || transferrers[j].domain != i){
                         ++j;
                         continue;
@@ -1030,8 +1032,10 @@ void* ECAT::rxtx(void* arg){
                     std::vector<CANEmu>& canemus = *canemusPtr;
                     int k = 0;
                     while(k < 6){
+                        channels[k].ID &= 0x1fffffff;
                         if(channels[k].ID > 0){
-                            CANEmu::txFuncs[j][channels[k].ID](channels[k].ID, channels[k].Byte, channels[k].DLC, &canemus[j]);
+                            int const stdID = channels[k].ID & 0x7ff, extID = channels[k].ID >> 11;
+                            CANEmu::txFuncs[j][stdID][extID](channels[k].ID, channels[k].Byte, channels[k].DLC, &canemus[j]);
                         }
                         ++k;
                     }

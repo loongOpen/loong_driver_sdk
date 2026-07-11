@@ -25,21 +25,13 @@ extern std::vector<std::map<int, std::vector<int>>> canEmuAlias2masterIDs;
 extern std::vector<std::map<int, int>> canEmuAlias2slaveID;
 extern int dofEffector;
 
-int nullRXCANEmu(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr){
-    return std::numeric_limits<int>::min();
-}
-
-void nullTXCANEmu(int const masterID, unsigned char* const data, int const length, CANEmu* const canemu){
-    printf("unexpected data with master_id %d and length %d on canemus[%d]\n", masterID, length, canemu->order);
-}
-
 std::map<std::string, DriverParameters*> CANEmu::type2parameters;
 unsigned short* CANEmu::alias2status;
 DriverParameters** CANEmu::alias2parameters;
-int CANEmu::orderSlaveID2alias[8][256];
-int CANEmu::orderMasterID2slaveID[8][2048];
-canEmuRXFunction CANEmu::rxFuncs[8][256];
-canEmuTXFunction CANEmu::txFuncs[8][2048];
+int CANEmu::orderSlaveID2alias[10][256];
+int* CANEmu::orderMasterID2slaveID[10][2048];
+canEmuRXFunction CANEmu::rxFuncs[10][256];
+canEmuTXFunction* CANEmu::txFuncs[10][2048];
 int CANEmu::alias2channel[256];
 
 CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
@@ -47,49 +39,33 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
     if(!initialized){
         alias2status = new unsigned short[dofAll + 1];
         alias2parameters = new DriverParameters*[dofAll + 1];
-        int i = 0, j;
+        int i = 0;
         while(i <= dofAll){
             alias2status[i] = 0xffff;
             alias2parameters[i] = nullptr;
             ++i;
         }
-        i = 0;
-        while(i < 8){
-            j = 0;
-            while(j < 2048){
-                orderMasterID2slaveID[i][j] = -1;
-                ++j;
-            }
-            ++i;
-        }
-        i = 0;
-        while(i < 8){
-            j = 0;
-            while(j < 256){
-                orderSlaveID2alias[i][j] = 0;
-                ++j;
-            }
-            ++i;
-        }
-        i = 0;
-        while(i < 8){
-            j = 0;
-            while(j < 256){
-                rxFuncs[i][j] = nullRXCANEmu;
-                ++j;
-            }
-            ++i;
-        }
-        i = 0;
-        while(i < 8){
-            j = 0;
-            while(j < 2048){
-                txFuncs[i][j] = nullTXCANEmu;
-                ++j;
-            }
-            ++i;
-        }
         initialized = true;
+    }
+    int i = 0;
+    while(i < 256){
+        orderSlaveID2alias[order][i] = 0;
+        ++i;
+    }
+    i = 0;
+    while(i < 2048){
+        orderMasterID2slaveID[order][i] = nullptr;
+        ++i;
+    }
+    i = 0;
+    while(i < 256){
+        rxFuncs[order][i] = nullRX<CANEmu>;
+        ++i;
+    }
+    i = 0;
+    while(i < 2048){
+        txFuncs[order][i] = nullptr;
+        ++i;
     }
     rxSwap = txSwap = rxSwap_ = txSwap_ = nullptr;
     MASK = mask = MASK_ = mask_ = 0;
@@ -124,31 +100,48 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
             alias2parameters[alias] = itr_->second;
         }
         printf("\talias %d, type %s, master_ids", alias, type.c_str());
-        int i = 0;
+        i = 0;
         while(i < masterIDs.size()){
             printf(" %d", masterIDs[i]);
-            orderMasterID2slaveID[order][masterIDs[i]] = slaveID;
-            if(txFuncs[order][masterIDs[i]] != nullTXCANEmu){
+            int const stdID = masterIDs[i] & 0x7ff, extID = masterIDs[i] >> 11;
+            if(orderMasterID2slaveID[order][stdID] == nullptr){
+                orderMasterID2slaveID[order][stdID] = new int[262144];
+                int j = 0;
+                while(j < 262144){
+                    orderMasterID2slaveID[order][stdID][j] = -1;
+                    ++j;
+                }
+            }
+            if(orderMasterID2slaveID[order][stdID][extID] != -1){
                 printf("\ninvalid canemu bus configuration\n");
                 exit(-1);
             }
+            orderMasterID2slaveID[order][stdID][extID] = slaveID;
+            if(txFuncs[order][stdID] == nullptr){
+                txFuncs[order][stdID] = new canEmuTXFunction[262144];
+                int j = 0;
+                while(j < 262144){
+                    txFuncs[order][stdID][j] = nullTX<CANEmu>;
+                    ++j;
+                }
+            }
             if(type.starts_with("Encos")){
-                txFuncs[order][masterIDs[i]] = encosTX<CANEmu>;
+                txFuncs[order][stdID][extID] = encosTX<CANEmu>;
             }else if(type.starts_with("Damiao")){
-                txFuncs[order][masterIDs[i]] = damiaoTX<CANEmu>;
+                txFuncs[order][stdID][extID] = damiaoTX<CANEmu>;
             }else if(type == "AGIBOT"){
-                txFuncs[order][masterIDs[i]] = agibotTX<CANEmu>;
+                txFuncs[order][stdID][extID] = agibotTX<CANEmu>;
             }else if(type == "LinkerBot"){
-                txFuncs[order][masterIDs[i]] = linkerBotTX<CANEmu>;
+                txFuncs[order][stdID][extID] = linkerBotTX<CANEmu>;
             }
             ++i;
         }
         printf(", slave_id %d\n", slaveID);
-        orderSlaveID2alias[order][slaveID] = alias;
-        if(rxFuncs[order][slaveID] != nullRXCANEmu){
+        if(orderSlaveID2alias[order][slaveID] != 0){
             printf("invalid canemu bus configuration\n");
             exit(-1);
         }
+        orderSlaveID2alias[order][slaveID] = alias;
         if(type.starts_with("Encos")){
             rxFuncs[order][slaveID] = encosRX<CANEmu>;
         }else if(type.starts_with("Damiao")){
@@ -241,10 +234,12 @@ int CANEmu::run(std::vector<CANEmu>& canemus){
     while(i < canemus.size()){
         printf("canemus[%d]:\t", i);
         j = 0;
-        while(j < 256){
+        while(j < 32){
             int a = orderSlaveID2alias[i][j];
-            if(j < 32 && a <= dofAll){
+            if(a <= dofAll){
                 printf("%02d ", a);
+            }else{
+                printf("00 ");
             }
             ++j;
         }
@@ -269,6 +264,22 @@ CANEmu::~CANEmu(){
     if(alias2parameters != nullptr){
         delete[] alias2parameters;
         alias2parameters = nullptr;
+    }
+    int i = 0;
+    while(i < 2048){
+        if(orderMasterID2slaveID[order][i] != nullptr){
+            delete[] orderMasterID2slaveID[order][i];
+            orderMasterID2slaveID[order][i] = nullptr;
+        }
+        ++i;
+    }
+    i = 0;
+    while(i < 2048){
+        if(txFuncs[order][i] != nullptr){
+            delete[] txFuncs[order][i];
+            txFuncs[order][i] = nullptr;
+        }
+        ++i;
     }
     if(rxSwap != nullptr){
         delete rxSwap;

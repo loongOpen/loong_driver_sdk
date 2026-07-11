@@ -44,6 +44,7 @@ float para2float(unsigned short const us, float const min, float const max, int 
 
 long CANBase::period;
 int CANBase::CANHAL;
+signed char CANBase::effectorAlias2status[2];
 std::mutex CANBase::resourceMutex, CANBase::checkMutex;
 CANopenData CANBase::checkData;
 std::vector<int> CANBase::checkSlaveIDs;
@@ -56,6 +57,7 @@ CANBase::CANBase(int const order, char const* device){
             period = 500000;
         }
         CANHAL = 0;
+        effectorAlias2status[0] = effectorAlias2status[1] = 0;
         initialized = true;
     }
     this->order = order;
@@ -330,7 +332,7 @@ int CANBase::open(int const masterID){
     return sock;
 }
 
-int CANBase::send(int const slaveID, unsigned char const* data, int const rtr, int const length){
+int CANBase::send(int const slaveID, unsigned char const* data, int const rtr, int const eff, int const length){
     struct can_frame frame;
     if(length > sizeof(frame.data)){
         printf("send: cans[%d] send data length cannot be greater than %ld\n", order, sizeof(frame.data));
@@ -339,6 +341,9 @@ int CANBase::send(int const slaveID, unsigned char const* data, int const rtr, i
     frame.can_id = slaveID;
     if(rtr == 1){
         frame.can_id |= CAN_RTR_FLAG;
+    }
+    if(eff == 1){
+        frame.can_id |= CAN_EFF_FLAG;
     }
     frame.can_dlc = length;
     memcpy(frame.data, data, length);
@@ -379,7 +384,7 @@ int CANBase::recv(unsigned char* const data, int const length, int* const master
     return frame.can_dlc;
 }
 
-int CANBase::sendfd(int const slaveID, unsigned char const* data, int const rtr, int const length){
+int CANBase::sendfd(int const slaveID, unsigned char const* data, int const rtr, int const eff, int const length){
     struct canfd_frame frame;
     if(length > sizeof(frame.data)){
         printf("sendfd: cans[%d] send data length cannot be greater than %ld\n", order, sizeof(frame.data));
@@ -388,6 +393,9 @@ int CANBase::sendfd(int const slaveID, unsigned char const* data, int const rtr,
     frame.can_id = slaveID;
     if(rtr == 1){
         frame.can_id |= CAN_RTR_FLAG;
+    }
+    if(eff == 1){
+        frame.can_id |= CAN_EFF_FLAG;
     }
     frame.len = length;
     if(canfd == 0){

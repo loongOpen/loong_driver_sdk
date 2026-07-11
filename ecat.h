@@ -30,7 +30,7 @@ float kunweiTech(int const value);
 class ECAT{
 public:
     bool dc, refSlave, sdoRequestable, regRequestable;
-    int order, fd, effectorAlias, sensorAlias, transferrerCount, * domainSizes, cpu;
+    int order, fd, effectorAlias, sensorAlias, localTransferrerCount, * domainSizes, cpu;
     std::map<int, std::string> alias2type;
     std::vector<std::tuple<std::vector<int>, int, std::string>> aliases2domainType;
     long period;
