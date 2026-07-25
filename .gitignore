@@ -22,6 +22,8 @@
 !libeph507-can.so
 driver_test*
 !driver_test.cpp
+!driver_test-ncurses.cpp
+!driver_test+ncurses.cpp
 !driver_test.sh
 build/*
 !version.h

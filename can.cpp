@@ -81,8 +81,6 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         txFuncs[order][i] = nullptr;
         ++i;
     }
-    rxSwap = txSwap = rxSwap_ = txSwap_ = rxSwap__ = txSwap__ = nullptr;
-    MASK = mask = MASK_ = mask_ = MASK__ = mask__ = 0;
     rollingCounter = 0xff;
     alias2type = canAlias2type[order];
     alias2masterIDs = canAlias2masterIDs[order];
@@ -140,6 +138,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
                 txFuncs[order][stdID][extID] = encosTX<CAN>;
             }else if(type.starts_with("Damiao")){
                 txFuncs[order][stdID][extID] = damiaoTX<CAN>;
+            }else if(type.starts_with("Weiyi")){
+                txFuncs[order][stdID][extID] = weiyiTX<CAN>;
             }else if(type.starts_with("RealMan")){
                 txFuncs[order][stdID][extID] = realManTX<CAN>;
             }else if(type.starts_with("CANopen")){
@@ -165,6 +165,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
             rxFuncs[order][slaveID] = encosRX<CAN>;
         }else if(type.starts_with("Damiao")){
             rxFuncs[order][slaveID] = damiaoRX<CAN>;
+        }else if(type.starts_with("Weiyi")){
+            rxFuncs[order][slaveID] = weiyiRX<CAN>;
         }else if(type.starts_with("RealMan")){
             rxFuncs[order][slaveID] = realManRX<CAN>;
         }else if(type.starts_with("CANopen")){
@@ -313,11 +315,6 @@ void CAN::cleanup(void* arg){
 
 void* CAN::rx(void* arg){
     std::vector<CAN>& cans = *(std::vector<CAN>*)arg;
-    unsigned int count = 0xffffffff;
-    unsigned char data[128], * data_;
-    struct canframe frames[64];
-    struct pack_info packInfo;
-    packInfo.length = 64;
     using sendFunction = int (CAN::*)(int const, unsigned char const*, int const, int const, int const);
     sendFunction sendFuncs[10] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     int i = 0;
@@ -329,6 +326,11 @@ void* CAN::rx(void* arg){
         }
         ++i;
     }
+    unsigned int count = 0xffffffff;
+    unsigned char data[128], * data_;
+    struct canframe frames[64];
+    struct pack_info packInfo;
+    packInfo.length = 64;
     struct timespec currentTime, wakeupTime, step{0, 6 * period / 100};
     while(step.tv_nsec >= NSEC_PER_SEC){
         step.tv_nsec -= NSEC_PER_SEC;
@@ -405,13 +407,25 @@ void* CAN::rx(void* arg){
 
 void* CAN::tx(void* arg){
     std::vector<CAN>& cans = *(std::vector<CAN>*)arg;
+    using recvFunction = int (CAN::*)(unsigned char* const, int* const);
+    recvFunction recvFuncs[10] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    int i = 0;
+    while(i < cans.size()){
+        if(cans[i].canfd == 1 || cans[i].device[0] == '/'){
+            recvFuncs[i] = &CAN::recvfd;
+        }else{
+            recvFuncs[i] = &CAN::recv;
+        }
+        ++i;
+    }
     int epfd = epoll_create1(EPOLL_CLOEXEC);
     if(epfd == -1){
         printf("epoll_create1() error\n");
         exit(-1);
     }
     pthread_cleanup_push(cleanup, &epfd);
-    int i = 0, sock2order[128];
+    int sock2order[128];
+    i = 0;
     while(i < 128){
         sock2order[i] = -1;
         ++i;
@@ -441,19 +455,17 @@ void* CAN::tx(void* arg){
         }
         i = 0;
         while(i < count){
-            int order = sock2order[events[i].data.fd], masterID, length;
-            CAN& can = cans[order];
-            if(can.canfd == 1 || can.device[0] == '/'){
-                length = can.recvfd(data, 64, &masterID);
-            }else{
-                length = can.recv(data, 64, &masterID);
-            }
+            int order = sock2order[events[i].data.fd], masterID, length = (cans[order].*recvFuncs[order])(data, &masterID);
             if(length < 1){
                 ++i;
                 continue;
             }
             int const stdID = masterID & 0x7ff, extID = masterID >> 11;
-            txFuncs[order][stdID][extID](masterID, data, length, &cans[order]);
+            if(txFuncs[order][stdID] == nullptr){
+                printf("unexpected frame with master_id %d and length %d on cans[%d]\n", masterID, length, order);
+            }else{
+                txFuncs[order][stdID][extID](masterID, data, length, &cans[order]);
+            }
             ++i;
         }
     }
@@ -496,7 +508,11 @@ void* CAN::tx__(void* arg){
                 continue;
             }
             int const stdID = masterID & 0x7ff, extID = masterID >> 11;
-            txFuncs[can.order][stdID][extID](masterID, frames[i].data, length, &can);
+            if(txFuncs[can.order][stdID] == nullptr){
+                printf("unexpected frame with master_id %d and length %d on cans[%d]\n", masterID, length, can.order);
+            }else{
+                txFuncs[can.order][stdID][extID](masterID, frames[i].data, length, &can);
+            }
             ++i;
         }
 #ifdef ENPHT

@@ -884,6 +884,18 @@
             <MinT>-10.0</MinT>
             <MaxT>10.0</MaxT>
         </Device>
+        <Device type="Weiyi HT142-160H-BD">
+            <MaxV>6000.0</MaxV>
+            <MaxC>45.0</MaxC>
+            <GearRatio>160.0</GearRatio>
+            <TConstant>0.071</TConstant>
+        </Device>
+        <Device type="Weiyi HT90-120H-BD">
+            <MaxV>6000.0</MaxV>
+            <MaxC>45.0</MaxC>
+            <GearRatio>120.0</GearRatio>
+            <TConstant>0.054</TConstant>
+        </Device>
         <Device type="RealMan WHJ60-S-D70-100-B">
             <PUnit>0.0001</PUnit>
             <TargetVUnit>0.002</TargetVUnit>
@@ -969,6 +981,8 @@
             <Type>Damiao DM-J6248P-2EC</Type>
             <Type>Damiao DM-J4340P-2EC</Type>
             <Type>Damiao DM-J4310-2EC</Type>
+            <Type>Weiyi HT142-160H-BD</Type>
+            <Type>Weiyi HT90-120H-BD</Type>
             <Type>RealMan WHJ60-S-D70-100-B</Type>
             <Type>RealMan WHJ30-S-D60-80-B</Type>
             <Type>RealMan WHJ10-M-D50-80-B</Type>

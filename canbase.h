@@ -172,6 +172,13 @@ unsigned char const EncosDamp           [3] = {0x69, 0x00, 0x00};
 unsigned char const DamiaoEnable        [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
 unsigned char const DamiaoDisable       [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
 unsigned char const DamiaoClrErr        [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfb};
+unsigned char const WeiyiEnable         [2] = {0x2a, 0x01};
+unsigned char const WeiyiDisable        [2] = {0x2a, 0x00};
+unsigned char const WeiyiMode           [2] = {0x07, 0x0d};
+unsigned char const WeiyiQuery          [1] = {0x94};
+unsigned char const WeiyiUnbrake        [2] = {0xf4, 0x01};
+unsigned char const Weiyibrake          [2] = {0xf4, 0x00};
+unsigned char const WeiyiClrErr         [1] = {0xfe};
 unsigned char const RealManIAP          [3] = {0x02, 0x49, 0x00};
 unsigned char const RealManEnable       [3] = {0x02, 0x0a, 0x01};
 unsigned char const RealManDisable      [3] = {0x02, 0x0a, 0x00};
@@ -189,14 +196,14 @@ int nullRX(int const order, int const alias, int* const slaveID, unsigned char* 
 
 template<typename T>
 void nullTX(int const masterID, unsigned char* const data, int const length, T* const can){
-    printf("unexpected data with master_id %d and length %d on %ss[%d]\n", masterID, length, typeid(*can).name(), can->order);
+    printf("unexpected frame with master_id %d and length %d on %ss[%d]\n", masterID, length, typeid(*can).name(), can->order);
 }
 
 template<typename T>
 int encosRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 2:
-        switch(T::alias2status[alias] & 0x007f){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0007:
             memcpy(data, EncosDamp, 3);
             return 3;
@@ -206,7 +213,7 @@ int encosRX(int const order, int const alias, int* const slaveID, unsigned char*
         }
         break;
     case 1:
-        switch(T::alias2status[alias] & 0x007f){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0007:
             break;
         case 0x0001:
@@ -217,7 +224,7 @@ int encosRX(int const order, int const alias, int* const slaveID, unsigned char*
         }
         break;
     case 0:
-        switch(T::alias2status[alias] & 0x007f){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0007:
             memcpy(data, EncosDisable, 3);
             T::alias2status[alias] = 0x0001;
@@ -230,12 +237,12 @@ int encosRX(int const order, int const alias, int* const slaveID, unsigned char*
     }
     DriverParameters const* parameters = T::alias2parameters[alias];
     unsigned short p, v, t, kp, kd;
-    if((T::alias2status[alias] & 0x007f) != 0x0007){
-         p = float2para(0.0, parameters->minP,  parameters->maxP,  16);
-         v = float2para(0.0, parameters->minV,  parameters->maxV,  12);
+    if((T::alias2status[alias] & 0x0f7f) != 0x0007){
+         p = float2para(0.0,                                                          parameters->minP,  parameters->maxP,  16);
+         v = float2para(0.0,                                                          parameters->minV,  parameters->maxV,  12);
         kp = 1;
         kd = 1;
-         t = float2para(0.0, parameters->minT,  parameters->maxT,  12);
+         t = float2para(0.0,                                                          parameters->minT,  parameters->maxT,  12);
     }else{
          p = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetPosition, parameters->minP,  parameters->maxP,  16);
          v = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity, parameters->minV,  parameters->maxV,  12);
@@ -243,14 +250,14 @@ int encosRX(int const order, int const alias, int* const slaveID, unsigned char*
         kd = float2para(half2single(drivers[alias - 1].rx.previous()->TargetTorque),  parameters->minKd, parameters->maxKd,  9);
          t = float2para(half2single(drivers[alias - 1].rx.previous()->TorqueOffset),  parameters->minT,  parameters->maxT,  12);
     }
-    *(data + 0) = kp >> 7;
-    *(data + 1) = kp << 1 & 0x00ff | kd >> 8;
-    *(data + 2) = kd & 0x00ff;
-    *(data + 3) =  p >> 8;
-    *(data + 4) =  p & 0x00ff;
-    *(data + 5) =  v >> 4;
-    *(data + 6) =  v << 4 & 0x00ff |  t >> 8;
-    *(data + 7) =  t & 0x00ff;
+    data[0] = kp >> 7;
+    data[1] = kp << 1 & 0x00ff | kd >> 8;
+    data[2] = kd & 0x00ff;
+    data[3] =  p >> 8;
+    data[4] =  p & 0x00ff;
+    data[5] =  v >> 4;
+    data[6] =  v << 4 & 0x00ff |  t >> 8;
+    data[7] =  t & 0x00ff;
     return 8;
 }
 
@@ -288,10 +295,9 @@ void encosTX(int const masterID, unsigned char* const data, int const length, T*
     struct timeval tv;
     gettimeofday(&tv, nullptr);
     long current = TIMEVAL2US(tv);
-    static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
-        if((T::alias2status[alias] & 0x007f) == 0x0000){
+        if((T::alias2status[alias] & 0x0f7f) == 0x0000){
             int i = 0;
             while(i < 32){
                 int a = T::orderSlaveID2alias[can->order][i];
@@ -310,8 +316,8 @@ void encosTX(int const masterID, unsigned char* const data, int const length, T*
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[can->order] = current;
-    }else if(current - previous[can->order] > 20 * can->period / 1000){
+        can->previous = current;
+    }else if(current - can->previous > 20 * can->period / 1000){
         unsigned int x = can->mask ^ can->MASK;
         int i = 0;
         while(i < 32){
@@ -324,7 +330,7 @@ void encosTX(int const masterID, unsigned char* const data, int const length, T*
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[can->order] = current;
+        can->previous = current;
     }
 }
 
@@ -332,7 +338,7 @@ template<typename T>
 int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 1:
-        switch(T::alias2status[alias] & 0x007f){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0007:
             break;
         case 0x0001:
@@ -343,7 +349,7 @@ int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char
         }
         break;
     case 0:
-        switch(T::alias2status[alias] & 0x007f){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0007:
             memcpy(data, DamiaoDisable, 8);
             T::alias2status[alias] = 0x0001;
@@ -354,7 +360,7 @@ int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char
         }
         break;
     case -1:
-        switch(T::alias2status[alias] & 0x007f){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0007:
             break;
         case 0x0001:
@@ -370,14 +376,14 @@ int damiaoRX(int const order, int const alias, int* const slaveID, unsigned char
     unsigned short kp = float2para(half2single(drivers[alias - 1].rx.previous()->ControlWord),   parameters->minKp, parameters->maxKp, 12);
     unsigned short kd = float2para(half2single(drivers[alias - 1].rx.previous()->TargetTorque),  parameters->minKd, parameters->maxKd, 12);
     unsigned short  t = float2para(half2single(drivers[alias - 1].rx.previous()->TorqueOffset),  parameters->minT,  parameters->maxT,  12);
-    *(data + 0) =  p >> 8;
-    *(data + 1) =  p & 0x00ff;
-    *(data + 2) =  v >> 4;
-    *(data + 3) =  v << 4 & 0x00ff | kp >> 8;
-    *(data + 4) = kp & 0x00ff;
-    *(data + 5) = kd >> 4;
-    *(data + 6) = kd << 4 & 0x00ff |  t >> 8;
-    *(data + 7) =  t & 0x00ff;
+    data[0] =  p >> 8;
+    data[1] =  p & 0x00ff;
+    data[2] =  v >> 4;
+    data[3] =  v << 4 & 0x00ff | kp >> 8;
+    data[4] = kp & 0x00ff;
+    data[5] = kd >> 4;
+    data[6] = kd << 4 & 0x00ff |  t >> 8;
+    data[7] =  t & 0x00ff;
     return 8;
 }
 
@@ -423,10 +429,9 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
     struct timeval tv;
     gettimeofday(&tv, nullptr);
     long current = TIMEVAL2US(tv);
-    static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
-        if((T::alias2status[alias] & 0x007f & ~(0x0001 ^ 0x0007)) == 0x0000){
+        if((T::alias2status[alias] & 0x0f7f & ~(0x0001 ^ 0x0007)) == 0x0000){
             int i = 0;
             while(i < 32){
                 int a = T::orderSlaveID2alias[can->order][i];
@@ -445,8 +450,8 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[can->order] = current;
-    }else if(current - previous[can->order] > 20 * can->period / 1000){
+        can->previous = current;
+    }else if(current - can->previous > 20 * can->period / 1000){
         unsigned int x = can->mask ^ can->MASK;
         int i = 0;
         while(i < 32){
@@ -459,7 +464,247 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[can->order] = current;
+        can->previous = current;
+    }
+}
+
+template<typename T>
+int weiyiRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff){
+    switch(drivers[alias - 1].rx.previous()->Undefined){
+    case 1:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
+            break;
+        case 0x0001:
+            static unsigned char count[32] = {
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+            };
+            ++count[alias];
+            if(count[alias] == 0){
+                memcpy(data, WeiyiUnbrake, 2);
+                return 2;
+            }else{
+                return std::numeric_limits<int>::min();
+            }
+            break;
+        case 0x0250:
+            memcpy(data, WeiyiQuery, 1);
+            return 1;
+            break;
+        case 0x0050:
+            memcpy(data, WeiyiMode, 2);
+            return 2;
+            break;
+        case 0x0000:
+            memcpy(data, WeiyiEnable, 2);
+            return 2;
+            break;
+        }
+        break;
+    case 0:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
+            memcpy(data, WeiyiDisable, 2);
+            return 2;
+            break;
+        case 0x0001:
+            break;
+        case 0x0250:
+            memcpy(data, WeiyiQuery, 1);
+            return 1;
+            break;
+        case 0x0050:
+            memcpy(data, WeiyiMode, 2);
+            return 2;
+            break;
+        case 0x0000:
+            memcpy(data, WeiyiEnable, 2);
+            return 2;
+            break;
+        }
+        break;
+    case -1:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
+            break;
+        case 0x0001:
+            memcpy(data, WeiyiClrErr, 1);
+            return 1;
+            break;
+        case 0x0250:
+            memcpy(data, WeiyiQuery, 1);
+            return 1;
+            break;
+        case 0x0050:
+            memcpy(data, WeiyiMode, 2);
+            return 2;
+            break;
+        case 0x0000:
+            memcpy(data, WeiyiEnable, 2);
+            return 2;
+            break;
+        }
+        break;
+    }
+    static unsigned int count[32] = {
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+    };
+    DriverParameters const* parameters = T::alias2parameters[alias];
+    ++count[alias];
+    if(count[alias] % 3 == 0){
+        if(count[alias] % 1500 == 0){
+            data[0] = 0x60;
+            return 1;
+        }
+        int   p =   *(float*)&drivers[alias - 1].rx.previous()->TargetPosition * (1 << 24) * parameters->gearRatio / 2.0 / Pi;
+        short v =   *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity * (1 << 14) * parameters->gearRatio / parameters->maxV / Pi * 30.0;
+        short t = half2single(drivers[alias - 1].rx.previous()->TorqueOffset)  * (1 << 14) / parameters->maxC / parameters->tConstant / parameters->gearRatio;
+        unsigned char* c = (unsigned char*)&p;
+        data[3] = c[1];
+        data[2] = c[2];
+        data[1] = c[3];
+        c = (unsigned char*)&v;
+        data[5] = c[0];
+        data[4] = c[1];
+        c = (unsigned char*)&t;
+        data[7] = c[0];
+        data[6] = c[1];
+        data[0] = 0x80;
+        return 8;
+    }else if(count[alias] % 3 == 1){
+        if(count[alias] % 1500 == 1){
+            data[0] = 0x5f;
+            return 1;
+        }
+        int  kp = half2single(drivers[alias - 1].rx.previous()->ControlWord)   * (1 << 24);
+        int  kd = half2single(drivers[alias - 1].rx.previous()->TargetTorque)  * (1 << 24);
+        unsigned char* c = (unsigned char*)&kp;
+        data[4] = 0x00;
+        data[3] = c[1];
+        data[2] = c[2];
+        data[1] = c[3];
+        c = (unsigned char*)&kd;
+        data[7] = 0x00;
+        data[6] = c[1];
+        data[5] = c[2];
+        data[0] = 0x81;
+        return 8;
+    }else{
+        data[0] = 0x94;
+        return 1;
+    }
+}
+
+template<typename T>
+void weiyiTX(int const masterID, unsigned char* const data, int const length, T* const can){
+    int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
+    DriverParameters const* parameters = T::alias2parameters[alias];
+    if(length == 2){
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
+            if(data[0] == 0x2a && data[1] == 0x01){
+                T::alias2status[alias] = 0x0000;
+            }
+            break;
+        case 0x0001:
+            if(data[0] == 0xf4 && data[1] == 0x01){
+                T::alias2status[alias] = 0x0007;
+            }
+            break;
+        case 0x0250:
+            break;
+        case 0x0050:
+            if(data[0] == 0x07 && data[1] == 0x01){
+                T::alias2status[alias] = 0x0250;
+            }
+            break;
+        case 0x0000:
+            if(data[0] == 0x2a && data[1] == 0x01){
+                T::alias2status[alias] = 0x0050;
+            }
+            break;
+        }
+        return;
+    }else if(length == 3){
+        static signed char temperatureMOS  [32] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        };
+        static signed char temperatureRotor[32] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        };
+        data[0] = data[2];
+        if(data[0] == 0x60){
+            drivers[alias - 1].tx.next()->Undefined   = temperatureMOS  [alias] = *(short*)(data + 0) / (1 << 8);
+        }else if(data[0] == 0x5f){
+            drivers[alias - 1].tx.next()->ModeDisplay = temperatureRotor[alias] = *(short*)(data + 0) / (1 << 8);
+        }
+        if(temperatureMOS[alias] > 80 || temperatureRotor[alias] > 80){
+            T::alias2status[alias] |= 0x0080;
+        }else{
+            T::alias2status[alias] &= ~0x0080;
+        }
+        return;
+    }else if(length == 5){
+        if(data[0] != 0xfe){
+            return;
+        }
+        if((T::alias2status[alias] & 0x0f7f) == 0x0001){
+            T::alias2status[alias] = 0x0000;
+        }
+        return;
+    }else if(length == 8){
+        if(data[0] != 0x94){
+            return;
+        }
+        if((T::alias2status[alias] & 0x0f7f) == 0x0250){
+            T::alias2status[alias] = 0x0001;
+        }
+    }else{
+        return;
+    }
+    T::alias2status[alias] &= ~0x4000;
+    data[0] = data[1];
+    data[1] = data[3];
+    data[3] = data[0];
+    data[0] = data[4];
+    data[4] = data[5];
+    data[5] = data[0];
+    data[0] = data[6];
+    data[6] = data[7];
+    data[7] = data[0];
+    data[0] = 0x00;
+    *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             (float)*(  int*)(data + 0) / (1 << 24) / parameters->gearRatio * 2.0 * Pi;
+    *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             (float)*(short*)(data + 4) / (1 << 14) / parameters->gearRatio * parameters->maxV * Pi / 30.0;
+              drivers[alias - 1].tx.next()->ActualTorque   = single2half((float)*(short*)(data + 6) / (1 << 14) * parameters->maxC * parameters->tConstant * parameters->gearRatio);
+              drivers[alias - 1].tx.next()->StatusWord     = T::alias2status[alias];
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    long current = TIMEVAL2US(tv);
+    can->mask |= 1 << slaveID;
+    if(can->mask == can->MASK){
+        can->txSwap->advanceNodePtr();
+        can->mask = 0;
+        can->previous = current;
+    }else if(current - can->previous > 20 * can->period / 1000){
+        unsigned int x = can->mask ^ can->MASK;
+        int i = 0;
+        while(i < 32){
+            if((x & 1 << i) > 0){
+                int a = T::orderSlaveID2alias[can->order][i];
+                T::alias2status[a] |= 0x4000;
+                drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
+            }
+            ++i;
+        }
+        can->txSwap->advanceNodePtr();
+        can->mask = 0;
+        can->previous = current;
     }
 }
 
@@ -467,7 +712,7 @@ template<typename T>
 int realManRX(int const order, int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 1:
-        switch(T::alias2status[alias] & 0x007f){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0250:
             T::alias2status[alias] = 0x0007;
         case 0x0007:
@@ -487,7 +732,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
         }
         break;
     case 0:
-        switch(T::alias2status[alias] & 0x007f){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0250:
         case 0x0007:
             memcpy(data, RealManDisable, 3);
@@ -506,7 +751,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
         }
         break;
     case -1:
-        switch(T::alias2status[alias] & 0x007f){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0250:
             memcpy(data, RealManDisable, 3);
             return 3;
@@ -534,7 +779,7 @@ int realManRX(int const order, int const alias, int* const slaveID, unsigned cha
     if(*slaveID == 1){
         enabled[order] = true;
     }
-    if((T::alias2status[alias] & 0x007f) != 0x0007){
+    if((T::alias2status[alias] & 0x0f7f) != 0x0007){
         enabled[order] = false;
     }
     if(*slaveID == 1){
@@ -567,8 +812,7 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
         if(length != 16){
             return;
         }
-        switch(T::alias2status[alias] & 0x007f){
-        case 0x0050:
+        if((T::alias2status[alias] & 0x0f7f) == 0x0050){
             T::alias2status[alias] = 0x0250;
             signed char temperature = *(short*)(data + 4) * 0.1;
             unsigned short err = *(unsigned short*)(data + 0);
@@ -584,14 +828,13 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
                       drivers[alias - 1].tx->Undefined      = temperature;
                       drivers[alias - 1].tx->StatusWord     = err > 0 ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];
                       drivers[alias - 1].tx->ErrorCode      = err;
-            break;
         }
         return;
     }else if(masterID > 0x100 && masterID != 0x5fe){
         if(length != 3){
             return;
         }
-        switch(T::alias2status[alias] & 0x007f){
+        switch(T::alias2status[alias] & 0x0f7f){
         case 0x0250:
         case 0x0007:
             if(data[1] == 0x0a){
@@ -614,6 +857,8 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
         if(length != 24){
             return;
         }
+    }else{
+        return;
     }
     signed char temperature = *(short*)(data + 16) * 0.1;
     unsigned short err = *(unsigned short*)(data + 12);
@@ -632,13 +877,12 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
     struct timeval tv;
     gettimeofday(&tv, nullptr);
     long current = TIMEVAL2US(tv);
-    static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[can->order] = current;
-    }else if(current - previous[can->order] > 20 * can->period / 1000){
+        can->previous = current;
+    }else if(current - can->previous > 20 * can->period / 1000){
         unsigned int x = can->mask ^ can->MASK;
         int i = 0;
         while(i < 32){
@@ -651,7 +895,7 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[can->order] = current;
+        can->previous = current;
     }
 }
 
@@ -742,13 +986,12 @@ void canopenEyouTX(int const masterID, unsigned char* const data, int const leng
         struct timeval tv;
         gettimeofday(&tv, nullptr);
         long current = TIMEVAL2US(tv);
-        static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
         can->mask |= 1 << slaveID;
         if(can->mask == can->MASK){
             can->txSwap->advanceNodePtr();
             can->mask = 0;
-            previous[can->order] = current;
-        }else if(current - previous[can->order] > 20 * can->period / 1000){
+            can->previous = current;
+        }else if(current - can->previous > 20 * can->period / 1000){
             unsigned int x = can->mask ^ can->MASK;
             int i = 0;
             while(i < 32){
@@ -760,7 +1003,7 @@ void canopenEyouTX(int const masterID, unsigned char* const data, int const leng
             }
             can->txSwap->advanceNodePtr();
             can->mask = 0;
-            previous[can->order] = current;
+            can->previous = current;
         }
     }else if(masterID > 0x180){ // TxPDO1
         if(length != 8){
@@ -808,13 +1051,12 @@ void canopenElmoTX(int const masterID, unsigned char* const data, int const leng
         struct timeval tv;
         gettimeofday(&tv, nullptr);
         long current = TIMEVAL2US(tv);
-        static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
         can->mask |= 1 << slaveID;
         if(can->mask == can->MASK){
             can->txSwap->advanceNodePtr();
             can->mask = 0;
-            previous[can->order] = current;
-        }else if(current - previous[can->order] > 20 * can->period / 1000){
+            can->previous = current;
+        }else if(current - can->previous > 20 * can->period / 1000){
             unsigned int x = can->mask ^ can->MASK;
             int i = 0;
             while(i < 32){
@@ -826,7 +1068,7 @@ void canopenElmoTX(int const masterID, unsigned char* const data, int const leng
             }
             can->txSwap->advanceNodePtr();
             can->mask = 0;
-            previous[can->order] = current;
+            can->previous = current;
         }
     }else if(masterID > 0x180){ // TxPDO1
         if(length != 8){
@@ -858,13 +1100,12 @@ void canopenElmoTX(int const masterID, unsigned char* const data, int const leng
     struct timeval tv;
     gettimeofday(&tv, nullptr);
     long current = TIMEVAL2US(tv);
-    static long previous[10] = {current, current, current, current, current, current, current, current, current, current};
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[can->order] = current;
-    }else if(current - previous[can->order] > 20 * can->period / 1000){
+        can->previous = current;
+    }else if(current - can->previous > 20 * can->period / 1000){
         unsigned int x = can->mask ^ can->MASK;
         int i = 0;
         while(i < 32){
@@ -876,7 +1117,7 @@ void canopenElmoTX(int const masterID, unsigned char* const data, int const leng
         }
         can->txSwap->advanceNodePtr();
         can->mask = 0;
-        previous[can->order] = current;
+        can->previous = current;
     }
 }
 
@@ -1026,8 +1267,14 @@ void yesenseTX(int const masterID, unsigned char* const data, int const length, 
 
 class CANBase{
 public:
+    std::map<int, std::string> alias2type;
+    std::map<int, std::vector<int>> alias2masterIDs;
+    std::map<int, int> alias2slaveID;
+    SwapList* rxSwap, * txSwap, * rxSwap_, * txSwap_, * rxSwap__, * txSwap__;
     int order, canhal, autoRestart, baudrate, canfd, dbaudrate, division, sock, slaveCount;
     char* device;
+    unsigned int MASK, mask, MASK_, mask_, MASK__, mask__;
+    long previous;
     static long period;
     static int CANHAL;
     static signed char effectorAlias2status[2];
@@ -1042,18 +1289,14 @@ public:
     int ifaceDown();
     int open(int const masterID);
     int send(int const slaveID, unsigned char const* data, int const rtr, int const eff, int const length);
-    int recv(unsigned char* const data, int const length, int* const masterID);
+    int recv(unsigned char* const data, int* const masterID);
     int sendfd(int const slaveID, unsigned char const* data, int const rtr, int const eff, int const length);
-    int recvfd(unsigned char* const data, int const length, int* const masterID);
+    int recvfd(unsigned char* const data, int* const masterID);
     ~CANBase();
 };
 
 class CAN : public CANBase{
 public:
-    std::map<int, std::string> alias2type;
-    std::map<int, std::vector<int>> alias2masterIDs;
-    std::map<int, int> alias2slaveID;
-    SwapList* rxSwap, * txSwap, * rxSwap_, * txSwap_, * rxSwap__, * txSwap__;
     static pthread_t rxPth, txPth, txPth_;
     static int rxCPU, txCPU, txCPU_;
     static std::map<std::string, DriverParameters*> type2parameters;
@@ -1063,7 +1306,6 @@ public:
     static int* orderMasterID2slaveID[10][2048];
     static canRXFunction rxFuncs[10][256];
     static canTXFunction* txFuncs[10][2048];
-    unsigned int MASK, mask, MASK_, mask_, MASK__, mask__;
     unsigned char rollingCounter;
     CAN(int const order, char const* device);
     int config();
@@ -1081,10 +1323,6 @@ public:
 
 class CANEmu : public CANBase{
 public:
-    std::map<int, std::string> alias2type;
-    std::map<int, std::vector<int>> alias2masterIDs;
-    std::map<int, int> alias2slaveID;
-    SwapList* rxSwap, * txSwap, * rxSwap_, * txSwap_;
     static std::map<std::string, DriverParameters*> type2parameters;
     static unsigned short* alias2status;
     static DriverParameters** alias2parameters;
@@ -1093,7 +1331,6 @@ public:
     static canEmuRXFunction rxFuncs[10][256];
     static canEmuTXFunction* txFuncs[10][2048];
     static int alias2channel[256];
-    unsigned int MASK, mask, MASK_, mask_;
     CANEmu(int const order);
     int config();
     static int run(std::vector<CANEmu>& canemus);

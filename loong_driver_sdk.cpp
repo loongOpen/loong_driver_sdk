@@ -98,6 +98,7 @@ DriverSDK::impClass::impClass(){
     drivers = nullptr;
     imus = nullptr;
     digits = nullptr;
+    transferrers = nullptr;
     int i = 0;
     while(i < 6){
         processorsECAT.push_back(sysconf(_SC_NPROCESSORS_ONLN) - 1);
@@ -130,6 +131,9 @@ int DriverSDK::impClass::imuCheck(){
         if(rs232alias2type[i].size() > 1){
             printf("there should be only one slave belonging to rs232 master %d\n", i);
             return -1;
+        }else if(rs232alias2type[i].size() == 0){
+            ++i;
+            continue;
         }
         auto itr = rs232alias2type[i].begin();
         int index = itr->first - 240;
@@ -1211,13 +1215,29 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
             }else if(drivers[i].busCode == 2){
                 data[i].temp[0] = drivers[i].tx->Undefined;
             }
-            data[i].pos        = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
-            data[i].vel        = 2.0 * Pi * drivers[i].parameters.polarity * drivers[i].tx->ActualVelocity / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
-            data[i].tor        = drivers[i].parameters.polarity * drivers[i].tx->ActualTorque / 1000.0 * drivers[i].parameters.ratedCurrent * drivers[i].parameters.torqueConstant * drivers[i].parameters.gearRatioTor;
-            data[i].statusWord = drivers[i].tx->StatusWord;
-            data[i].errorCode  = drivers[i].tx->ErrorCode;
+            float position     = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
+            if(position < drivers[i].parameters.minimumPosition){
+                printf("drivers[%d] position %f out of range\n", i, position);
+                position = drivers[i].parameters.minimumPosition;
+            }else if(position > drivers[i].parameters.maximumPosition){
+                printf("drivers[%d] position %f out of range\n", i, position);
+                position = drivers[i].parameters.maximumPosition;
+            }
+            data[i].pos        = position;
+            data[i].vel        = 2.0 * Pi * drivers[i].parameters.polarity *  drivers[i].tx->ActualVelocity / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
+            data[i].tor        =            drivers[i].parameters.polarity *  drivers[i].tx->ActualTorque / 1000.0 * drivers[i].parameters.ratedCurrent * drivers[i].parameters.torqueConstant * drivers[i].parameters.gearRatioTor;
+            data[i].statusWord =                                              drivers[i].tx->StatusWord;
+            data[i].errorCode  =                                              drivers[i].tx->ErrorCode;
         }else{
-            data[i].pos        = drivers[i].parameters.polarity *  (*(float*)&drivers[i].tx->ActualPosition - drivers[i].parameters.countBias);
+            float position     = drivers[i].parameters.polarity *  (*(float*)&drivers[i].tx->ActualPosition - drivers[i].parameters.countBias);
+            if(position < drivers[i].parameters.minimumPosition){
+                printf("drivers[%d] position %f out of range\n", i, position);
+                position = drivers[i].parameters.minimumPosition;
+            }else if(position > drivers[i].parameters.maximumPosition){
+                printf("drivers[%d] position %f out of range\n", i, position);
+                position = drivers[i].parameters.maximumPosition;
+            }
+            data[i].pos        = position;
             data[i].vel        = drivers[i].parameters.polarity *   *(float*)&drivers[i].tx->ActualVelocity;
             data[i].tor        = drivers[i].parameters.polarity * half2single(drivers[i].tx->ActualTorque);
             data[i].temp[0]    =                                              drivers[i].tx->Undefined;

@@ -763,7 +763,7 @@ int ECAT::config(){
             ++j;
         }
         j = 0;
-        while(j < 10){
+        while(j < transferrerCount){
             switch(transferrers[j].config("ECAT", order, i, rxPDOSwaps[i], txPDOSwaps[i])){
             case 2:
                 break;
@@ -1035,7 +1035,11 @@ void* ECAT::rxtx(void* arg){
                         channels[k].ID &= 0x1fffffff;
                         if(channels[k].ID > 0){
                             int const stdID = channels[k].ID & 0x7ff, extID = channels[k].ID >> 11;
-                            CANEmu::txFuncs[j][stdID][extID](channels[k].ID, channels[k].Byte, channels[k].DLC, &canemus[j]);
+                            if(CANEmu::txFuncs[j][stdID] == nullptr){
+                                printf("unexpected frame with master_id %d and length %d on canemus[%d]\n", channels[k].ID, channels[k].DLC, j);
+                            }else{
+                                CANEmu::txFuncs[j][stdID][extID](channels[k].ID, channels[k].Byte, channels[k].DLC, &canemus[j]);
+                            }
                         }
                         ++k;
                     }

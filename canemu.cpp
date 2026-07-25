@@ -67,8 +67,6 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
         txFuncs[order][i] = nullptr;
         ++i;
     }
-    rxSwap = txSwap = rxSwap_ = txSwap_ = nullptr;
-    MASK = mask = MASK_ = mask_ = 0;
     alias2type = canEmuAlias2type[order];
     alias2masterIDs = canEmuAlias2masterIDs[order];
     alias2slaveID = canEmuAlias2slaveID[order];
@@ -129,6 +127,8 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
                 txFuncs[order][stdID][extID] = encosTX<CANEmu>;
             }else if(type.starts_with("Damiao")){
                 txFuncs[order][stdID][extID] = damiaoTX<CANEmu>;
+            }else if(type.starts_with("Weiyi")){
+                txFuncs[order][stdID][extID] = weiyiTX<CANEmu>;
             }else if(type == "AGIBOT"){
                 txFuncs[order][stdID][extID] = agibotTX<CANEmu>;
             }else if(type == "LinkerBot"){
@@ -146,6 +146,8 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
             rxFuncs[order][slaveID] = encosRX<CANEmu>;
         }else if(type.starts_with("Damiao")){
             rxFuncs[order][slaveID] = damiaoRX<CANEmu>;
+        }else if(type.starts_with("Weiyi")){
+            rxFuncs[order][slaveID] = weiyiRX<CANEmu>;
         }else if(type == "AGIBOT"){
             rxFuncs[order][slaveID] = agibotRX<CANEmu>;
         }else if(type == "LinkerBot"){

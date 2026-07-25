@@ -1,5 +1,4 @@
 #!/bin/bash
-export LD_LIBRARY_PATH=.
 if [ $# -eq 1 ]; then
     echo "driver_test_`uname -m` $1"
     ./driver_test_`uname -m` $1

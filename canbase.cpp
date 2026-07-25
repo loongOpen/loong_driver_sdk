@@ -60,6 +60,9 @@ CANBase::CANBase(int const order, char const* device){
         effectorAlias2status[0] = effectorAlias2status[1] = 0;
         initialized = true;
     }
+    rxSwap = txSwap = rxSwap_ = txSwap_ = rxSwap__ = txSwap__ = nullptr;
+    MASK = mask = MASK_ = mask_ = MASK__ = mask__ = 0;
+    previous = 0;
     this->order = order;
     canhal      = configXML->masterFeature("CAN", order, "canhal");
     autoRestart = configXML->masterFeature("CAN", order, "auto_restart");
@@ -352,8 +355,8 @@ int CANBase::send(int const slaveID, unsigned char const* data, int const rtr, i
     if(ret != sizeof(frame)){
         ++count[order];
         if(count[order] % (2 * slaveCount) == 0){
+            printf("send: cans[%d] write() ret = %d\n", order, ret);
             if(autoRestart){
-                printf("send: cans[%d] write() ret = %d\n", order, ret);
                 ifaceDown();
                 ifaceUp_();
             }
@@ -364,23 +367,15 @@ int CANBase::send(int const slaveID, unsigned char const* data, int const rtr, i
     return frame.can_id;
 }
 
-int CANBase::recv(unsigned char* const data, int const length, int* const masterID){
+int CANBase::recv(unsigned char* const data, int* const masterID){
     struct can_frame frame;
     int ret = read(sock, &frame, sizeof(frame));
     if(ret < 1){
         printf("recv: cans[%d] read() ret = %d\n", order, ret);
         return ret;
     }
-    if(masterID != nullptr){
-        *masterID = frame.can_id & CAN_EFF_MASK;
-    }
-    if(length < frame.can_dlc){
-        printf("recv: cans[%d] recv data buffer is too small\n", order);
-        memcpy(data, frame.data, length);
-        return length;
-    }else{
-        memcpy(data, frame.data, frame.can_dlc);
-    }
+    *masterID = frame.can_id & CAN_EFF_MASK;
+    memcpy(data, frame.data, frame.can_dlc);
     return frame.can_dlc;
 }
 
@@ -414,8 +409,8 @@ int CANBase::sendfd(int const slaveID, unsigned char const* data, int const rtr,
     if(ret != sizeof(frame)){
         ++count[order];
         if(count[order] % (2 * slaveCount) == 0){
+            printf("sendfd: cans[%d] write() ret = %d\n", order, ret);
             if(autoRestart){
-                printf("sendfd: cans[%d] write() ret = %d\n", order, ret);
                 ifaceDown();
                 ifaceUp_();
             }
@@ -426,23 +421,15 @@ int CANBase::sendfd(int const slaveID, unsigned char const* data, int const rtr,
     return frame.can_id;
 }
 
-int CANBase::recvfd(unsigned char* const data, int const length, int* const masterID){
+int CANBase::recvfd(unsigned char* const data, int* const masterID){
     struct canfd_frame frame;
     int ret = read(sock, &frame, sizeof(frame));
     if(ret < 1){
         printf("recvfd: cans[%d] read() ret = %d\n", order, ret);
         return ret;
     }
-    if(masterID != nullptr){
-        *masterID = frame.can_id & CAN_EFF_MASK;
-    }
-    if(length < frame.len){
-        printf("recvfd: cans[%d] recv data buffer is too small\n", order);
-        memcpy(data, frame.data, length);
-        return length;
-    }else{
-        memcpy(data, frame.data, frame.len);
-    }
+    *masterID = frame.can_id & CAN_EFF_MASK;
+    memcpy(data, frame.data, frame.len);
     return frame.len;
 }
 

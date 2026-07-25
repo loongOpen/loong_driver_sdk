@@ -204,6 +204,9 @@ int DriverParameters::load(std::string const& type){
     maxKd = configXML->readDeviceParameter("CAN", type.c_str(), "MaxKd");
     minT  = configXML->readDeviceParameter("CAN", type.c_str(),  "MinT");
     maxT  = configXML->readDeviceParameter("CAN", type.c_str(),  "MaxT");
+    maxC  = configXML->readDeviceParameter("CAN", type.c_str(),  "MaxC");
+    gearRatio   = configXML->readDeviceParameter("CAN", type.c_str(),   "GearRatio");
+    tConstant   = configXML->readDeviceParameter("CAN", type.c_str(),   "TConstant");
     pUnit       = configXML->readDeviceParameter("CAN", type.c_str(),       "PUnit");
     targetVUnit = configXML->readDeviceParameter("CAN", type.c_str(), "TargetVUnit");
     actualVUnit = configXML->readDeviceParameter("CAN", type.c_str(), "ActualVUnit");
@@ -211,7 +214,6 @@ int DriverParameters::load(std::string const& type){
     targetCUnit = configXML->readDeviceParameter("CAN", type.c_str(), "TargetCUnit");
     actualCUnit = configXML->readDeviceParameter("CAN", type.c_str(), "ActualCUnit");
     cOffsetUnit = configXML->readDeviceParameter("CAN", type.c_str(), "COffsetUnit");
-    tConstant   = configXML->readDeviceParameter("CAN", type.c_str(),   "TConstant");
     if( minP  == std::numeric_limits<float>::min() ||
         maxP  == std::numeric_limits<float>::min() ||
         minV  == std::numeric_limits<float>::min() ||
@@ -222,15 +224,17 @@ int DriverParameters::load(std::string const& type){
         maxKd == std::numeric_limits<float>::min() ||
         minT  == std::numeric_limits<float>::min() ||
         maxT  == std::numeric_limits<float>::min() ||
+        maxC  == std::numeric_limits<float>::min() ||
+        gearRatio   == std::numeric_limits<float>::min() ||
+        tConstant   == std::numeric_limits<float>::min() ||
         pUnit       == std::numeric_limits<float>::min() ||
         targetVUnit == std::numeric_limits<float>::min() ||
         actualVUnit == std::numeric_limits<float>::min() ||
         vOffsetUnit == std::numeric_limits<float>::min() ||
         targetCUnit == std::numeric_limits<float>::min() ||
         actualCUnit == std::numeric_limits<float>::min() ||
-        cOffsetUnit == std::numeric_limits<float>::min() ||
-        tConstant   == std::numeric_limits<float>::min()){
-        printf("no parameter of driver with type %s is set in xml\n", type.c_str());
+        cOffsetUnit == std::numeric_limits<float>::min()){
+        printf("a parameter of driver with type %s is incorrectly set in xml\n", type.c_str());
         return -1;
     }
     return 0;
@@ -272,7 +276,11 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
         maximumTorque     == std::numeric_limits<float>::min() ||
         minimumPosition   == std::numeric_limits<float>::min() ||
         maximumPosition   == std::numeric_limits<float>::min()){
-        printf("a motor parameter is incorrectly set in xml\n");
+        printf("a parameter of motor with alias %d is incorrectly set in xml\n", alias);
+        return -1;
+    }
+    if(minimumPosition >= maximumPosition){
+        printf("MinimumPosition of motor with alias %d should be lighter than MaximumPosition of that motor\n", alias);
         return -1;
     }
     if(bus == "ECAT"){
