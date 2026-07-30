@@ -17,6 +17,9 @@
 
 #include "hobot_can_hal.h"
 
+void canPeriod(long period){
+}
+
 int canInit(){
     return 0;
 }

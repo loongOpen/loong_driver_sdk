@@ -112,9 +112,9 @@ struct DriverTXData{
 
 class DriverParameters{
 public:
-    float minP, maxP, minV, maxV, minKp, maxKp, minKd, maxKd, minT, maxT, maxC, gearRatio, tConstant, pUnit, targetVUnit, actualVUnit, vOffsetUnit, targetCUnit, actualCUnit, cOffsetUnit;
+    float minP, maxP, minV, maxV, minKp, maxKp, minKd, maxKd, minT, maxT, maxC, gearRatio, tConstant, pUnit, targetVUnit, actualVUnit, vOffsetUnit, targetCUnit, actualCUnit, cOffsetUnit, transType;
     DriverParameters();
-    int load(std::string const& type);
+    void load(std::string const& type);
     ~DriverParameters();
 };
 

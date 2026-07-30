@@ -81,7 +81,6 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         txFuncs[order][i] = nullptr;
         ++i;
     }
-    rollingCounter = 0xff;
     alias2type = canAlias2type[order];
     alias2masterIDs = canAlias2masterIDs[order];
     alias2slaveID = canAlias2slaveID[order];
@@ -171,6 +170,10 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
             rxFuncs[order][slaveID] = realManRX<CAN>;
         }else if(type.starts_with("CANopen")){
             rxFuncs[order][slaveID] = canopenConfigRX<CAN>;
+            unsigned char transType = alias2parameters[alias]->transType;
+            if(transType < 241){
+                canopenSyncAlias = alias;
+            }
             canopenAliases.push_back(alias);
         }else if(type == "AGIBOT"){
             rxFuncs[order][slaveID] = agibotRX<CAN>;
@@ -347,7 +350,12 @@ void* CAN::rx(void* arg){
                 }
                 auto itr = cans[i].alias2slaveID.begin();
                 while(itr != cans[i].alias2slaveID.end()){
-                    int alias = itr->first, slaveID = itr->second, rtr = 0, eff = 0, length = rxFuncs[i][slaveID](i, alias, &slaveID, data, &rtr, &eff);
+                    int alias = itr->first, slaveID = itr->second, rtr = 0, eff = 0, length = rxFuncs[i][slaveID](alias, &slaveID, data, &rtr, &eff, &cans[i]);
+                    bool supplemental = false;
+                    if(length == std::numeric_limits<int>::max()){
+                        length = data[64];
+                        supplemental = true;
+                    }
                     if(length > -1){
                         data_ = data;
                     }else if(length == std::numeric_limits<int>::min()){
@@ -367,6 +375,23 @@ void* CAN::rx(void* arg){
                         frames[nr].can_channel = cans[i].device[4] == '_' || cans[i].device[4] == '\0' ? cans[i].device[3] - '0' : 10 + cans[i].device[4] - '0';
                         frames[nr].len = length;
                         memcpy(frames[nr].data, data_, length);
+                        ++packInfo.data_num;
+                    }
+                    if(!supplemental){
+                        ++itr;
+                        continue;
+                    }
+                    Frame& frame = cans[i].supplementalFrame;
+                    if(cans[i].canhal == 0){
+                        (cans[i].*sendFuncs[i])(frame.slaveID, frame.data, frame.rtr, frame.eff, frame.length);
+                    }else{
+                        int nr = packInfo.data_num;
+                        frames[nr].canid = BSWAP(frame.slaveID);
+                        frames[nr].count = ++cans[i].rollingCounter;
+                        frames[nr].can_type = frame.rtr << 2 | cans[i].canfd << 1 | frame.eff;
+                        frames[nr].can_channel = cans[i].device[4] == '_' || cans[i].device[4] == '\0' ? cans[i].device[3] - '0' : 10 + cans[i].device[4] - '0';
+                        frames[nr].len = frame.length;
+                        memcpy(frames[nr].data, frame.data, length);
                         ++packInfo.data_num;
                     }
                     ++itr;
@@ -559,7 +584,7 @@ void* CAN::tx_(void* arg){
     return nullptr;
 }
 
-void CAN::transfer(int const alias, long const period, int const division, unsigned short const maxCurr, CANopenData rx){
+int CAN::transfer(int const alias, long const period, int const division, unsigned short const maxCurr, CANopenData rx){
     int slaveID = 0;
     if(alias != 0){
         slaveID = alias2slaveID.find(alias)->second;
@@ -567,17 +592,21 @@ void CAN::transfer(int const alias, long const period, int const division, unsig
             unsigned short id = *(unsigned short*)(rx.data + 4);
             id += slaveID;
             *(unsigned short*)(rx.data + 4) = id;
-        }
-        if(rx.data[2] == 0x18 && rx.data[3] == 0x05){
+        }else if((rx.data[2] == 0x14 || rx.data[2] == 0x18) && rx.data[3] == 0x02){
+            unsigned char transType = alias2parameters[alias]->transType;
+            *                 (rx.data + 4) = transType;
+        }else if(rx.data[2] == 0x18 && rx.data[3] == 0x05){
+            unsigned char transType = alias2parameters[alias]->transType;
+            if(transType < 255){
+                return -1;
+            }
             *(unsigned short*)(rx.data + 4) = division * period / 1000000;
-        }
-        if(rx.data[1] == 0xc2 && rx.data[2] == 0x60 && rx.data[3] == 0x01){
+        }else if(rx.data[1] == 0xc2 && rx.data[2] == 0x60 && rx.data[3] == 0x01){
             *                 (rx.data + 4) = division * period / 1000000;
-        }
-        if(rx.data[1] == 0x72 && rx.data[2] == 0x60 && rx.data[3] == 0x00){
+        }else if(rx.data[1] == 0x72 && rx.data[2] == 0x60 && rx.data[3] == 0x00){
             *(unsigned short*)(rx.data + 4) = maxCurr;
         }
-        if(rx.functionCode == 0){
+        if(rx.functionCode == 0x000){
             *                 (rx.data + 1) = slaveID;
             slaveID = 0;
         }
@@ -605,6 +634,7 @@ void CAN::transfer(int const alias, long const period, int const division, unsig
             printf("canSendMsgFrame: cans[%d] write ret = %d\n", order, ret);
         }
     }
+    return 0;
 }
 
 int CAN::canopenConfig(){
@@ -695,14 +725,16 @@ int CAN::canopenConfig(){
         j = 0;
         while(j < correspondences.size()){
             do{
-                transfer(alias, period, txIndices.size(), maxCurrent[canopenAliases[i] - 1], correspondences[j].rx);
-                checkMutex.lock();
-                checkSlaveIDs.clear();
+                if(transfer(alias, period, txIndices.size(), maxCurrent[canopenAliases[i] - 1], correspondences[j].rx) == -1){
+                    break;
+                }
                 if(correspondences[j].tx.functionCode != 0x000){
+                    checkMutex.lock();
+                    checkSlaveIDs.clear();
                     checkSlaveIDs.push_back(alias2slaveID.find(alias)->second);
                     checkData = correspondences[j].tx;
+                    checkMutex.unlock();
                 }
-                checkMutex.unlock();
             }while(!canopenCheck<CAN>(period, 20));
             ++j;
         }
@@ -721,9 +753,9 @@ int CAN::canopenConfig(){
                 }
                 transfer(canopenAliases[i], period, 1, maxCurrent[canopenAliases[i] - 1], Correspondence_.rx);
                 checkMutex.lock();
-                checkData = Correspondence_.tx;
                 checkSlaveIDs.clear();
                 checkSlaveIDs.push_back(alias2slaveID.find(canopenAliases[i])->second);
+                checkData = Correspondence_.tx;
                 checkMutex.unlock();
             }while(!canopenCheck<CAN>(period, 20));
             if(tryCount > 4){
@@ -749,6 +781,8 @@ int CAN::canopenConfig(){
             if(orderMasterID2slaveID[order][stdID][extID] == slaveID){
                 if(subType == "Eyou"){
                     txFuncs[order][stdID][extID] = canopenEyouTX<CAN>;
+                }else if(subType == "Eyou_"){
+                    txFuncs[order][stdID][extID] = canopenEyouTX_<CAN>;
                 }else if(subType == "Elmo"){
                     txFuncs[order][stdID][extID] = canopenElmoTX<CAN>;
                 }else{
@@ -760,6 +794,8 @@ int CAN::canopenConfig(){
         }
         if(subType == "Eyou"){
             rxFuncs[order][slaveID] = canopenEyouRX<CAN>;
+        }else if(subType == "Eyou_"){
+            rxFuncs[order][slaveID] = canopenEyouRX_<CAN>;
         }else if(subType == "Elmo"){
             rxFuncs[order][slaveID] = canopenElmoRX<CAN>;
         }else{
@@ -785,10 +821,15 @@ int CAN::run(std::vector<CAN>& cans){
     if(j == 0){
         return 0;
     }
-    if(CANHAL > 0 && canInit() < 0){
-        printf("canhal init failed\n");
-        CANHAL = 0;
-        return -1;
+    if(CANHAL > 0){
+#ifdef GD32
+        canPeriod(period);
+#endif
+        if(canInit() < 0){
+            printf("canhal init failed\n");
+            CANHAL = 0;
+            return -1;
+        }
     }
     bool socketCAN = false;
     if(j > CANHAL){

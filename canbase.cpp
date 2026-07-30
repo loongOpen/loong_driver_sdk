@@ -44,10 +44,10 @@ float para2float(unsigned short const us, float const min, float const max, int 
 
 long CANBase::period;
 int CANBase::CANHAL;
-signed char CANBase::effectorAlias2status[2];
 std::mutex CANBase::resourceMutex, CANBase::checkMutex;
 CANopenData CANBase::checkData;
 std::vector<int> CANBase::checkSlaveIDs;
+signed char CANBase::effectorAlias2status[2];
 
 CANBase::CANBase(int const order, char const* device){
     static bool initialized = false;
@@ -62,7 +62,6 @@ CANBase::CANBase(int const order, char const* device){
     }
     rxSwap = txSwap = rxSwap_ = txSwap_ = rxSwap__ = txSwap__ = nullptr;
     MASK = mask = MASK_ = mask_ = MASK__ = mask__ = 0;
-    previous = 0;
     this->order = order;
     canhal      = configXML->masterFeature("CAN", order, "canhal");
     autoRestart = configXML->masterFeature("CAN", order, "auto_restart");
@@ -72,6 +71,9 @@ CANBase::CANBase(int const order, char const* device){
     division    = configXML->masterAttribute("CAN", order, "division");
     sock = -1;
     slaveCount = 0;
+    canopenSyncAlias = 0;
+    previous = 0;
+    rollingCounter = 0xff;
     this->device = (char*)malloc(strlen(device) + 1);
     strcpy(this->device, device);
 }

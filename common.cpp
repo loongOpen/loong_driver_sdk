@@ -193,18 +193,18 @@ SwapList::~SwapList(){
 DriverParameters::DriverParameters(){
 }
 
-int DriverParameters::load(std::string const& type){
-    minP  = configXML->readDeviceParameter("CAN", type.c_str(),  "MinP");
-    maxP  = configXML->readDeviceParameter("CAN", type.c_str(),  "MaxP");
-    minV  = configXML->readDeviceParameter("CAN", type.c_str(),  "MinV");
-    maxV  = configXML->readDeviceParameter("CAN", type.c_str(),  "MaxV");
-    minKp = configXML->readDeviceParameter("CAN", type.c_str(), "MinKp");
-    maxKp = configXML->readDeviceParameter("CAN", type.c_str(), "MaxKp");
-    minKd = configXML->readDeviceParameter("CAN", type.c_str(), "MinKd");
-    maxKd = configXML->readDeviceParameter("CAN", type.c_str(), "MaxKd");
-    minT  = configXML->readDeviceParameter("CAN", type.c_str(),  "MinT");
-    maxT  = configXML->readDeviceParameter("CAN", type.c_str(),  "MaxT");
-    maxC  = configXML->readDeviceParameter("CAN", type.c_str(),  "MaxC");
+void DriverParameters::load(std::string const& type){
+    minP        = configXML->readDeviceParameter("CAN", type.c_str(),        "MinP");
+    maxP        = configXML->readDeviceParameter("CAN", type.c_str(),        "MaxP");
+    minV        = configXML->readDeviceParameter("CAN", type.c_str(),        "MinV");
+    maxV        = configXML->readDeviceParameter("CAN", type.c_str(),        "MaxV");
+    minKp       = configXML->readDeviceParameter("CAN", type.c_str(),       "MinKp");
+    maxKp       = configXML->readDeviceParameter("CAN", type.c_str(),       "MaxKp");
+    minKd       = configXML->readDeviceParameter("CAN", type.c_str(),       "MinKd");
+    maxKd       = configXML->readDeviceParameter("CAN", type.c_str(),       "MaxKd");
+    minT        = configXML->readDeviceParameter("CAN", type.c_str(),        "MinT");
+    maxT        = configXML->readDeviceParameter("CAN", type.c_str(),        "MaxT");
+    maxC        = configXML->readDeviceParameter("CAN", type.c_str(),        "MaxC");
     gearRatio   = configXML->readDeviceParameter("CAN", type.c_str(),   "GearRatio");
     tConstant   = configXML->readDeviceParameter("CAN", type.c_str(),   "TConstant");
     pUnit       = configXML->readDeviceParameter("CAN", type.c_str(),       "PUnit");
@@ -214,30 +214,7 @@ int DriverParameters::load(std::string const& type){
     targetCUnit = configXML->readDeviceParameter("CAN", type.c_str(), "TargetCUnit");
     actualCUnit = configXML->readDeviceParameter("CAN", type.c_str(), "ActualCUnit");
     cOffsetUnit = configXML->readDeviceParameter("CAN", type.c_str(), "COffsetUnit");
-    if( minP  == std::numeric_limits<float>::min() ||
-        maxP  == std::numeric_limits<float>::min() ||
-        minV  == std::numeric_limits<float>::min() ||
-        maxV  == std::numeric_limits<float>::min() ||
-        minKp == std::numeric_limits<float>::min() ||
-        maxKp == std::numeric_limits<float>::min() ||
-        minKd == std::numeric_limits<float>::min() ||
-        maxKd == std::numeric_limits<float>::min() ||
-        minT  == std::numeric_limits<float>::min() ||
-        maxT  == std::numeric_limits<float>::min() ||
-        maxC  == std::numeric_limits<float>::min() ||
-        gearRatio   == std::numeric_limits<float>::min() ||
-        tConstant   == std::numeric_limits<float>::min() ||
-        pUnit       == std::numeric_limits<float>::min() ||
-        targetVUnit == std::numeric_limits<float>::min() ||
-        actualVUnit == std::numeric_limits<float>::min() ||
-        vOffsetUnit == std::numeric_limits<float>::min() ||
-        targetCUnit == std::numeric_limits<float>::min() ||
-        actualCUnit == std::numeric_limits<float>::min() ||
-        cOffsetUnit == std::numeric_limits<float>::min()){
-        printf("a parameter of driver with type %s is incorrectly set in xml\n", type.c_str());
-        return -1;
-    }
-    return 0;
+    transType   = configXML->readDeviceParameter("CAN", type.c_str(),   "TransType");
 }
 
 DriverParameters::~DriverParameters(){

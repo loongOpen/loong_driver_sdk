@@ -422,7 +422,11 @@ int DriverSDK::impClass::init(char const* xmlFile){
             printf("invalid imu configuration\n");
             return -1;
         }
-        imus = new WrapperPair<IMURXData, IMUTXData, IMUParameters>[imuCount];
+        if(imuCount > 0){
+            imus = new WrapperPair<IMURXData, IMUTXData, IMUParameters>[imuCount];
+        }else{
+            imus = new WrapperPair<IMURXData, IMUTXData, IMUParameters>[1];
+        }
         i = 0;
         while(i < rs232alias2type.size()){
             rs232s.emplace_back(i, configXML->masterDevice("RS232", i, "device").c_str());
@@ -706,7 +710,7 @@ void DriverSDK::impClass::ecatUpdate(){
             transferrerRXData->IDE = 0;
             auto itr = canemus[i].alias2slaveID.begin();
             while(itr != canemus[i].alias2slaveID.end()){
-                int alias = itr->first, slaveID = itr->second, rtr = 0, eff = 0, length = CANEmu::rxFuncs[i][slaveID](i, alias, &slaveID, data, &rtr, &eff), channel = CANEmu::alias2channel[alias];
+                int alias = itr->first, slaveID = itr->second, rtr = 0, eff = 0, length = CANEmu::rxFuncs[i][slaveID](alias, &slaveID, data, &rtr, &eff, &canemus[i]), channel = CANEmu::alias2channel[alias];
                 if(length == std::numeric_limits<int>::min()){
                     ++itr;
                     continue;
@@ -1217,10 +1221,10 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
             }
             float position     = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
             if(position < drivers[i].parameters.minimumPosition){
-                printf("drivers[%d] position %f out of range\n", i, position);
+                printf("position %f of driver with alias %d out of range\n", position, i + 1);
                 position = drivers[i].parameters.minimumPosition;
             }else if(position > drivers[i].parameters.maximumPosition){
-                printf("drivers[%d] position %f out of range\n", i, position);
+                printf("position %f of driver with alias %d out of range\n", position, i + 1);
                 position = drivers[i].parameters.maximumPosition;
             }
             data[i].pos        = position;
@@ -1231,10 +1235,10 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
         }else{
             float position     = drivers[i].parameters.polarity *  (*(float*)&drivers[i].tx->ActualPosition - drivers[i].parameters.countBias);
             if(position < drivers[i].parameters.minimumPosition){
-                printf("drivers[%d] position %f out of range\n", i, position);
+                printf("position %f of driver with alias %d out of range\n", position, i + 1);
                 position = drivers[i].parameters.minimumPosition;
             }else if(position > drivers[i].parameters.maximumPosition){
-                printf("drivers[%d] position %f out of range\n", i, position);
+                printf("position %f of driver with alias %d out of range\n", position, i + 1);
                 position = drivers[i].parameters.maximumPosition;
             }
             data[i].pos        = position;

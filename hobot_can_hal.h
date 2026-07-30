@@ -60,6 +60,7 @@ struct pack_info{
     unsigned char crc_enabled;
 };
 
+void canPeriod(long period);
 int canInit();
 int canSendMsgConfig(char const* target, Can_Config_Filter_Type* filter, struct pack_info* packInfo);
 int canSendMsgFrame(char const* target, struct canframe* frames, struct pack_info* packInfo);

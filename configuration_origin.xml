@@ -979,6 +979,7 @@
             <MaxT>10.0</MaxT>
         </Device>
         <Device type="CANopen Eyou">
+            <TransType>255</TransType>
             <RxPDOs index="0x1600">
                 <Object>TargetPosition</Object>
                 <Object>TargetVelocity</Object>
@@ -1013,6 +1014,7 @@
             </Dictionary>
         </Device>
         <Device type="CANopen Elmo">
+            <TransType>255</TransType>
             <!--<RxPDOs index="0x1600">
                 <Object>TargetPosition</Object>
                 <Object>TargetVelocity</Object>
@@ -1110,6 +1112,7 @@
         <Slave master="2" master_ids="134 261 1797"      slave_id="5" alias="17" type="RealMan WHJ10-M-D50-80-B" >0</Slave>
         <Slave master="2" master_ids="135 262 1798"      slave_id="6" alias="18" type="RealMan WHJ10-M-D50-80-B" >0</Slave><!-- master_ids="1534 262 1798" -->
         <Slave master="2" master_ids="136 263 1799"      slave_id="7" alias="19" type="RealMan WHJ10-M-D50-80-B" >0</Slave>
+        <!-- Left End -->
         <!-- Right Arm -->
         <Slave master="3" master_ids="385 897 1409 1793" slave_id="1" alias="20" type="CANopen Elmo"             >0</Slave><!-- master_ids="384+slave_id 896+slave_id 1408+slave_id 1792+slave_id" -->
         <Slave master="3" master_ids="386 898 1410 1794" slave_id="2" alias="21" type="CANopen Elmo"             >0</Slave>
@@ -1121,6 +1124,7 @@
         <Slave master="3" master_ids="134 261 1797"      slave_id="5" alias="24" type="RealMan WHJ10-M-D50-80-B" >0</Slave>
         <Slave master="3" master_ids="135 262 1798"      slave_id="6" alias="25" type="RealMan WHJ10-M-D50-80-B" >0</Slave><!-- master_ids="1534 262 1798" -->
         <Slave master="3" master_ids="136 263 1799"      slave_id="7" alias="26" type="RealMan WHJ10-M-D50-80-B" >0</Slave>
+        <!-- Right End -->
         <!-- Waist -->
         <Slave master="4" master_ids="17"                slave_id="1" alias="27" type=""                         >0</Slave>
         <Slave master="4" master_ids="18"                slave_id="2" alias="28" type=""                         >0</Slave>
