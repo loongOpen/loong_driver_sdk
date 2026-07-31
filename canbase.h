@@ -195,6 +195,63 @@ unsigned short float2para(float const f, float const min, float const max, int c
 float para2float(unsigned short const us, float const min, float const max, int const bit);
 
 template<typename T>
+void staging(int const slaveID, int const alias, T* const can){
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    long current = TIMEVAL2US(tv);
+    can->mask |= 1 << slaveID;
+    if(can->mask == can->MASK){
+        if(!can->ready){
+            int i = 0;
+            while(i < 32){
+                int a = T::orderSlaveID2alias[can->order][i];
+                if(a > 0 && a <= dofAll){
+                    if(drivers[a - 1].busCode % 2 == 1){
+                        if(std::abs(*(float*)&drivers[a - 1].tx.next()->ActualPosition - drivers[a - 1].parameters.countBias) > 2.0 * Pi - 0.6){
+                            if(drivers[a - 1].parameters.countBias > 0){
+                                drivers[a - 1].parameters.countBias -= 2.0 * Pi;
+                            }else{
+                                drivers[a - 1].parameters.countBias += 2.0 * Pi;
+                            }
+                        }
+                    }else{
+                        if(std::abs(2.0 * Pi * (drivers[a - 1].tx->ActualPosition - drivers[a - 1].parameters.countBias) / drivers[a - 1].parameters.encoderResolution / drivers[a - 1].parameters.gearRatioPosVel) > 2.0 * Pi - 0.6){
+                            if(drivers[a - 1].parameters.countBias > 0){
+                                drivers[a - 1].parameters.countBias -= drivers[a - 1].parameters.encoderResolution;
+                            }else{
+                                drivers[a - 1].parameters.countBias += drivers[a - 1].parameters.encoderResolution;
+                            }
+                        }
+                    }
+                    if((T::alias2status[alias] & 0x0f7f & ~(0x0001 ^ 0x0007)) == 0x0000){
+                        T::alias2status[alias] = 0x0001;
+                    }
+                }
+                ++i;
+            }
+            can->ready = true;
+        }
+        can->txSwap->advanceNodePtr();
+        can->mask = 0;
+        can->previous = current;
+    }else if(current - can->previous > 20 * can->period / 1000){
+        unsigned int x = can->mask ^ can->MASK;
+        int i = 0;
+        while(i < 32){
+            if((x & 1 << i) > 0){
+                int a = T::orderSlaveID2alias[can->order][i];
+                T::alias2status[a] |= 0x4000;
+                drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
+            }
+            ++i;
+        }
+        can->txSwap->advanceNodePtr();
+        can->mask = 0;
+        can->previous = current;
+    }
+}
+
+template<typename T>
 int nullRX(int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff, T* const can){
     return std::numeric_limits<int>::min();
 }
@@ -297,46 +354,7 @@ void encosTX(int const masterID, unsigned char* const data, int const length, T*
               drivers[alias - 1].tx.next()->ModeDisplay    = temperatureRotor;
               drivers[alias - 1].tx.next()->StatusWord     = error ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0x0000;
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    long current = TIMEVAL2US(tv);
-    can->mask |= 1 << slaveID;
-    if(can->mask == can->MASK){
-        if((T::alias2status[alias] & 0x0f7f) == 0x0000){
-            int i = 0;
-            while(i < 32){
-                int a = T::orderSlaveID2alias[can->order][i];
-                if(a > 0 && a <= dofAll){
-                    if(std::abs(*(float*)&drivers[a - 1].tx.next()->ActualPosition - drivers[a - 1].parameters.countBias) > 2 * Pi - 0.6){
-                        if(drivers[a - 1].parameters.countBias > 0){
-                            drivers[a - 1].parameters.countBias -= 2 * Pi;
-                        }else{
-                            drivers[a - 1].parameters.countBias += 2 * Pi;
-                        }
-                    }
-                    T::alias2status[a] = 0x0001;
-                }
-                ++i;
-            }
-        }
-        can->txSwap->advanceNodePtr();
-        can->mask = 0;
-        can->previous = current;
-    }else if(current - can->previous > 20 * can->period / 1000){
-        unsigned int x = can->mask ^ can->MASK;
-        int i = 0;
-        while(i < 32){
-            if((x & 1 << i) > 0){
-                int a = T::orderSlaveID2alias[can->order][i];
-                T::alias2status[a] |= 0x4000;
-                drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
-            }
-            ++i;
-        }
-        can->txSwap->advanceNodePtr();
-        can->mask = 0;
-        can->previous = current;
-    }
+    staging<T>(slaveID, alias, can);
 }
 
 template<typename T>
@@ -431,46 +449,7 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
               drivers[alias - 1].tx.next()->ModeDisplay    = temperatureRotor;
               drivers[alias - 1].tx.next()->StatusWord     = error ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0x0000;
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    long current = TIMEVAL2US(tv);
-    can->mask |= 1 << slaveID;
-    if(can->mask == can->MASK){
-        if((T::alias2status[alias] & 0x0f7f & ~(0x0001 ^ 0x0007)) == 0x0000){
-            int i = 0;
-            while(i < 32){
-                int a = T::orderSlaveID2alias[can->order][i];
-                if(a > 0 && a <= dofAll){
-                    if(std::abs(*(float*)&drivers[a - 1].tx.next()->ActualPosition - drivers[a - 1].parameters.countBias) > 2 * Pi - 0.6){
-                        if(drivers[a - 1].parameters.countBias > 0){
-                            drivers[a - 1].parameters.countBias -= 2 * Pi;
-                        }else{
-                            drivers[a - 1].parameters.countBias += 2 * Pi;
-                        }
-                    }
-                    T::alias2status[a] = 0x0001;
-                }
-                ++i;
-            }
-        }
-        can->txSwap->advanceNodePtr();
-        can->mask = 0;
-        can->previous = current;
-    }else if(current - can->previous > 20 * can->period / 1000){
-        unsigned int x = can->mask ^ can->MASK;
-        int i = 0;
-        while(i < 32){
-            if((x & 1 << i) > 0){
-                int a = T::orderSlaveID2alias[can->order][i];
-                T::alias2status[a] |= 0x4000;
-                drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
-            }
-            ++i;
-        }
-        can->txSwap->advanceNodePtr();
-        can->mask = 0;
-        can->previous = current;
-    }
+    staging<T>(slaveID, alias, can);
 }
 
 template<typename T>
@@ -688,29 +667,7 @@ void weiyiTX(int const masterID, unsigned char* const data, int const length, T*
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             (float)*(short*)(data + 4) / (1 << 14) / parameters->gearRatio * parameters->maxV * Pi / 30.0;
               drivers[alias - 1].tx.next()->ActualTorque   = single2half((float)*(short*)(data + 6) / (1 << 14) * parameters->maxC * parameters->tConstant * parameters->gearRatio);
               drivers[alias - 1].tx.next()->StatusWord     = T::alias2status[alias];
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    long current = TIMEVAL2US(tv);
-    can->mask |= 1 << slaveID;
-    if(can->mask == can->MASK){
-        can->txSwap->advanceNodePtr();
-        can->mask = 0;
-        can->previous = current;
-    }else if(current - can->previous > 20 * can->period / 1000){
-        unsigned int x = can->mask ^ can->MASK;
-        int i = 0;
-        while(i < 32){
-            if((x & 1 << i) > 0){
-                int a = T::orderSlaveID2alias[can->order][i];
-                T::alias2status[a] |= 0x4000;
-                drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
-            }
-            ++i;
-        }
-        can->txSwap->advanceNodePtr();
-        can->mask = 0;
-        can->previous = current;
-    }
+    staging<T>(slaveID, alias, can);
 }
 
 template<typename T>
@@ -879,29 +836,7 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
               drivers[alias - 1].tx.next()->Undefined      = temperature;
               drivers[alias - 1].tx.next()->StatusWord     = err > 0 ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = err;
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    long current = TIMEVAL2US(tv);
-    can->mask |= 1 << slaveID;
-    if(can->mask == can->MASK){
-        can->txSwap->advanceNodePtr();
-        can->mask = 0;
-        can->previous = current;
-    }else if(current - can->previous > 20 * can->period / 1000){
-        unsigned int x = can->mask ^ can->MASK;
-        int i = 0;
-        while(i < 32){
-            if((x & 1 << i) > 0){
-                int a = T::orderSlaveID2alias[can->order][i];
-                T::alias2status[a] |= 0x4000;
-                drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
-            }
-            ++i;
-        }
-        can->txSwap->advanceNodePtr();
-        can->mask = 0;
-        can->previous = current;
-    }
+    staging<T>(slaveID, alias, can);
 }
 
 template<typename T>
@@ -988,28 +923,7 @@ void canopenEyouTX(int const masterID, unsigned char* const data, int const leng
         drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)(data + 2);
         drivers[alias - 1].tx.next()->ErrorCode      = *(unsigned short*)(data + 4);
         drivers[alias - 1].tx.next()->Undefined      = *(          char*)(data + 6);
-        struct timeval tv;
-        gettimeofday(&tv, nullptr);
-        long current = TIMEVAL2US(tv);
-        can->mask |= 1 << slaveID;
-        if(can->mask == can->MASK){
-            can->txSwap->advanceNodePtr();
-            can->mask = 0;
-            can->previous = current;
-        }else if(current - can->previous > 20 * can->period / 1000){
-            unsigned int x = can->mask ^ can->MASK;
-            int i = 0;
-            while(i < 32){
-                if((x & 1 << i) > 0){
-                    int a = T::orderSlaveID2alias[can->order][i];
-                    drivers[a - 1].tx.next()->StatusWord |= 0x4000;
-                }
-                ++i;
-            }
-            can->txSwap->advanceNodePtr();
-            can->mask = 0;
-            can->previous = current;
-        }
+        staging<T>(slaveID, alias, can);
     }else if(masterID > 0x180){ // TxPDO1
         if(length != 8){
             return;
@@ -1067,28 +981,7 @@ void canopenEyouTX_(int const masterID, unsigned char* const data, int const len
         drivers[alias - 1].tx.next()->ActualTorque   = *(         short*)(data + 0);
         drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)(data + 2);
         drivers[alias - 1].tx.next()->ErrorCode      = *(unsigned short*)(data + 4);
-        struct timeval tv;
-        gettimeofday(&tv, nullptr);
-        long current = TIMEVAL2US(tv);
-        can->mask |= 1 << slaveID;
-        if(can->mask == can->MASK){
-            can->txSwap->advanceNodePtr();
-            can->mask = 0;
-            can->previous = current;
-        }else if(current - can->previous > 20 * can->period / 1000){
-            unsigned int x = can->mask ^ can->MASK;
-            int i = 0;
-            while(i < 32){
-                if((x & 1 << i) > 0){
-                    int a = T::orderSlaveID2alias[can->order][i];
-                    drivers[a - 1].tx.next()->StatusWord |= 0x4000;
-                }
-                ++i;
-            }
-            can->txSwap->advanceNodePtr();
-            can->mask = 0;
-            can->previous = current;
-        }
+        staging<T>(slaveID, alias, can);
     }else if(masterID > 0x180){ // TxPDO1
         if(length != 8){
             return;
@@ -1132,28 +1025,7 @@ void canopenElmoTX(int const masterID, unsigned char* const data, int const leng
         drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)(data + 2);
         drivers[alias - 1].tx.next()->ErrorCode      = *(unsigned short*)(data + 4);
         drivers[alias - 1].tx.next()->Undefined      = *(         short*)(data + 6);
-        struct timeval tv;
-        gettimeofday(&tv, nullptr);
-        long current = TIMEVAL2US(tv);
-        can->mask |= 1 << slaveID;
-        if(can->mask == can->MASK){
-            can->txSwap->advanceNodePtr();
-            can->mask = 0;
-            can->previous = current;
-        }else if(current - can->previous > 20 * can->period / 1000){
-            unsigned int x = can->mask ^ can->MASK;
-            int i = 0;
-            while(i < 32){
-                if((x & 1 << i) > 0){
-                    int a = T::orderSlaveID2alias[can->order][i];
-                    drivers[a - 1].tx.next()->StatusWord |= 0x4000;
-                }
-                ++i;
-            }
-            can->txSwap->advanceNodePtr();
-            can->mask = 0;
-            can->previous = current;
-        }
+        staging<T>(slaveID, alias, can);
     }else if(masterID > 0x180){ // TxPDO1
         if(length != 8){
             return;
@@ -1181,28 +1053,7 @@ void canopenElmoTX(int const masterID, unsigned char* const data, int const leng
     drivers[alias - 1].tx.next()->ActualPosition = *(           int*)(data + 0);
     drivers[alias - 1].tx.next()->ActualTorque   = *(         short*)(data + 4);
     drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)(data + 6);
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    long current = TIMEVAL2US(tv);
-    can->mask |= 1 << slaveID;
-    if(can->mask == can->MASK){
-        can->txSwap->advanceNodePtr();
-        can->mask = 0;
-        can->previous = current;
-    }else if(current - can->previous > 20 * can->period / 1000){
-        unsigned int x = can->mask ^ can->MASK;
-        int i = 0;
-        while(i < 32){
-            if((x & 1 << i) > 0){
-                int a = T::orderSlaveID2alias[can->order][i];
-                drivers[a - 1].tx.next()->StatusWord |= 0x4000;
-            }
-            ++i;
-        }
-        can->txSwap->advanceNodePtr();
-        can->mask = 0;
-        can->previous = current;
-    }
+    staging<T>(slaveID, alias, can);
 }
 
 template<typename T>
@@ -1358,6 +1209,7 @@ public:
     unsigned int MASK, mask, MASK_, mask_, MASK__, mask__;
     int order, canhal, autoRestart, baudrate, canfd, dbaudrate, division, sock, slaveCount, canopenSyncAlias;
     char* device;
+    bool ready;
     long previous;
     unsigned char rollingCounter;
     std::vector<int> canopenAliases;

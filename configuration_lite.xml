@@ -1683,7 +1683,7 @@
         <CountBias>0</CountBias>
         <EncoderResolution>524288</EncoderResolution>
         <GearRatioTor>1</GearRatioTor>
-        <GearRatioPosVel>1</GearRatioPosVel>
+        <GearRatioPosVel>10</GearRatioPosVel>
         <RatedCurrent>1</RatedCurrent>
         <TorqueConstant>1</TorqueConstant>
         <GearEfficiency>0.91</GearEfficiency>

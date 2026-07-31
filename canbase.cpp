@@ -72,6 +72,7 @@ CANBase::CANBase(int const order, char const* device){
     sock = -1;
     slaveCount = 0;
     canopenSyncAlias = 0;
+    ready = false;
     previous = 0;
     rollingCounter = 0xff;
     this->device = (char*)malloc(strlen(device) + 1);
