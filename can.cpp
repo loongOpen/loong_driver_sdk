@@ -541,7 +541,7 @@ void* CAN::tx__(void* arg){
             ++i;
         }
 #ifdef ENPHT
-        wakeupTime.tv_nsec += can.period * can.division;
+        wakeupTime.tv_nsec += can.division * can.period;
         while(wakeupTime.tv_nsec >= NSEC_PER_SEC){
             wakeupTime.tv_nsec -= NSEC_PER_SEC;
             ++wakeupTime.tv_sec;
@@ -584,7 +584,17 @@ void* CAN::tx_(void* arg){
     return nullptr;
 }
 
-int CAN::transfer(int const alias, long const period, int const division, unsigned short const maxCurr, CANopenData rx){
+float inverseHarmonicMean(std::map<unsigned short, int> const* txIndex2division){
+    float result = 0.0;
+    auto itr = txIndex2division->begin();
+    while(itr != txIndex2division->end()){
+        result += 1.0 / itr->second;
+        ++itr;
+    }
+    return result;
+}
+
+int CAN::transfer(int const alias, std::vector<unsigned short> const* txIndices, std::map<unsigned short, int> const* txIndex2division, unsigned short const maxCurr, CANopenData rx){
     int slaveID = 0;
     if(alias != 0){
         slaveID = alias2slaveID.find(alias)->second;
@@ -592,17 +602,34 @@ int CAN::transfer(int const alias, long const period, int const division, unsign
             unsigned short id = *(unsigned short*)(rx.data + 4);
             id += slaveID;
             *(unsigned short*)(rx.data + 4) = id;
-        }else if((rx.data[2] == 0x14 || rx.data[2] == 0x18) && rx.data[3] == 0x02){
+        }else if(rx.data[2] == 0x14 && rx.data[3] == 0x02){
             unsigned char transType = alias2parameters[alias]->transType;
             *                 (rx.data + 4) = transType;
+        }else if(rx.data[2] == 0x18 && rx.data[3] == 0x02){
+            unsigned char transType = alias2parameters[alias]->transType;
+            if(transType < 241){
+                unsigned char txDivision = 1;
+                auto itr = txIndex2division->find(0x1a00 + rx.data[1]);
+                if(itr != txIndex2division->end()){
+                    txDivision = itr->second;
+                }
+                *             (rx.data + 4) = txDivision * transType;
+            }else{
+                *             (rx.data + 4) =              transType;
+            }
         }else if(rx.data[2] == 0x18 && rx.data[3] == 0x05){
             unsigned char transType = alias2parameters[alias]->transType;
-            if(transType < 255){
+            if(transType < 241){
                 return -1;
             }
-            *(unsigned short*)(rx.data + 4) = division * period / 1000000;
+            unsigned char txDivision = 1;
+            auto itr = txIndex2division->find(0x1a00 + rx.data[1]);
+            if(itr != txIndex2division->end()){
+                txDivision = itr->second;
+            }
+            *(unsigned short*)(rx.data + 4) = txDivision * inverseHarmonicMean(txIndex2division) * division * period / 1000000;
         }else if(rx.data[1] == 0xc2 && rx.data[2] == 0x60 && rx.data[3] == 0x01){
-            *                 (rx.data + 4) = division * period / 1000000;
+            *                 (rx.data + 4) =              inverseHarmonicMean(txIndex2division) * division * period / 1000000;
         }else if(rx.data[1] == 0x72 && rx.data[2] == 0x60 && rx.data[3] == 0x00){
             *(unsigned short*)(rx.data + 4) = maxCurr;
         }
@@ -656,11 +683,11 @@ int CAN::canopenConfig(){
         int m = 0;
         while(m < rxPDOs.size()){
             unsigned short index = strtoul(rxPDOs[m][0].c_str(), nullptr, 16);
+            rxIndices.push_back(index);
             Correspondence correspondence = Correspondences[23];
             *(unsigned short*)(correspondence.rx.data + 1) = index;
             *(unsigned short*)(correspondence.tx.data + 1) = index;
             correspondences.push_back(correspondence);
-            rxIndices.push_back(index);
             int n = 1;
             while(n < rxPDOs[m].size()){
                 std::vector<std::string> entry = configXML->entry(deviceXML, rxPDOs[m][n].c_str());
@@ -682,14 +709,16 @@ int CAN::canopenConfig(){
             correspondences.push_back(correspondence);
             ++m;
         }
+        std::map<unsigned short, int> txIndex2division;
         m = 0;
         while(m < txPDOs.size()){
             unsigned short index = strtoul(txPDOs[m][0].c_str(), nullptr, 16);
+            txIndices.push_back(index);
+            txIndex2division.emplace(index, configXML->txDivision(deviceXML, txPDOs[m][0].c_str()));
             Correspondence correspondence = Correspondences[25];
             *(unsigned short*)(correspondence.rx.data + 1) = index;
             *(unsigned short*)(correspondence.tx.data + 1) = index;
             correspondences.push_back(correspondence);
-            txIndices.push_back(index);
             int n = 1;
             while(n < txPDOs[m].size()){
                 std::vector<std::string> entry = configXML->entry(deviceXML, txPDOs[m][n].c_str());
@@ -725,7 +754,7 @@ int CAN::canopenConfig(){
         j = 0;
         while(j < correspondences.size()){
             do{
-                if(transfer(alias, period, txIndices.size(), maxCurrent[canopenAliases[i] - 1], correspondences[j].rx) == -1){
+                if(transfer(alias, &txIndices, &txIndex2division, maxCurrent[canopenAliases[i] - 1], correspondences[j].rx) == -1){
                     break;
                 }
                 if(correspondences[j].tx.functionCode != 0x000){
@@ -741,7 +770,7 @@ int CAN::canopenConfig(){
         ++i;
     }
     /* while(true){
-        transfer(0, period, 1, 1000, Correspondence0.rx);
+        transfer(0, nullptr, nullptr, 1000, Correspondence0.rx);
         usleep(period / 1000);
         int i = 0;
         while(i < canopenAliases.size()){
@@ -751,7 +780,7 @@ int CAN::canopenConfig(){
                 if(tryCount > 4){
                     break;
                 }
-                transfer(canopenAliases[i], period, 1, maxCurrent[canopenAliases[i] - 1], Correspondence_.rx);
+                transfer(canopenAliases[i], nullptr, nullptr, maxCurrent[canopenAliases[i] - 1], Correspondence_.rx);
                 checkMutex.lock();
                 checkSlaveIDs.clear();
                 checkSlaveIDs.push_back(alias2slaveID.find(canopenAliases[i])->second);
@@ -768,7 +797,7 @@ int CAN::canopenConfig(){
         }
         break;
     } */
-    transfer(0, period, 1, 1000, Correspondence0.rx);
+    transfer(0, nullptr, nullptr, 1000, Correspondence0.rx);
     i = 0;
     while(i < canopenAliases.size()){
         int alias = canopenAliases[i], slaveID = alias2slaveID.find(alias)->second;

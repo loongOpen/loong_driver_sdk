@@ -120,16 +120,16 @@ std::vector<Correspondence> const Correspondences = { {
         .rx = { .functionCode = 0x600, .rtr = 0, .eff = 0, .length = 8, .data = {0x2b, 0x03, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} },   // 22 TxPDO4 Event Timer
         .tx = { .functionCode = 0x580, .rtr = 0, .eff = 0, .length = 8, .data = {0x60, 0x03, 0x18, 0x05, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .eff = 0, .length = 8, .data = {0x2f, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },   // 23 RxPDO Count
+        .rx = { .functionCode = 0x600, .rtr = 0, .eff = 0, .length = 8, .data = {0x2f, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} },   // 23 RxPDO Group Count
         .tx = { .functionCode = 0x580, .rtr = 0, .eff = 0, .length = 8, .data = {0x60, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .eff = 0, .length = 8, .data = {0x23, 0x00, 0x16, 0x01, 0x20, 0x00, 0x7a, 0x60} },   // 24 RxPDO
+        .rx = { .functionCode = 0x600, .rtr = 0, .eff = 0, .length = 8, .data = {0x23, 0x00, 0x16, 0x01, 0x20, 0x00, 0x7a, 0x60} },   // 24 RxPDO Group
         .tx = { .functionCode = 0x580, .rtr = 0, .eff = 0, .length = 8, .data = {0x60, 0x00, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .eff = 0, .length = 8, .data = {0x2f, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },   // 25 TxPDO Count
+        .rx = { .functionCode = 0x600, .rtr = 0, .eff = 0, .length = 8, .data = {0x2f, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} },   // 25 TxPDO Group Count
         .tx = { .functionCode = 0x580, .rtr = 0, .eff = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00} }
     }, {
-        .rx = { .functionCode = 0x600, .rtr = 0, .eff = 0, .length = 8, .data = {0x23, 0x00, 0x1a, 0x01, 0x20, 0x00, 0x64, 0x60} },   // 26 TxPDO
+        .rx = { .functionCode = 0x600, .rtr = 0, .eff = 0, .length = 8, .data = {0x23, 0x00, 0x1a, 0x01, 0x20, 0x00, 0x64, 0x60} },   // 26 TxPDO Group
         .tx = { .functionCode = 0x580, .rtr = 0, .eff = 0, .length = 8, .data = {0x60, 0x00, 0x1a, 0x01, 0x00, 0x00, 0x00, 0x00} }
     }, {
         .rx = { .functionCode = 0x600, .rtr = 0, .eff = 0, .length = 8, .data = {0x23, 0x00, 0x14, 0x01, 0x00, 0x02, 0x00, 0x00} },   // 27 Enable RxPDO1
@@ -214,17 +214,9 @@ void staging(int const slaveID, int const alias, T* const can){
                                 drivers[a - 1].parameters.countBias += 2.0 * Pi;
                             }
                         }
-                    }else{
-                        if(std::abs(2.0 * Pi * (drivers[a - 1].tx->ActualPosition - drivers[a - 1].parameters.countBias) / drivers[a - 1].parameters.encoderResolution / drivers[a - 1].parameters.gearRatioPosVel) > 2.0 * Pi - 0.6){
-                            if(drivers[a - 1].parameters.countBias > 0){
-                                drivers[a - 1].parameters.countBias -= drivers[a - 1].parameters.encoderResolution;
-                            }else{
-                                drivers[a - 1].parameters.countBias += drivers[a - 1].parameters.encoderResolution;
-                            }
-                        }
                     }
-                    if((T::alias2status[alias] & 0x0f7f & ~(0x0001 ^ 0x0007)) == 0x0000){
-                        T::alias2status[alias] = 0x0001;
+                    if((T::alias2status[a] & 0x0f7f & ~(0x0001 ^ 0x0007)) == 0x0000){
+                        T::alias2status[a] = 0x0001;
                     }
                 }
                 ++i;
@@ -540,10 +532,6 @@ int weiyiRX(int const alias, int* const slaveID, unsigned char* const data, int*
     DriverParameters const* parameters = T::alias2parameters[alias];
     ++count[alias];
     if(count[alias] % 3 == 0){
-        if(count[alias] % 1500 == 0){
-            data[0] = 0x60;
-            return 1;
-        }
         int   p =   *(float*)&drivers[alias - 1].rx.previous()->TargetPosition * (1 << 24) * parameters->gearRatio / 2.0 / Pi;
         short v =   *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity * (1 << 14) * parameters->gearRatio / parameters->maxV / Pi * 30.0;
         short t = half2single(drivers[alias - 1].rx.previous()->TorqueOffset)  * (1 << 14) / parameters->maxC / parameters->tConstant / parameters->gearRatio;
@@ -558,12 +546,19 @@ int weiyiRX(int const alias, int* const slaveID, unsigned char* const data, int*
         data[7] = c[0];
         data[6] = c[1];
         data[0] = 0x80;
-        return 8;
-    }else if(count[alias] % 3 == 1){
-        if(count[alias] % 1500 == 1){
-            data[0] = 0x5f;
-            return 1;
+        if(count[alias] % 300 == 0){
+            data[64] = 8;
+            Frame& frame = can->supplementalFrame;
+            frame.slaveID = *slaveID;
+            frame.rtr     = 0;
+            frame.eff     = 0;
+            frame.length  = 1;
+            frame.data[0] = 0x60;
+            return std::numeric_limits<int>::max();
+        }else{
+            return 8;
         }
+    }else if(count[alias] % 3 == 1){
         int  kp = half2single(drivers[alias - 1].rx.previous()->ControlWord)   * (1 << 24);
         int  kd = half2single(drivers[alias - 1].rx.previous()->TargetTorque)  * (1 << 24);
         unsigned char* c = (unsigned char*)&kp;
@@ -576,7 +571,18 @@ int weiyiRX(int const alias, int* const slaveID, unsigned char* const data, int*
         data[6] = c[1];
         data[5] = c[2];
         data[0] = 0x81;
-        return 8;
+        if(count[alias] % 300 == 1){
+            data[64] = 8;
+            Frame& frame = can->supplementalFrame;
+            frame.slaveID = *slaveID;
+            frame.rtr     = 0;
+            frame.eff     = 0;
+            frame.length  = 1;
+            frame.data[0] = 0x5f;
+            return std::numeric_limits<int>::max();
+        }else{
+            return 8;
+        }
     }else{
         data[0] = 0x94;
         return 1;
@@ -614,21 +620,14 @@ void weiyiTX(int const masterID, unsigned char* const data, int const length, T*
         }
         return;
     }else if(length == 3){
-        static signed char temperatureMOS  [32] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-        };
-        static signed char temperatureRotor[32] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-        };
+        signed char temperatureMOS = 0, temperatureRotor = 0;
         data[0] = data[2];
         if(data[0] == 0x60){
-            drivers[alias - 1].tx.next()->Undefined   = temperatureMOS  [alias] = *(short*)(data + 0) / (1 << 8);
+            drivers[alias - 1].tx.next()->Undefined   = temperatureMOS   = *(short*)(data + 0) / (1 << 8);
         }else if(data[0] == 0x5f){
-            drivers[alias - 1].tx.next()->ModeDisplay = temperatureRotor[alias] = *(short*)(data + 0) / (1 << 8);
+            drivers[alias - 1].tx.next()->ModeDisplay = temperatureRotor = *(short*)(data + 0) / (1 << 8);
         }
-        if(temperatureMOS[alias] > 80 || temperatureRotor[alias] > 80){
+        if(temperatureMOS > 80 || temperatureRotor > 80){
             T::alias2status[alias] |= 0x0080;
         }else{
             T::alias2status[alias] &= ~0x0080;
@@ -1252,7 +1251,7 @@ public:
     static void cleanup_(void* arg);
     static void* tx__(void* arg);
     static void* tx_(void* arg);
-    int transfer(int const alias, long const period, int const division, unsigned short const maxCurr, CANopenData rx);
+    int transfer(int const alias, std::vector<unsigned short> const* txIndices, std::map<unsigned short, int> const* txIndex2division, unsigned short const maxCurr, CANopenData rx);
     int canopenConfig();
     static int run(std::vector<CAN>& cans);
     ~CAN();

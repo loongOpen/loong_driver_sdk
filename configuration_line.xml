@@ -989,11 +989,11 @@
                 <Object>ControlWord</Object>
                 <Object>Mode</Object>
             </RxPDOs>
-            <TxPDOs index="0x1a00">
+            <TxPDOs index="0x1a00" division="1">
                 <Object>ActualPosition</Object>
                 <Object>ActualVelocity</Object>
             </TxPDOs>
-            <TxPDOs index="0x1a02">
+            <TxPDOs index="0x1a02" division="1">
                 <Object>ActualTorque</Object>
                 <Object>StatusWord</Object>
                 <Object>ErrorCode</Object>

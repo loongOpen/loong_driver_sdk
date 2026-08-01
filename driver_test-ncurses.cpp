@@ -84,10 +84,12 @@ int main(int argc, char** argv){
     }
     std::vector<DriverSDK::motorTargetStruct> motorTargetData;
     std::vector<DriverSDK::motorActualStruct> motorActualData;
+    std::vector<int> encoderCounts;
     i = 0;
     while(i < motorNr){
         motorTargetData.push_back(DriverSDK::motorTargetStruct{});
         motorActualData.push_back(DriverSDK::motorActualStruct{});
+        encoderCounts.emplace_back(0);
         ++i;
     }
     std::vector<DriverSDK::sensorStruct> sensorData;
@@ -242,12 +244,13 @@ int main(int argc, char** argv){
             ++j;
         }
         driverSDK.getMotorActual(motorActualData);
+        driverSDK.getEncoderCount(encoderCounts);
         j = 0;
         while(j < motorNr){
             driverSDK.sendMotorSDORequest(sdoData[j]);
             driverSDK.recvMotorSDOResponse(sdoData[j]);
             motorTargetData[j].pos = motorActualData[j].pos;
-            printf("motor%02d:\t%8ld %8d 0x%04x 0x%04x\n", j + 1, sdoData[j].value, motorActualData[j].temp[0], motorActualData[j].statusWord, motorActualData[j].errorCode);
+            printf("motor%02d:\t%8ld|%11d %8d 0x%04x 0x%04x\n", j + 1, sdoData[j].value, encoderCounts[j], motorActualData[j].temp[0], motorActualData[j].statusWord, motorActualData[j].errorCode);
             ++j;
         }
         driverSDK.setMotorTarget(motorTargetData);

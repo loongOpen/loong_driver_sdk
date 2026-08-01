@@ -48,6 +48,7 @@ public:
     unsigned int vendorID(tinyxml2::XMLElement const* deviceElement);
     unsigned int productCode(tinyxml2::XMLElement const* deviceElement);
     std::vector<std::vector<std::string>> pdos(tinyxml2::XMLElement* const deviceElement, char const* rxtx);
+    int txDivision(tinyxml2::XMLElement* const deviceElement, char const* index);
     std::vector<std::string> entry(tinyxml2::XMLElement* const deviceElement, char const* object);
     std::vector<std::map<int, std::string>> alias2type(char const* bus, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>>* const aliases2domainType, bool emu = false);
     std::vector<std::map<int, int>> alias2attribute(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domainType = nullptr);

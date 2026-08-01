@@ -267,6 +267,22 @@ std::vector<std::vector<std::string>> ConfigXML::pdos(tinyxml2::XMLElement* cons
     return ret;
 }
 
+int ConfigXML::txDivision(tinyxml2::XMLElement* const deviceElement, char const* index){
+    tinyxml2::XMLElement* txPDOsElement = deviceElement->FirstChildElement("TxPDOs");
+    while(txPDOsElement != nullptr){
+        if(strcmp(txPDOsElement->Attribute("index"), index) == 0){
+            tinyxml2::XMLAttribute const* attribute = txPDOsElement->FindAttribute("division");
+            if(attribute == nullptr){
+                return 1;
+            }else{
+                return attribute->IntValue();
+            }
+        }
+        txPDOsElement = txPDOsElement->NextSiblingElement("TxPDOs");
+    }
+    return 1;
+}
+
 std::vector<std::string> ConfigXML::entry(tinyxml2::XMLElement* const deviceElement, char const* object){
     std::vector<std::string> ret;
     tinyxml2::XMLElement* dictionaryElement = deviceElement->FirstChildElement("Dictionary");
@@ -352,7 +368,7 @@ std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus, s
                 printf("duplicate alias on bus %s master %d\n", bus, master);
                 exit(-1);
             }
-            ret[master].insert(std::make_pair(alias, slaveElement->Attribute("type")));
+            ret[master].emplace(alias, slaveElement->Attribute("type"));
         }
         slaveElement = slaveElement->NextSiblingElement("Slave");
     }
@@ -409,7 +425,7 @@ std::vector<std::map<int, int>> ConfigXML::alias2attribute(char const* bus, char
                 printf("missing %s of device with alias %d\n", name, alias);
                 exit(-1);
             }
-            ret[master].insert(std::make_pair(alias, slaveElement->IntAttribute(name)));
+            ret[master].emplace(alias, slaveElement->IntAttribute(name));
         }
         slaveElement = slaveElement->NextSiblingElement("Slave");
     }
@@ -476,7 +492,7 @@ std::vector<std::map<int, std::vector<int>>> ConfigXML::alias2attribute_(char co
                 printf("invalid %s of device with alias %d\n", name, alias);
                 exit(-1);
             }
-            ret[master].insert(std::make_pair(alias, items));
+            ret[master].emplace(alias, items);
         }
         slaveElement = slaveElement->NextSiblingElement("Slave");
     }
