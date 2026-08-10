@@ -31,18 +31,22 @@ class ECAT{
 public:
     bool sdoRequestable, regRequestable;
     int order, * domainSizes, cpu, domainCount, * workingCounters, previousIncompleteness, tryCount;
+    static int effectorAlias, sensorAlias;
+    std::atomic<int> stalled;
     std::map<int, std::string> alias2type;
     std::string eni;
     long period;
-    std::map<int, int> alias2slave, alias2domain;
+    std::map<int, int> alias2slave, alias2domain, driverAlias2slave, effectorAlias2slave, sensorAlias2slave;
     std::vector<int> domainDivisions;
+    std::vector<bool> domainWatchdogs;
+    int alias2count[256];
     SwapList** rxPDOSwaps, ** txPDOSwaps;
     SDOMsg* sdoMsg;
     REGMsg* regMsg;
     PtrQue<SDOMsg> sdoRequestQueue, sdoResponseQueue, regRequestQueue, regResponseQueue;
     ecat::task* task;
     ecat::master* master;
-    ecat::PdoRegInfo** targetPosition, ** targetVelocity, ** targetTorque, ** controlWord, ** mode, ** torqueOffset, ** velocityOffset, ** actualPosition, ** actualVelocity, ** actualTorque, ** statusWord, ** modeDisplay, ** errorCode;
+    ecat::PdoRegInfo** targetPosition, ** targetVelocity, ** targetTorque, ** controlWord, ** mode, ** torqueOffset, ** velocityOffset, ** actualPosition, ** actualVelocity, ** actualTorque, ** statusWord, ** modeDisplay, ** errorCode, ** fx, ** fy, ** fz, ** mx, ** my, ** mz;
     ecat::domain_state* domainStates;
     ecat::wc_state_type* wcStates;
     ECAT(int const order);
@@ -54,5 +58,6 @@ public:
     int run();
     void clean();
     ~ECAT();
+    ECAT(ECAT const&&);
 };
 }

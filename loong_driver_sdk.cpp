@@ -33,10 +33,11 @@
 namespace DriverSDK{
 ConfigXML* configXML;
 std::vector<std::map<int, std::string>> rs232alias2type, rs485alias2type, rs485emuAlias2type, canAlias2type, canEmuAlias2type, ecatAlias2type;
-std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> ecatAliases2domainType;
+std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> ecatAliases2domain2type;
 std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs, canEmuAlias2masterIDs;
 std::vector<std::map<int, int>> canAlias2slaveID, canEmuAlias2slaveID, ecatAlias2domain;
 std::vector<std::vector<int>> ecatDomainDivisions;
+std::vector<std::vector<bool>> ecatDomainWatchdogs;
 int dofLeg, dofArm, dofWaist, dofNeck, dofAll, dofLeftEffector, dofRightEffector, dofEffector, imuCount, transferrerCount;
 sensorFunction sensorFuncs[2] = {nullSensor, nullSensor};
 WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
@@ -48,7 +49,6 @@ WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters>* transf
 std::vector<unsigned short> processorsECAT, processorsCAN;
 std::vector<char> operatingMode;
 std::vector<unsigned short> maxCurrent;
-std::atomic<int> ecatStalled;
 std::vector<RS485>* rs485sPtr;
 std::vector<CANEmu>* canemusPtr;
 
@@ -109,7 +109,6 @@ DriverSDK::impClass::impClass(){
         processorsCAN.push_back(sysconf(_SC_NPROCESSORS_ONLN) - 1);
         ++i;
     }
-    ecatStalled.store(0);
     ecats.reserve(6);
     rs232s.reserve(6);
     rs485sPtr = &rs485s;
@@ -238,12 +237,12 @@ int DriverSDK::impClass::driverCheck(){
         ++i;
     }
     i = 0;
-    while(i < ecatAliases2domainType.size()){
+    while(i < ecatAliases2domain2type.size()){
         int j = 0;
-        while(j < ecatAliases2domainType[i].size()){
+        while(j < ecatAliases2domain2type[i].size()){
             std::vector<int> aliases;
             std::string type;
-            std::tie(aliases, std::ignore, type) = ecatAliases2domainType[i][j];
+            std::tie(aliases, std::ignore, type) = ecatAliases2domain2type[i][j];
             if(aliases.size() != atoi(configXML->typeAttribute("ECAT", type.c_str(), "dof").c_str())){
                 return -2;
             }
@@ -306,11 +305,11 @@ int DriverSDK::impClass::init(char const* xmlFile){
     }else if(dofAll > 0){
         drivers = new WrapperPair<DriverRXData, DriverTXData, MotorParameters>[dofAll];
     }
-    ecatAlias2type     = configXML->alias2type("ECAT", &ecatAliases2domainType);
-    rs485alias2type    = configXML->alias2type("RS485", nullptr);
-    rs485emuAlias2type = configXML->alias2type("RS485Emu", nullptr);
-    canAlias2type      = configXML->alias2type("CAN", nullptr);
-    canEmuAlias2type   = configXML->alias2type("CANEmu", &ecatAliases2domainType, true);
+    ecatAlias2type     = configXML->alias2type("ECAT",     &ecatAliases2domain2type      );
+    rs485alias2type    = configXML->alias2type("RS485",    nullptr                       );
+    rs485emuAlias2type = configXML->alias2type("RS485Emu", nullptr                       );
+    canAlias2type      = configXML->alias2type("CAN",      nullptr                       );
+    canEmuAlias2type   = configXML->alias2type("CANEmu",   &ecatAliases2domain2type, true);
     if(ecatAlias2type.size() > 6){
         printf("6 ecat masters at most\n");
         return -1;
@@ -385,12 +384,13 @@ int DriverSDK::impClass::init(char const* xmlFile){
     if(dofEffector > 0){
         digits = new WrapperPair<DigitRXData, DigitTXData, EffectorParameters>[dofEffector];
     }
-    ecatDomainDivisions   = configXML->domainDivisions("ECAT");
-    ecatAlias2domain      = configXML->alias2attribute("ECAT", "domain");
-    canAlias2masterIDs    = configXML->alias2attribute_("CAN", "master_ids");
-    canAlias2slaveID      = configXML->alias2attribute("CAN", "slave_id");
-    canEmuAlias2masterIDs = configXML->alias2attribute_("CANEmu", "master_ids", &ecatAliases2domainType);
-    canEmuAlias2slaveID   = configXML->alias2attribute("CANEmu", "slave_id", &ecatAliases2domainType);
+    ecatDomainDivisions   = configXML->domainDivisions ("ECAT"                                          );
+    ecatDomainWatchdogs   = configXML->domainWatchdogs ("ECAT"                                          );
+    ecatAlias2domain      = configXML->alias2attribute ("ECAT",   "domain"                              );
+    canAlias2masterIDs    = configXML->alias2attribute_("CAN",    "master_ids"                          );
+    canAlias2slaveID      = configXML->alias2attribute ("CAN",    "slave_id"                            );
+    canEmuAlias2masterIDs = configXML->alias2attribute_("CANEmu", "master_ids", &ecatAliases2domain2type);
+    canEmuAlias2slaveID   = configXML->alias2attribute ("CANEmu", "slave_id",   &ecatAliases2domain2type);
     i = 0;
     if(operatingMode.size() == 0){
         while(i < dofAll){
@@ -1219,29 +1219,13 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
             }else if(drivers[i].busCode == 2){
                 data[i].temp[0] = drivers[i].tx->Undefined;
             }
-            float position     = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
-            if(position < drivers[i].parameters.minimumPosition){
-                printf("position %f of driver with alias %d out of range\n", position, i + 1);
-                position = drivers[i].parameters.minimumPosition;
-            }else if(position > drivers[i].parameters.maximumPosition){
-                printf("position %f of driver with alias %d out of range\n", position, i + 1);
-                position = drivers[i].parameters.maximumPosition;
-            }
-            data[i].pos        = position;
+            data[i].pos        = 2.0 * Pi * drivers[i].parameters.polarity * (drivers[i].tx->ActualPosition - drivers[i].parameters.countBias) / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
             data[i].vel        = 2.0 * Pi * drivers[i].parameters.polarity *  drivers[i].tx->ActualVelocity / drivers[i].parameters.encoderResolution / drivers[i].parameters.gearRatioPosVel;
             data[i].tor        =            drivers[i].parameters.polarity *  drivers[i].tx->ActualTorque / 1000.0 * drivers[i].parameters.ratedCurrent * drivers[i].parameters.torqueConstant * drivers[i].parameters.gearRatioTor;
             data[i].statusWord =                                              drivers[i].tx->StatusWord;
             data[i].errorCode  =                                              drivers[i].tx->ErrorCode;
         }else{
-            float position     = drivers[i].parameters.polarity *  (*(float*)&drivers[i].tx->ActualPosition - drivers[i].parameters.countBias);
-            if(position < drivers[i].parameters.minimumPosition){
-                printf("position %f of driver with alias %d out of range\n", position, i + 1);
-                position = drivers[i].parameters.minimumPosition;
-            }else if(position > drivers[i].parameters.maximumPosition){
-                printf("position %f of driver with alias %d out of range\n", position, i + 1);
-                position = drivers[i].parameters.maximumPosition;
-            }
-            data[i].pos        = position;
+            data[i].pos        = drivers[i].parameters.polarity *  (*(float*)&drivers[i].tx->ActualPosition - drivers[i].parameters.countBias);
             data[i].vel        = drivers[i].parameters.polarity *   *(float*)&drivers[i].tx->ActualVelocity;
             data[i].tor        = drivers[i].parameters.polarity * half2single(drivers[i].tx->ActualTorque);
             data[i].temp[0]    =                                              drivers[i].tx->Undefined;
@@ -1252,7 +1236,13 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
         ++i;
     }
     imp.sdoRequestableUpdate();
-    return -ecatStalled.load();
+    int stalled = 0;
+    i = 0;
+    while(i < imp.ecats.size()){
+        stalled += imp.ecats[i].stalled.load();
+        ++i;
+    }
+    return -stalled;
 }
 
 int DriverSDK::getEncoderCount(std::vector<int>& data){

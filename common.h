@@ -42,6 +42,9 @@ int quadchar2int_(unsigned char const* qc);
 float quadchar2float(unsigned char const* qc);
 float quadchar2float_(unsigned char const* qc);
 void adjustCPU(int* const cpu, int const processor);
+float nullSensor(int const value);
+float linkTouch(int const value);
+float kunweiTech(int const value);
 
 class SwapNode{
 public:
@@ -127,6 +130,7 @@ public:
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
 #else
     int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
+    void load(ecat::sdo_request* const sdoHandler);
 #endif
     ~MotorParameters();
 };
@@ -148,6 +152,7 @@ public:
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
 #else
     int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
+    void load(ecat::sdo_request* const sdoHandler);
 #endif
     ~IMUParameters();
 };
@@ -225,6 +230,7 @@ public:
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
 #else
     int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
+    void load(ecat::sdo_request* const sdoHandler);
 #endif
     ~EffectorParameters();
 };
@@ -259,6 +265,7 @@ public:
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
 #else
     int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
+    void load(ecat::sdo_request* const sdoHandler);
 #endif
     ~SensorParameters();
 };
@@ -289,6 +296,7 @@ public:
     int load(std::string const& bus, int const alias, std::string const& type, ec_sdo_request_t* const sdoHandler);
 #else
     int load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler);
+    void load(ecat::sdo_request* const sdoHandler);
 #endif
     ~TransferrerParameters();
 };
@@ -416,9 +424,7 @@ public:
         if(this->bus != bus || this->order != order || this->domain != domain){
             return 1;
         }
-        parameters.sdoTemplate   .sdoHandler = sdoHandler;
-        parameters.temperatureSDO.sdoHandler = sdoHandler;
-        parameters.clearErrorSDO .sdoHandler = sdoHandler;
+        parameters.load(sdoHandler);
         return 0;
     }
 #endif

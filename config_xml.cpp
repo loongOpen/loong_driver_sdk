@@ -184,6 +184,26 @@ std::vector<std::vector<int>> ConfigXML::domainDivisions(char const* bus){
     return ret;
 }
 
+std::vector<std::vector<bool>> ConfigXML::domainWatchdogs(char const* bus){
+    std::vector<std::vector<bool>> ret;
+    if(xmlDoc.FirstChildElement("Config")->FirstChildElement(bus) == nullptr){
+        return ret;
+    }
+    tinyxml2::XMLElement* domainElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Domains")->FirstChildElement("Domain");
+    while(domainElement != nullptr){
+        int master = domainElement->IntAttribute("master"), order = domainElement->IntAttribute("order");
+        while(ret.size() <= master){
+            ret.push_back(std::vector<bool>());
+        }
+        while(ret[master].size() <= order){
+            ret[master].push_back(false);
+        }
+        ret[master][order] = domainElement->BoolAttribute("watchdog");
+        domainElement = domainElement->NextSiblingElement("Domain");
+    }
+    return ret;
+}
+
 tinyxml2::XMLElement* ConfigXML::device(char const* bus, char const* VendorID, char const* ProductCode){
     tinyxml2::XMLElement* deviceElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Devices")->FirstChildElement("Device");
     while(deviceElement != nullptr){
@@ -302,7 +322,7 @@ std::vector<std::string> ConfigXML::entry(tinyxml2::XMLElement* const deviceElem
     return ret;
 }
 
-std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>>* const aliases2domainType, bool emu){
+std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>>* const aliases2domain2type, bool emu){
     std::vector<std::map<int, std::string>> ret;
     if(xmlDoc.FirstChildElement("Config")->FirstChildElement(bus) == nullptr){
         return ret;
@@ -316,19 +336,19 @@ std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus, s
         int master = 0;
         if(slaveElement->FindAttribute("master") != nullptr){
             master = slaveElement->IntAttribute("master");
-        }else if(aliases2domainType != nullptr && slaveElement->FindAttribute("alias") != nullptr){
+        }else if(aliases2domain2type != nullptr && slaveElement->FindAttribute("alias") != nullptr){
             int i = 0, count = 0, alias = slaveElement->IntAttribute("alias");
-            while(i < aliases2domainType->size()){
+            while(i < aliases2domain2type->size()){
                 int j = 0;
-                while(j < (*aliases2domainType)[i].size()){
+                while(j < (*aliases2domain2type)[i].size()){
                     std::vector<int> aliases;
-                    std::tie(aliases, std::ignore, std::ignore) = (*aliases2domainType)[i][j];
+                    std::tie(aliases, std::ignore, std::ignore) = (*aliases2domain2type)[i][j];
                     int k = 0;
                     while(k < aliases.size()){
                         if(alias == aliases[k]){
                             master = count;
-                            j = (*aliases2domainType)[i].size() - 1;
-                            i = aliases2domainType->size() - 1;
+                            j = (*aliases2domain2type)[i].size() - 1;
+                            i = aliases2domain2type->size() - 1;
                             break;
                         }
                         ++k;
@@ -342,11 +362,11 @@ std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus, s
         while(ret.size() <= master){
             ret.push_back(std::map<int, std::string>());
         }
-        while(!emu && aliases2domainType != nullptr && aliases2domainType->size() <= master){
-            aliases2domainType->push_back(std::vector<std::tuple<std::vector<int>, int, std::string>>());
+        while(!emu && aliases2domain2type != nullptr && aliases2domain2type->size() <= master){
+            aliases2domain2type->push_back(std::vector<std::tuple<std::vector<int>, int, std::string>>());
         }
         if(slaveElement->FindAttribute("alias") == nullptr){
-            if(emu || aliases2domainType == nullptr || slaveElement->FindAttribute("aliases") == nullptr){
+            if(emu || aliases2domain2type == nullptr || slaveElement->FindAttribute("aliases") == nullptr){
                 printf("invalid alias of device on bus %s\n", bus);
                 exit(-1);
             }else{
@@ -360,7 +380,7 @@ std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus, s
                     printf("invalid aliases of device on bus %s\n", bus);
                     exit(-1);
                 }
-                (*aliases2domainType)[master].push_back(std::make_tuple(items, slaveElement->IntAttribute("domain"), slaveElement->Attribute("type")));
+                (*aliases2domain2type)[master].push_back(std::make_tuple(items, slaveElement->IntAttribute("domain"), slaveElement->Attribute("type")));
             }
         }else{
             int alias = slaveElement->IntAttribute("alias");
@@ -375,7 +395,7 @@ std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus, s
     return ret;
 }
 
-std::vector<std::map<int, int>> ConfigXML::alias2attribute(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domainType){
+std::vector<std::map<int, int>> ConfigXML::alias2attribute(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domain2type){
     std::vector<std::map<int, int>> ret;
     if(xmlDoc.FirstChildElement("Config")->FirstChildElement(bus) == nullptr){
         return ret;
@@ -389,19 +409,19 @@ std::vector<std::map<int, int>> ConfigXML::alias2attribute(char const* bus, char
         int master = 0;
         if(slaveElement->FindAttribute("master") != nullptr){
             master = slaveElement->IntAttribute("master");
-        }else if(aliases2domainType != nullptr && slaveElement->FindAttribute("alias") != nullptr){
+        }else if(aliases2domain2type != nullptr && slaveElement->FindAttribute("alias") != nullptr){
             int i = 0, count = 0, alias = slaveElement->IntAttribute("alias");
-            while(i < aliases2domainType->size()){
+            while(i < aliases2domain2type->size()){
                 int j = 0;
-                while(j < (*aliases2domainType)[i].size()){
+                while(j < (*aliases2domain2type)[i].size()){
                     std::vector<int> aliases;
-                    std::tie(aliases, std::ignore, std::ignore) = (*aliases2domainType)[i][j];
+                    std::tie(aliases, std::ignore, std::ignore) = (*aliases2domain2type)[i][j];
                     int k = 0;
                     while(k < aliases.size()){
                         if(alias == aliases[k]){
                             master = count;
-                            j = (*aliases2domainType)[i].size() - 1;
-                            i = aliases2domainType->size() - 1;
+                            j = (*aliases2domain2type)[i].size() - 1;
+                            i = aliases2domain2type->size() - 1;
                             break;
                         }
                         ++k;
@@ -432,7 +452,7 @@ std::vector<std::map<int, int>> ConfigXML::alias2attribute(char const* bus, char
     return ret;
 }
 
-std::vector<std::map<int, std::vector<int>>> ConfigXML::alias2attribute_(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domainType){
+std::vector<std::map<int, std::vector<int>>> ConfigXML::alias2attribute_(char const* bus, char const* name, std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> const* aliases2domain2type){
     std::vector<std::map<int, std::vector<int>>> ret;
     if(xmlDoc.FirstChildElement("Config")->FirstChildElement(bus) == nullptr){
         return ret;
@@ -446,19 +466,19 @@ std::vector<std::map<int, std::vector<int>>> ConfigXML::alias2attribute_(char co
         int master = 0;
         if(slaveElement->FindAttribute("master") != nullptr){
             master = slaveElement->IntAttribute("master");
-        }else if(aliases2domainType != nullptr && slaveElement->FindAttribute("alias") != nullptr){
+        }else if(aliases2domain2type != nullptr && slaveElement->FindAttribute("alias") != nullptr){
             int i = 0, count = 0, alias = slaveElement->IntAttribute("alias");
-            while(i < aliases2domainType->size()){
+            while(i < aliases2domain2type->size()){
                 int j = 0;
-                while(j < (*aliases2domainType)[i].size()){
+                while(j < (*aliases2domain2type)[i].size()){
                     std::vector<int> aliases;
-                    std::tie(aliases, std::ignore, std::ignore) = (*aliases2domainType)[i][j];
+                    std::tie(aliases, std::ignore, std::ignore) = (*aliases2domain2type)[i][j];
                     int k = 0;
                     while(k < aliases.size()){
                         if(alias == aliases[k]){
                             master = count;
-                            j = (*aliases2domainType)[i].size() - 1;
-                            i = aliases2domainType->size() - 1;
+                            j = (*aliases2domain2type)[i].size() - 1;
+                            i = aliases2domain2type->size() - 1;
                             break;
                         }
                         ++k;

@@ -19,11 +19,13 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <curses.h>
+#include <sys/mman.h>
 #include <cmath>
 
 double const Pi = std::acos(-1);
 
 int main(int argc, char** argv){
+    mlockall(MCL_CURRENT | MCL_FUTURE);
     int enabled = 0, count = 2, count_ = 2;
     DriverSDK::DriverSDK& driverSDK = DriverSDK::DriverSDK::instance();
     std::vector<unsigned short> cpusECAT = {2, 3, 3, 3, 3, 3};

@@ -67,9 +67,9 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
         txFuncs[order][i] = nullptr;
         ++i;
     }
-    alias2type = canEmuAlias2type[order];
+    alias2type      = canEmuAlias2type     [order];
     alias2masterIDs = canEmuAlias2masterIDs[order];
-    alias2slaveID = canEmuAlias2slaveID[order];
+    alias2slaveID   = canEmuAlias2slaveID  [order];
     if(alias2type.size() == 0){
         return;
     }

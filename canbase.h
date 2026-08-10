@@ -327,7 +327,7 @@ void encosTX(int const masterID, unsigned char* const data, int const length, T*
     unsigned short v = *(unsigned short*)(data + 2);
     v >>= 4;
     data[3] = data[5];
-    data[4] = data[4] & 0x0f;
+    data[4] &= 0x0f;
     unsigned short t = *(unsigned short*)(data + 3);
     int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
     DriverParameters const* parameters = T::alias2parameters[alias];
@@ -358,7 +358,6 @@ int damiaoRX(int const alias, int* const slaveID, unsigned char* const data, int
             break;
         case 0x0001:
             memcpy(data, DamiaoEnable, 8);
-            T::alias2status[alias] = 0x0007;
             return 8;
             break;
         }
@@ -367,7 +366,6 @@ int damiaoRX(int const alias, int* const slaveID, unsigned char* const data, int
         switch(T::alias2status[alias] & 0x0f7f){
         case 0x0007:
             memcpy(data, DamiaoDisable, 8);
-            T::alias2status[alias] = 0x0001;
             return 8;
             break;
         case 0x0001:
@@ -415,7 +413,7 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
     unsigned short v = *(unsigned short*)(data + 2);
     v >>= 4;
     data[3] = data[5];
-    data[4] = data[4] & 0x0f;
+    data[4] &= 0x0f;
     unsigned short t = *(unsigned short*)(data + 3);
     int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
     DriverParameters const* parameters = T::alias2parameters[alias];
@@ -783,7 +781,7 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
                 T::alias2status[alias] &= ~0x0080;
             }
             T::alias2status[alias] &= ~0x4000;
-            *(float*)&drivers[alias - 1].tx->ActualPosition = *(int*)(data + 8) * parameters->pUnit * Pi / 180.0;
+            *(float*)&drivers[alias - 1].tx->ActualPosition =             *(int*)(data +  8) * parameters->pUnit * Pi / 180.0;
             *(float*)&drivers[alias - 1].tx->ActualVelocity = 0.0;
                       drivers[alias - 1].tx->ActualTorque   = single2half(*(int*)(data + 12) * parameters->actualCUnit * parameters->tConstant);
                       drivers[alias - 1].tx->Undefined      = temperature;
@@ -829,8 +827,8 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
         T::alias2status[alias] &= ~0x0080;
     }
     T::alias2status[alias] &= ~0x4000;
-    *(float*)&drivers[alias - 1].tx.next()->ActualPosition = *(int*)(data + 8) * parameters->pUnit * Pi / 180.0;
-    *(float*)&drivers[alias - 1].tx.next()->ActualVelocity = *(int*)(data + 4) * parameters->actualVUnit * Pi / 30.0;
+    *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             *(int*)(data + 8) * parameters->pUnit * Pi / 180.0;
+    *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             *(int*)(data + 4) * parameters->actualVUnit * Pi / 30.0;
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(*(int*)(data + 0) * parameters->actualCUnit * parameters->tConstant);
               drivers[alias - 1].tx.next()->Undefined      = temperature;
               drivers[alias - 1].tx.next()->StatusWord     = err > 0 ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];

@@ -30,31 +30,22 @@ extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> ecatAlias2type;
 extern std::vector<std::map<int, int>> ecatAlias2domain;
 extern std::vector<std::vector<int>> ecatDomainDivisions;
+extern std::vector<std::vector<bool>> ecatDomainWatchdogs;
 extern int dofAll;
+extern sensorFunction sensorFuncs[2];
 extern WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
+extern WrapperPair<SensorRXData, SensorTXData, SensorParameters> sensors[2];
 extern std::vector<unsigned short> processorsECAT;
 extern std::vector<unsigned short> maxCurrent;
-extern std::atomic<int> ecatStalled;
 
-float nullSensor(int const value){
-    return 0.0;
-}
-
-float linkTouch(int const value){
-    return value / 10000.0;
-}
-
-float kunweiTech(int const value){
-    return value / 10000.0;
-}
+int ECAT::effectorAlias, ECAT::sensorAlias;
 
 ECAT::ECAT(int const order){
     domainSizes = nullptr;
     rxPDOSwaps = txPDOSwaps = nullptr;
     sdoMsg = nullptr;
     regMsg = nullptr;
-    sdoRequestable = false;
-    regRequestable = false;
+    sdoRequestable = regRequestable = false;
     task = nullptr;
     master = nullptr;
     targetPosition = targetVelocity = targetTorque = controlWord = mode = torqueOffset = velocityOffset = actualPosition = actualVelocity = actualTorque = statusWord = modeDisplay = errorCode = nullptr;
@@ -69,12 +60,13 @@ ECAT::ECAT(int const order){
         printf("\talias %d, type %s\n", itr->first, itr->second.c_str());
         ++itr;
     }
-    eni      = configXML->masterDevice("ECAT", order, "eni");
+    eni      = configXML->masterDevice   ("ECAT", order, "eni"   );
     period   = configXML->masterAttribute("ECAT", order, "period");
-    cpu      = configXML->masterAttribute("ECAT", order, "cpu");
+    cpu      = configXML->masterAttribute("ECAT", order, "cpu"   );
     adjustCPU(&cpu, processorsECAT[order]);
-    alias2domain = ecatAlias2domain[order];
+    alias2domain    = ecatAlias2domain   [order];
     domainDivisions = ecatDomainDivisions[order];
+    domainWatchdogs = ecatDomainWatchdogs[order];
     while(init() < 0){
         clean();
     }
@@ -87,21 +79,27 @@ int ECAT::init(){
         return -1;
     }
     master = task->get_master_ptr();
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(cpu, &cpuset);
-    task->cpu_affinity(&cpuset, sizeof(cpuset));
-    task->priority(90);
     task->load_eni(eni, period);
-    domainSizes = new int[domainDivisions.size()];
-    rxPDOSwaps = new SwapList*[domainDivisions.size()];
-    txPDOSwaps = new SwapList*[domainDivisions.size()];
+    domainSizes = new       int[domainDivisions.size()];
+    rxPDOSwaps  = new SwapList*[domainDivisions.size()];
+    txPDOSwaps  = new SwapList*[domainDivisions.size()];
     int i = 0;
     while(i < domainDivisions.size()){
         domainSizes[i] = 0;
-        rxPDOSwaps[i] = nullptr;
-        txPDOSwaps[i] = nullptr;
+        rxPDOSwaps [i] = nullptr;
+        txPDOSwaps [i] = nullptr;
         ++i;
+    }
+    static bool initialized = false;
+    if(!initialized){
+        effectorAlias = 199;
+        sensorAlias = 219;
+        i = 0;
+        while(i < 256){
+            alias2count[i] = -1;
+            ++i;
+        }
+        initialized = true;
     }
     return 0;
 }
@@ -130,6 +128,22 @@ int ECAT::readAlias(unsigned short const slave, std::string const& category, uns
             }catch(std::exception const& e){
                 sleep(1);
             }
+        }
+    }else if(bitLength == 0){
+        if(category == "effector"){
+            auto itr = alias2type.end();
+            do{
+                ++effectorAlias;
+                itr = alias2type.find(effectorAlias);
+            }while(itr == alias2type.end() && effectorAlias < 201);
+            return effectorAlias;
+        }else if(category == "sensor"){
+            auto itr = alias2type.end();
+            do{
+                ++sensorAlias;
+                itr = alias2type.find(sensorAlias);
+            }while(itr == alias2type.end() && sensorAlias < 221);
+            return sensorAlias;
         }
     }
     return 0;
@@ -198,10 +212,6 @@ int ECAT::check(){
         std::string const type = configXML->deviceType(deviceXML);
         printf(", type %s", type.c_str());
         std::string const category = configXML->typeCategory("ECAT", type.c_str());
-        if(category != "driver"){
-            printf("\n\tdevice not a driver\n");
-            return -1;
-        }
         std::vector<std::string> aliasEntry = configXML->entry(deviceXML, "Alias");
         int alias = readAlias(i, category,
             strtoul(aliasEntry[1].c_str(), nullptr, 16),
@@ -234,19 +244,6 @@ int ECAT::config(){
     if(alias2type.size() == 0){
         return 0;
     }
-    targetPosition = new ecat::PdoRegInfo*[alias2slave.size()];
-    targetVelocity = new ecat::PdoRegInfo*[alias2slave.size()];
-    targetTorque   = new ecat::PdoRegInfo*[alias2slave.size()];
-    controlWord    = new ecat::PdoRegInfo*[alias2slave.size()];
-    mode           = new ecat::PdoRegInfo*[alias2slave.size()];
-    torqueOffset   = new ecat::PdoRegInfo*[alias2slave.size()];
-    velocityOffset = new ecat::PdoRegInfo*[alias2slave.size()];
-    actualPosition = new ecat::PdoRegInfo*[alias2slave.size()];
-    actualVelocity = new ecat::PdoRegInfo*[alias2slave.size()];
-    actualTorque   = new ecat::PdoRegInfo*[alias2slave.size()];
-    statusWord     = new ecat::PdoRegInfo*[alias2slave.size()];
-    modeDisplay    = new ecat::PdoRegInfo*[alias2slave.size()];
-    errorCode      = new ecat::PdoRegInfo*[alias2slave.size()];
     int count = 0, rxPDOOffsets[alias2slave.size()], txPDOOffsets[alias2slave.size()];
     auto itr = alias2slave.begin();
     while(itr != alias2slave.end()){
@@ -254,8 +251,15 @@ int ECAT::config(){
         std::string const& type = alias2type.find(alias)->second;
         std::string const category = configXML->typeCategory("ECAT", type.c_str());
         printf("master %d, domain %d, slave %d, alias %d, category %s, type %s\n", order, 0, slave, alias, category.c_str(), type.c_str());
-        if(task->profile_no(slave) != 402 || task->slots_count(slave) > 1){
-            printf("\tdriver must be CiA402 single-axis\n");
+        if(task->profile_no(slave) == 402){
+            if(task->slots_count(slave) > 1){
+                printf("\tany driver must be single-axis\n");
+                return -1;
+            }
+        }else if(task->profile_no(slave) == 5001){
+            ;
+        }else{
+            printf("\tany slave must be either CiA 402 or ETG 5001\n");
             return -1;
         }
         tinyxml2::XMLElement* deviceXML = configXML->device("ECAT", type.c_str());
@@ -331,9 +335,14 @@ int ECAT::config(){
         }
         rxPDOOffsets[count] /= 8;
         txPDOOffsets[count] /= 8;
+        if(task->profile_no(slave) != 402){
+            ++count;
+            ++itr;
+            continue;
+        }
         unsigned int u32 = 0;
         unsigned short u16 = 0;
-        unsigned char u8 = domainDivisions[0] * period / 1000000L;
+        unsigned char u8 = domainDivisions[0] * period / 1000000;
         while(true){
             try{
                 master->sdo_download(slave, {0x60c2, 0x01}, false, u8);
@@ -418,19 +427,66 @@ int ECAT::config(){
     while(itr != alias2slave.end()){
         int alias = itr->first, slave = itr->second;
         std::string const& type = alias2type.find(alias)->second;
-        if(drivers[alias - 1].init("ECAT", 0, order, 0, slave, alias, type, rxPDOOffsets[count], txPDOOffsets[count]) != 0){
-            printf("\tdrivers[%d] init failed\n", alias - 1);
-            return -1;
+        std::string const category = configXML->typeCategory("ECAT", type.c_str());
+        if(category == "driver"){
+            if(drivers[alias - 1].init("ECAT", 0, order, 0, slave, alias, type, rxPDOOffsets[count], txPDOOffsets[count]) != 0){
+                printf("\tdrivers[%d] init failed\n", alias - 1);
+                return -1;
+            }
+            if(drivers[alias - 1].config("ECAT", order, 0, rxPDOSwaps[0], txPDOSwaps[0]) != 0){
+                printf("\tdrivers[%d] config failed\n", alias - 1);
+                return -1;
+            }
+            driverAlias2slave.emplace(alias, slave);
+        }else if(category == "effector"){
+            effectorAlias2slave.emplace(alias, slave);
+        }else if(category == "sensor"){
+            if(alias != 220 && alias != 221){
+                printf("\tinvalid sensor alias %d\n", alias);
+                return -1;
+            }
+            if(sensors[alias - 220].init("ECAT", 0, order, 0, slave, alias, type, rxPDOOffsets[count], txPDOOffsets[count]) != 0){
+                printf("\tsensors[%d] init failed\n", alias - 220);
+                return -1;
+            }
+            if(sensors[alias - 220].config("ECAT", order, 0, rxPDOSwaps[0], txPDOSwaps[0]) != 0){
+                printf("\tsensors[%d] config failed\n", alias - 220);
+                return -1;
+            }
+            if(type == "LinkTouch"){
+                sensorFuncs[alias - 220] = linkTouch;
+            }else if(type == "KunweiTech"){
+                sensorFuncs[alias - 220] = kunweiTech;
+            }else{
+                printf("\tinvalid sensor type %s\n", type.c_str());
+                return -1;
+            }
+            sensorAlias2slave.emplace(alias, slave);
         }
-        if(drivers[alias - 1].config("ECAT", order, 0, rxPDOSwaps[0], txPDOSwaps[0]) != 0){
-            printf("\tdrivers[%d] config failed\n", alias - 1);
-            return -1;
-        }
+        alias2count[alias] = count;
         ++count;
         ++itr;
     }
     task->set_config_callback([this](){
-        int count = 0;
+        targetPosition = new ecat::PdoRegInfo*[alias2slave.size()];
+        targetVelocity = new ecat::PdoRegInfo*[alias2slave.size()];
+        targetTorque   = new ecat::PdoRegInfo*[alias2slave.size()];
+        controlWord    = new ecat::PdoRegInfo*[alias2slave.size()];
+        mode           = new ecat::PdoRegInfo*[alias2slave.size()];
+        torqueOffset   = new ecat::PdoRegInfo*[alias2slave.size()];
+        velocityOffset = new ecat::PdoRegInfo*[alias2slave.size()];
+        actualPosition = new ecat::PdoRegInfo*[alias2slave.size()];
+        actualVelocity = new ecat::PdoRegInfo*[alias2slave.size()];
+        actualTorque   = new ecat::PdoRegInfo*[alias2slave.size()];
+        statusWord     = new ecat::PdoRegInfo*[alias2slave.size()];
+        modeDisplay    = new ecat::PdoRegInfo*[alias2slave.size()];
+        errorCode      = new ecat::PdoRegInfo*[alias2slave.size()];
+        fx             = new ecat::PdoRegInfo*[alias2slave.size()];
+        fy             = new ecat::PdoRegInfo*[alias2slave.size()];
+        fz             = new ecat::PdoRegInfo*[alias2slave.size()];
+        mx             = new ecat::PdoRegInfo*[alias2slave.size()];
+        my             = new ecat::PdoRegInfo*[alias2slave.size()];
+        mz             = new ecat::PdoRegInfo*[alias2slave.size()];
         auto itr = alias2slave.begin();
         while(itr != alias2slave.end()){
             int slave = itr->second;
@@ -439,6 +495,11 @@ int ECAT::config(){
             task->auto_register_pdo_entry(pdoCfg, slave, ecat::PdoTypeRx);
             pdoCfg = task->get_slot_tx_config(slave, 0);
             task->auto_register_pdo_entry(pdoCfg, slave, ecat::PdoTypeTx);
+            ++itr;
+        }
+        itr = driverAlias2slave.begin();
+        while(itr != driverAlias2slave.end()){
+            int alias = itr->first, slave = itr->second, count = alias2count[alias];
             tinyxml2::XMLElement* deviceXML = configXML->device("ECAT", alias2type.find(itr->first)->second.c_str());
             std::vector<std::vector<std::string>> rxPDOs = configXML->pdos(deviceXML, "RxPDOs"), txPDOs = configXML->pdos(deviceXML, "TxPDOs");
             int i = 0;
@@ -491,7 +552,52 @@ int ECAT::config(){
                 }
                 ++i;
             }
-            ++count;
+            ++itr;
+        }
+        itr = effectorAlias2slave.begin();
+        while(itr != effectorAlias2slave.end()){
+            ++itr;
+        }
+        itr = sensorAlias2slave.begin();
+        while(itr != sensorAlias2slave.end()){
+            int alias = itr->first, slave = itr->second, count = alias2count[alias];
+            tinyxml2::XMLElement* deviceXML = configXML->device("ECAT", alias2type.find(itr->first)->second.c_str());
+            std::vector<std::vector<std::string>> rxPDOs = configXML->pdos(deviceXML, "RxPDOs"), txPDOs = configXML->pdos(deviceXML, "TxPDOs");
+            int i = 0;
+            while(i < rxPDOs.size()){
+                int j = 1;
+                while(j < rxPDOs[i].size()){
+                    std::vector<std::string> entry = configXML->entry(deviceXML, rxPDOs[i][j].c_str());
+                    unsigned short index = (unsigned short)strtoul(entry[1].c_str(), nullptr, 16);
+                    unsigned char subindex = (unsigned char)strtoul(entry[2].c_str(), nullptr, 16);
+                    ++j;
+                }
+                ++i;
+            }
+            i = 0;
+            while(i < txPDOs.size()){
+                int j = 1;
+                while(j < txPDOs[i].size()){
+                    std::vector<std::string> entry = configXML->entry(deviceXML, txPDOs[i][j].c_str());
+                    unsigned short index = (unsigned short)strtoul(entry[1].c_str(), nullptr, 16);
+                    unsigned char subindex = (unsigned char)strtoul(entry[2].c_str(), nullptr, 16);
+                    if(      entry[0] == "Fx"){
+                        fx[count] = task->get_pdo_by_entry(slave, {index, subindex});
+                    }else if(entry[0] == "Fy"){
+                        fy[count] = task->get_pdo_by_entry(slave, {index, subindex});
+                    }else if(entry[0] == "Fz"){
+                        fz[count] = task->get_pdo_by_entry(slave, {index, subindex});
+                    }else if(entry[0] == "Mx"){
+                        mx[count] = task->get_pdo_by_entry(slave, {index, subindex});
+                    }else if(entry[0] == "My"){
+                        my[count] = task->get_pdo_by_entry(slave, {index, subindex});
+                    }else if(entry[0] == "Mz"){
+                        mz[count] = task->get_pdo_by_entry(slave, {index, subindex});
+                    }
+                    ++j;
+                }
+                ++i;
+            }
             ++itr;
         }
     });
@@ -511,6 +617,8 @@ int ECAT::config(){
         auto itr = alias2slave.begin();
         while(itr != alias2slave.end()){
             int alias = itr->first, slave = itr->second;
+            std::string const& type = alias2type.find(alias)->second;
+            std::string const category = configXML->typeCategory("ECAT", type.c_str());
             while(requestState(slave, "OP") < 0);
             ecat::sdo_request* sdoHandler = nullptr;
             try{
@@ -520,18 +628,18 @@ int ECAT::config(){
                 exit(-1);
             }
             sdoHandler->timeout(500);
-            switch(drivers[alias - 1].config("ECAT", order, 0, sdoHandler)){
-            case 2:
-                drivers[alias - 1].tx->StatusWord = 0xffff;
-                break;
-            case 1:
-                break;
-            case 0:
-                break;
-            case -1:
-                printf("drivers[%d] config failed\n", alias - 1);
-                exit(-1);
-                break;
+            if(category == "driver"){
+                if(drivers[alias - 1].config("ECAT", order, 0, sdoHandler) != 0){
+                    printf("drivers[%d] config failed\n", alias - 1);
+                    exit(-1);
+                }
+            }else if(category == "effector"){
+                ;
+            }else if(category == "sensor"){
+                if(sensors[alias - 220].config("ECAT", order, 0, sdoHandler) != 0){
+                    printf("sensors[%d] config failed\n", alias - 220);
+                    exit(-1);
+                }
             }
             ++itr;
         }
@@ -625,10 +733,9 @@ int ECAT::config(){
             printf("master %d domain %d wc_state changed to %d\n", order, 0, (int)wcStates[0]);
         }
         if(domainStates[0].wc_state == ecat::wc_state_type::complete){
-            int count = 0;
-            auto itr = alias2slave.begin();
-            while(itr != alias2slave.end()){
-                int alias = itr->first;
+            auto itr = driverAlias2slave.begin();
+            while(itr != driverAlias2slave.end()){
+                int alias = itr->first, count = alias2count[alias];
                 *(           int*)targetPosition[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetPosition;
                 *(           int*)targetVelocity[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetVelocity;
                 *(         short*)  targetTorque[count]->dataPtr = drivers[alias - 1].rx.previous()->TargetTorque;
@@ -642,15 +749,29 @@ int ECAT::config(){
                 drivers[alias - 1].tx.next()->StatusWord     = *(unsigned short*)    statusWord[count]->dataPtr;
                 drivers[alias - 1].tx.next()->ModeDisplay    = *(          char*)   modeDisplay[count]->dataPtr;
                 drivers[alias - 1].tx.next()->ErrorCode      = *(unsigned short*)     errorCode[count]->dataPtr;
-                ++count;
+                ++itr;
+            }
+            itr = effectorAlias2slave.begin();
+            while(itr != effectorAlias2slave.end()){
+                ++itr;
+            }
+            itr = sensorAlias2slave.begin();
+            while(itr != sensorAlias2slave.end()){
+                int alias = itr->first, count = alias2count[alias];
+                sensors[alias - 220].tx.next()->Fx = *(int*)fx[count]->dataPtr;
+                sensors[alias - 220].tx.next()->Fy = *(int*)fy[count]->dataPtr;
+                sensors[alias - 220].tx.next()->Fz = *(int*)fz[count]->dataPtr;
+                sensors[alias - 220].tx.next()->Mx = *(int*)mx[count]->dataPtr;
+                sensors[alias - 220].tx.next()->My = *(int*)my[count]->dataPtr;
+                sensors[alias - 220].tx.next()->Mz = *(int*)mz[count]->dataPtr;
                 ++itr;
             }
             txPDOSwaps[0]->advanceNodePtr();
-        }else if(order == 0){
+        }else if(domainWatchdogs[0]){
             ++incompleteness;
         }
         if(incompleteness != previousIncompleteness){
-            ecatStalled.store(incompleteness);
+            stalled.store(incompleteness);
             previousIncompleteness = incompleteness;
         }
     });
@@ -661,8 +782,12 @@ int ECAT::run(){
     if(alias2type.size() == 0){
         return 0;
     }
-    printf("ecats[%d] rxtx on cpu %d\n", order, cpu);
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(cpu, &cpuset);
+    task->cpu_affinity(&cpuset, sizeof(cpuset));
     task->start();
+    printf("ecats[%d] rxtx on cpu %d\n", order, cpu);
     return 0;
 }
 
@@ -722,6 +847,24 @@ void ECAT::clean(){
     if(errorCode != nullptr){
         delete[] errorCode;
     }
+    if(fx != nullptr){
+        delete[] fx;
+    }
+    if(fy != nullptr){
+        delete[] fy;
+    }
+    if(fz != nullptr){
+        delete[] fz;
+    }
+    if(mx != nullptr){
+        delete[] mx;
+    }
+    if(my != nullptr){
+        delete[] my;
+    }
+    if(mz != nullptr){
+        delete[] mz;
+    }
     if(sdoMsg != nullptr){
         delete sdoMsg;
         sdoMsg = nullptr;
@@ -759,5 +902,8 @@ void ECAT::clean(){
 
 ECAT::~ECAT(){
     clean();
+}
+
+ECAT::ECAT(ECAT const&&){
 }
 }

@@ -45,8 +45,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
     static bool initialized = false;
     if(!initialized){
         rxPth = txPth = txPth_ = 0;
-        rxCPU  = configXML->canAttribute("rx_cpu");
-        txCPU  = configXML->canAttribute("tx_cpu");
+        rxCPU  = configXML->canAttribute("rx_cpu" );
+        txCPU  = configXML->canAttribute("tx_cpu" );
         txCPU_ = configXML->canAttribute("tx_cpu_");
         adjustCPU(&rxCPU,  processorsCAN[0]);
         adjustCPU(&txCPU,  processorsCAN[1]);
@@ -81,9 +81,9 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         txFuncs[order][i] = nullptr;
         ++i;
     }
-    alias2type = canAlias2type[order];
+    alias2type      = canAlias2type     [order];
     alias2masterIDs = canAlias2masterIDs[order];
-    alias2slaveID = canAlias2slaveID[order];
+    alias2slaveID   = canAlias2slaveID  [order];
     if(alias2type.size() == 0){
         return;
     }
@@ -515,7 +515,7 @@ void* CAN::tx__(void* arg){
     struct canframe frames[32];
     struct pack_info packInfo;
     packInfo.length = 32;
-#ifdef ENPHT
+#if defined(ENPHT) || defined(GD32)
     struct timespec currentTime, wakeupTime;
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
 #endif
@@ -540,7 +540,7 @@ void* CAN::tx__(void* arg){
             }
             ++i;
         }
-#ifdef ENPHT
+#if defined(ENPHT) || defined(GD32)
         wakeupTime.tv_nsec += can.division * can.period;
         while(wakeupTime.tv_nsec >= NSEC_PER_SEC){
             wakeupTime.tv_nsec -= NSEC_PER_SEC;
@@ -888,7 +888,7 @@ int CAN::run(std::vector<CAN>& cans){
         return -1;
     }
     if(pthread_setaffinity_np(rxPth, sizeof(cpuset), &cpuset) != 0){
-        printf("setting can rx thread cpu affinity failed\n");
+        printf("setting can rx thread cpu affinity (cpu=%d) failed\n", rxCPU);
         return -1;
     }
     if(pthread_detach(rxPth) != 0){
@@ -904,7 +904,7 @@ int CAN::run(std::vector<CAN>& cans){
             return -1;
         }
         if(pthread_setaffinity_np(txPth, sizeof(cpuset), &cpuset) != 0){
-            printf("setting socketcan tx thread cpu affinity failed\n");
+            printf("setting socketcan tx thread cpu affinity (cpu=%d) failed\n", txCPU);
             return -1;
         }
         if(pthread_detach(txPth) != 0){
@@ -921,7 +921,7 @@ int CAN::run(std::vector<CAN>& cans){
             return -1;
         }
         if(pthread_setaffinity_np(txPth_, sizeof(cpuset), &cpuset) != 0){
-            printf("setting canhal tx_ thread cpu affinity failed\n");
+            printf("setting canhal tx_ thread cpu affinity (cpu=%d) failed\n", txCPU_);
             return -1;
         }
         if(pthread_detach(txPth_) != 0){

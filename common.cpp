@@ -141,6 +141,18 @@ void adjustCPU(int* const cpu, int const processor){
     }
 }
 
+float nullSensor(int const value){
+    return 0.0;
+}
+
+float linkTouch(int const value){
+    return value / 10000.0;
+}
+
+float kunweiTech(int const value){
+    return value / 10000.0;
+}
+
 SwapNode::SwapNode(int const size){
     memPtr = (unsigned char*)calloc(size, 1);
     previous = nullptr;
@@ -303,6 +315,14 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
     return 0;
 }
 
+#ifdef NIIC
+void MotorParameters::load(ecat::sdo_request* const sdoHandler){
+    sdoTemplate   .sdoHandler = sdoHandler;
+    temperatureSDO.sdoHandler = sdoHandler;
+    clearErrorSDO .sdoHandler = sdoHandler;
+}
+#endif
+
 MotorParameters::~MotorParameters(){
 }
 
@@ -316,6 +336,11 @@ int IMUParameters::load(std::string const& bus, int const alias, std::string con
 #endif
     return 0;
 }
+
+#ifdef NIIC
+void IMUParameters::load(ecat::sdo_request* const sdoHandler){
+}
+#endif
 
 IMUParameters::~IMUParameters(){
 }
@@ -331,6 +356,11 @@ int EffectorParameters::load(std::string const& bus, int const alias, std::strin
     return 0;
 }
 
+#ifdef NIIC
+void EffectorParameters::load(ecat::sdo_request* const sdoHandler){
+}
+#endif
+
 EffectorParameters::~EffectorParameters(){
 }
 
@@ -345,6 +375,11 @@ int SensorParameters::load(std::string const& bus, int const alias, std::string 
     return 0;
 }
 
+#ifdef NIIC
+void SensorParameters::load(ecat::sdo_request* const sdoHandler){
+}
+#endif
+
 SensorParameters::~SensorParameters(){
 }
 
@@ -358,6 +393,11 @@ int TransferrerParameters::load(std::string const& bus, int const alias, std::st
 #endif
     return 0;
 }
+
+#ifdef NIIC
+void TransferrerParameters::load(ecat::sdo_request* const sdoHandler){
+}
+#endif
 
 TransferrerParameters::~TransferrerParameters(){
 }

@@ -852,39 +852,40 @@
     </Categories>
     <Masters>
         <Master order="0" eni="NIIC_ENI_M0.xml" dc="true" ref_slave="false" period="1000000" cpu="-1"/>
-        <Master order="1" eni="NIIC_ENI_M1.xml" dc="true" ref_slave="false" period="4000000" cpu="-1"/>
-        <Master order="2" eni="NIIC_ENI_M2.xml" dc="true" ref_slave="false" period="4000000" cpu="-1"/>
-        <Master order="3" eni="NIIC_ENI_M3.xml" dc="true" ref_slave="false" period="4000000" cpu="-1"/>
-        <Master order="4" eni="NIIC_ENI_M4.xml" dc="true" ref_slave="false" period="4000000" cpu="-1"/>
-        <Master order="5" eni="NIIC_ENI_M5.xml" dc="true" ref_slave="false" period="4000000" cpu="-1"/>
+        <Master order="1" eni="NIIC_ENI_M1.xml" dc="true" ref_slave="false" period="1000000" cpu="-1"/>
+        <Master order="2" eni="NIIC_ENI_M2.xml" dc="true" ref_slave="false" period="1000000" cpu="-1"/>
+        <Master order="3" eni="NIIC_ENI_M3.xml" dc="true" ref_slave="false" period="1000000" cpu="-1"/>
+        <Master order="4" eni="NIIC_ENI_M4.xml" dc="true" ref_slave="false" period="1000000" cpu="-1"/>
+        <Master order="5" eni="NIIC_ENI_M5.xml" dc="true" ref_slave="false" period="1000000" cpu="-1"/>
     </Masters>
     <Domains>
-        <Domain master="0" order="0"  division="1"/>
-        <Domain master="0" order="1"  division="1"/>
-        <Domain master="0" order="2"  division="1"/>
-        <Domain master="0" order="3"  division="1"/>
-        <Domain master="0" order="4"  division="1"/>
-        <Domain master="0" order="5"  division="1"/>
-        <Domain master="0" order="6"  division="1"/>
-        <Domain master="0" order="7"  division="1"/>
-        <Domain master="0" order="8"  division="1"/>
-        <Domain master="0" order="9"  division="1"/>
-        <Domain master="0" order="10" division="1"/>
-        <Domain master="0" order="11" division="1"/>
-        <Domain master="0" order="12" division="1"/>
-        <Domain master="0" order="13" division="1"/>
-        <Domain master="0" order="14" division="1"/>
-        <Domain master="0" order="15" division="1"/>
-        <Domain master="0" order="16" division="1"/>
-        <Domain master="1" order="0"  division="1"/>
-        <Domain master="1" order="1"  division="1"/>
-        <Domain master="1" order="2"  division="1"/>
-        <Domain master="1" order="3"  division="1"/>
-        <Domain master="1" order="4"  division="1"/>
-        <Domain master="2" order="0"  division="1"/>
-        <Domain master="3" order="0"  division="1"/>
-        <Domain master="4" order="0"  division="1"/>
-        <Domain master="5" order="0"  division="1"/>
+        <Domain master="0" order="0"  division="1" watchdog="false"/>
+        <Domain master="0" order="1"  division="1" watchdog="true" />
+        <Domain master="0" order="2"  division="1" watchdog="true" />
+        <Domain master="0" order="3"  division="1" watchdog="true" />
+        <Domain master="0" order="4"  division="1" watchdog="true" />
+        <Domain master="0" order="5"  division="1" watchdog="true" />
+        <Domain master="0" order="6"  division="1" watchdog="true" />
+        <Domain master="0" order="7"  division="1" watchdog="true" />
+        <Domain master="0" order="8"  division="1" watchdog="true" />
+        <Domain master="0" order="9"  division="1" watchdog="true" />
+        <Domain master="0" order="10" division="1" watchdog="true" />
+        <Domain master="0" order="11" division="1" watchdog="true" />
+        <Domain master="0" order="12" division="1" watchdog="false"/>
+        <Domain master="0" order="13" division="1" watchdog="false"/>
+        <Domain master="0" order="14" division="1" watchdog="false"/>
+        <Domain master="0" order="15" division="1" watchdog="false"/>
+        <Domain master="0" order="16" division="1" watchdog="false"/>
+        <Domain master="1" order="0"  division="1" watchdog="true" />
+        <Domain master="1" order="1"  division="1" watchdog="false"/>
+        <Domain master="1" order="2"  division="1" watchdog="false"/>
+        <Domain master="1" order="3"  division="1" watchdog="false"/>
+        <Domain master="1" order="4"  division="1" watchdog="false"/>
+        <Domain master="1" order="5"  division="1" watchdog="false"/>
+        <Domain master="2" order="0"  division="1" watchdog="true" />
+        <Domain master="3" order="0"  division="1" watchdog="false"/>
+        <Domain master="4" order="0"  division="1" watchdog="false"/>
+        <Domain master="5" order="0"  division="1" watchdog="false"/>
     </Domains>
     <Slaves>
         <!-- Left Leg -->
@@ -909,7 +910,7 @@
         <Slave master="1" domain="0"  alias="17"  type="Elmo"       >0</Slave>
         <Slave master="1" domain="0"  alias="18"  type="Elmo"       >0</Slave>
         <Slave master="1" domain="0"  alias="19"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="2"  alias="220" type="LinkTouch"  >0</Slave>
+        <Slave master="1" domain="2"  alias="220" type="KunweiTech" >0</Slave>
         <Slave master="1" domain="3"  alias="200" type="Tsinghua"   >0</Slave>
         <Slave master="1" domain="4"  alias="200" type="Ruiyan_1dof">0</Slave>
         <Slave master="1" domain="4"  alias="200" type="Ruiyan_6dof">0</Slave>
@@ -921,7 +922,7 @@
         <Slave master="1" domain="1"  alias="24"  type="Elmo"       >0</Slave>
         <Slave master="1" domain="1"  alias="25"  type="Elmo"       >0</Slave>
         <Slave master="1" domain="1"  alias="26"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="2"  alias="221" type="LinkTouch"  >0</Slave>
+        <Slave master="1" domain="2"  alias="221" type="KunweiTech" >0</Slave>
         <Slave master="1" domain="3"  alias="201" type="Tsinghua"   >0</Slave>
         <Slave master="1" domain="4"  alias="201" type="Ruiyan_1dof">0</Slave>
         <Slave master="1" domain="4"  alias="201" type="Ruiyan_6dof">0</Slave>

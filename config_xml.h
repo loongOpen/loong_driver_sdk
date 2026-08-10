@@ -40,6 +40,7 @@ public:
     int masterAttribute(char const* bus, int const order, char const* name);
     bool masterFeature(char const* bus, int const order, char const* name);
     std::vector<std::vector<int>> domainDivisions(char const* bus);
+    std::vector<std::vector<bool>> domainWatchdogs(char const* bus);
     tinyxml2::XMLElement* device(char const* bus, char const* VendorID, char const* ProductCode);
     tinyxml2::XMLElement* device(char const* bus, char const* type);
     std::string deviceType(tinyxml2::XMLElement const* deviceElement);

@@ -37,9 +37,10 @@ struct ec_ioctl_slave_state_t{
 
 extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> ecatAlias2type;
-extern std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> ecatAliases2domainType;
+extern std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> ecatAliases2domain2type;
 extern std::vector<std::map<int, int>> ecatAlias2domain;
 extern std::vector<std::vector<int>> ecatDomainDivisions;
+extern std::vector<std::vector<bool>> ecatDomainWatchdogs;
 extern int dofAll, dofLeftEffector, dofEffector, transferrerCount;
 extern sensorFunction sensorFuncs[2];
 extern WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
@@ -49,37 +50,25 @@ extern WrapperPair<SensorRXData, SensorTXData, SensorParameters> sensors[2];
 extern WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters>* transferrers;
 extern std::vector<unsigned short> processorsECAT;
 extern std::vector<unsigned short> maxCurrent;
-extern std::atomic<int> ecatStalled;
 extern std::vector<RS485>* rs485sPtr;
 extern std::vector<CANEmu>* canemusPtr;
 WrapperPair<HandRXData, HandTXData, EffectorParameters> hands[2];
 
-float nullSensor(int const value){
-    return 0.0;
-}
-
-float linkTouch(int const value){
-    return value / 10000.0;
-}
-
-float kunweiTech(int const value){
-    return value / 10000.0;
-}
+int ECAT::effectorAlias, ECAT::sensorAlias;
 
 ECAT::ECAT(int const order){
     domains = nullptr;
     domainPtrs = nullptr;
     domainSizes = nullptr;
     rxPDOSwaps = txPDOSwaps = nullptr;
-    sdoRequestable = false;
-    regRequestable = false;
+    sdoRequestable = regRequestable = false;
     master = nullptr;
     fd = -1;
     pth = 0;
     this->order = order;
     alias2type = ecatAlias2type[order];
-    aliases2domainType = ecatAliases2domainType[order];
-    if(alias2type.size() == 0 && aliases2domainType.size() == 0){
+    aliases2domain2type = ecatAliases2domain2type[order];
+    if(alias2type.size() == 0 && aliases2domain2type.size() == 0){
         return;
     }
     printf("ecats[%d]\n", order);
@@ -89,10 +78,10 @@ ECAT::ECAT(int const order){
         ++itr;
     }
     int i = 0;
-    while(i < aliases2domainType.size()){
+    while(i < aliases2domain2type.size()){
         std::vector<int> aliases;
         std::string type;
-        std::tie(aliases, std::ignore, type) = aliases2domainType[i];
+        std::tie(aliases, std::ignore, type) = aliases2domain2type[i];
         printf("\taliases");
         int j = 0;
         while(j < aliases.size()){
@@ -102,13 +91,14 @@ ECAT::ECAT(int const order){
         printf(", type %s\n", type.c_str());
         ++i;
     }
-    dc       = configXML->masterFeature("ECAT", order, "dc");
-    refSlave = configXML->masterFeature("ECAT", order, "ref_slave");
-    period   = configXML->masterAttribute("ECAT", order, "period");
-    cpu      = configXML->masterAttribute("ECAT", order, "cpu");
+    dc       = configXML->masterFeature  ("ECAT", order, "dc"       );
+    refSlave = configXML->masterFeature  ("ECAT", order, "ref_slave");
+    period   = configXML->masterAttribute("ECAT", order, "period"   );
+    cpu      = configXML->masterAttribute("ECAT", order, "cpu"      );
     adjustCPU(&cpu, processorsECAT[order]);
-    alias2domain = ecatAlias2domain[order];
+    alias2domain    = ecatAlias2domain   [order];
     domainDivisions = ecatDomainDivisions[order];
+    domainWatchdogs = ecatDomainWatchdogs[order];
     while(init() < 0){
         clean();
     }
@@ -126,23 +116,27 @@ int ECAT::init(){
         printf("opening master device %s failed\n", deviceName.str().c_str());
         return -1;
     }
-    domains = new ec_domain_t*[domainDivisions.size()];
-    domainPtrs = new unsigned char*[domainDivisions.size()];
-    domainSizes = new int[domainDivisions.size()];
-    rxPDOSwaps = new SwapList*[domainDivisions.size()];
-    txPDOSwaps = new SwapList*[domainDivisions.size()];
+    domains     = new   ec_domain_t*[domainDivisions.size()];
+    domainPtrs  = new unsigned char*[domainDivisions.size()];
+    domainSizes = new            int[domainDivisions.size()];
+    rxPDOSwaps  = new      SwapList*[domainDivisions.size()];
+    txPDOSwaps  = new      SwapList*[domainDivisions.size()];
     int i = 0;
     while(i < domainDivisions.size()){
-        domains[i] = nullptr;
-        domainPtrs[i] = nullptr;
+        domains    [i] = nullptr;
+        domainPtrs [i] = nullptr;
         domainSizes[i] = 0;
-        rxPDOSwaps[i] = nullptr;
-        txPDOSwaps[i] = nullptr;
+        rxPDOSwaps [i] = nullptr;
+        txPDOSwaps [i] = nullptr;
         ++i;
     }
-    effectorAlias = 199;
-    sensorAlias = 219;
     localTransferrerCount = 0;
+    static bool initialized = false;
+    if(!initialized){
+        effectorAlias = 199;
+        sensorAlias = 219;
+        initialized = true;
+    }
     return 0;
 }
 
@@ -217,7 +211,7 @@ int ECAT::requestState(unsigned short const slave, char const* stateString){
 }
 
 int ECAT::check(){
-    if(alias2type.size() == 0 && aliases2domainType.size() == 0){
+    if(alias2type.size() == 0 && aliases2domain2type.size() == 0){
         return 0;
     }
     auto itr = alias2domain.begin();
@@ -229,10 +223,10 @@ int ECAT::check(){
         ++itr;
     }
     int i = 0;
-    while(i < aliases2domainType.size()){
+    while(i < aliases2domain2type.size()){
         std::vector<int> aliases;
         int domain;
-        std::tie(aliases, domain, std::ignore) = aliases2domainType[i];
+        std::tie(aliases, domain, std::ignore) = aliases2domain2type[i];
         if(domain >= domainDivisions.size()){
             printf("master %d devices with aliases", order);
             int j = 0;
@@ -258,7 +252,7 @@ int ECAT::check(){
         printf("master %d is scanning\n", order);
         return -2;
     }
-    printf("master %d, %ld device(s) and %ld transferrer(s) in xml, %d slave(s) on bus\n", order, alias2type.size(), aliases2domainType.size(), masterInfo.slave_count);
+    printf("master %d, %ld device(s) and %ld transferrer(s) in xml, %d slave(s) on bus\n", order, alias2type.size(), aliases2domain2type.size(), masterInfo.slave_count);
     alias2slave.clear();
     i = 0;
     while(i < masterInfo.slave_count){
@@ -306,8 +300,8 @@ int ECAT::check(){
         alias2slave.insert(std::make_pair(alias, i));
         ++i;
     }
-    if(localTransferrerCount != aliases2domainType.size()){
-        printf("master %d the count of transferrers %d contradicts that(%ld) in xml\n", order, localTransferrerCount, aliases2domainType.size());
+    if(localTransferrerCount != aliases2domain2type.size()){
+        printf("master %d the count of transferrers %d contradicts that(%ld) in xml\n", order, localTransferrerCount, aliases2domain2type.size());
         clean();
         init();
         return -2;
@@ -323,7 +317,7 @@ int ECAT::check(){
 }
 
 int ECAT::config(){
-    if(alias2type.size() == 0 && aliases2domainType.size() == 0){
+    if(alias2type.size() == 0 && aliases2domain2type.size() == 0){
         return 0;
     }
     int i = 0;
@@ -342,7 +336,7 @@ int ECAT::config(){
         std::vector<int> aliases;
         std::string type;
         if(alias < 0){
-            std::tie(aliases, domain, type) = aliases2domainType[-alias - 1];
+            std::tie(aliases, domain, type) = aliases2domain2type[-alias - 1];
         }else{
             domain = alias2domain.find(alias)->second;
             type = alias2type.find(alias)->second;
@@ -588,11 +582,7 @@ int ECAT::config(){
                 return -1;
             }
         }else if(category == "sensor"){
-            if(alias == 220){
-                k = 0;
-            }else if(alias == 221){
-                k = 1;
-            }else{
+            if(alias != 220 && alias != 221){
                 printf("\tinvalid sensor alias %d\n", alias);
                 return -1;
             }
@@ -601,9 +591,9 @@ int ECAT::config(){
                 return -1;
             }
             if(type == "LinkTouch"){
-                sensorFuncs[k] = linkTouch;
+                sensorFuncs[alias - 220] = linkTouch;
             }else if(type == "KunweiTech"){
-                sensorFuncs[k] = kunweiTech;
+                sensorFuncs[alias - 220] = kunweiTech;
             }else{
                 printf("\tinvalid sensor type %s\n", type.c_str());
                 return -1;
@@ -1045,13 +1035,13 @@ void* ECAT::rxtx(void* arg){
                     }
                     ++j;
                 }
-            }else if(ecat->order == 0){
+            }else if(ecat->domainWatchdogs[i]){
                 ++incompleteness;
             }
             ++i;
         }
         if(incompleteness != previousIncompleteness){
-            ecatStalled.store(incompleteness);
+            ecat->stalled.store(incompleteness);
             previousIncompleteness = incompleteness;
         }
     }
@@ -1059,7 +1049,7 @@ void* ECAT::rxtx(void* arg){
 }
 
 int ECAT::run(){
-    if(alias2type.size() == 0 && aliases2domainType.size() == 0){
+    if(alias2type.size() == 0 && aliases2domain2type.size() == 0){
         return 0;
     }
     cpu_set_t cpuset;
@@ -1070,7 +1060,7 @@ int ECAT::run(){
         return -1;
     }
     if(pthread_setaffinity_np(pth, sizeof(cpu_set_t), &cpuset) != 0){
-        printf("setting ecats[%d] rxtx thread cpu affinity failed\n", order);
+        printf("setting ecats[%d] rxtx thread cpu affinity (cpu=%d) failed\n", order, cpu);
         return -1;
     }
     if(pthread_detach(pth) != 0){
@@ -1136,5 +1126,8 @@ void ECAT::clean(){
 
 ECAT::~ECAT(){
     clean();
+}
+
+ECAT::ECAT(ECAT const&&){
 }
 }

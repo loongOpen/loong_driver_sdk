@@ -30,12 +30,15 @@ float kunweiTech(int const value);
 class ECAT{
 public:
     bool dc, refSlave, sdoRequestable, regRequestable;
-    int order, fd, effectorAlias, sensorAlias, localTransferrerCount, * domainSizes, cpu;
+    int order, fd, localTransferrerCount, * domainSizes, cpu;
+    static int effectorAlias, sensorAlias;
+    std::atomic<int> stalled;
     std::map<int, std::string> alias2type;
-    std::vector<std::tuple<std::vector<int>, int, std::string>> aliases2domainType;
+    std::vector<std::tuple<std::vector<int>, int, std::string>> aliases2domain2type;
     long period;
     std::map<int, int> alias2slave, alias2domain;
     std::vector<int> domainDivisions;
+    std::vector<bool> domainWatchdogs;
     ec_domain_t** domains;
     unsigned char** domainPtrs;
     SwapList** rxPDOSwaps, ** txPDOSwaps;
@@ -52,5 +55,6 @@ public:
     int run();
     void clean();
     ~ECAT();
+    ECAT(ECAT const&&);
 };
 }
