@@ -101,6 +101,8 @@ int ECAT::init(){
         }
         initialized = true;
     }
+    localEffectorAlias = effectorAlias;
+    localSensorAlias = sensorAlias;
     return 0;
 }
 
@@ -133,17 +135,17 @@ int ECAT::readAlias(unsigned short const slave, std::string const& category, uns
         if(category == "effector"){
             auto itr = alias2type.end();
             do{
-                ++effectorAlias;
-                itr = alias2type.find(effectorAlias);
-            }while(itr == alias2type.end() && effectorAlias < 201);
-            return effectorAlias;
+                ++localEffectorAlias;
+                itr = alias2type.find(localEffectorAlias);
+            }while(itr == alias2type.end() && localEffectorAlias < 201);
+            return localEffectorAlias;
         }else if(category == "sensor"){
             auto itr = alias2type.end();
             do{
-                ++sensorAlias;
-                itr = alias2type.find(sensorAlias);
-            }while(itr == alias2type.end() && sensorAlias < 221);
-            return sensorAlias;
+                ++localSensorAlias;
+                itr = alias2type.find(localSensorAlias);
+            }while(itr == alias2type.end() && localSensorAlias < 221);
+            return localSensorAlias;
         }
     }
     return 0;
@@ -237,6 +239,8 @@ int ECAT::check(){
         init();
         return -2;
     }
+    effectorAlias = localEffectorAlias;
+    sensorAlias = localSensorAlias;
     return 0;
 }
 

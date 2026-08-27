@@ -33,10 +33,9 @@ int ConfigXML::writeMotorParameter(int const alias, char const* parameter, float
             tinyxml2::XMLElement* parameterElement = motorElement->FirstChildElement(parameter);
             if(parameterElement == nullptr){
                 return -1;
-            }else{
-                parameterElement->SetText(value);
-                return 0;
             }
+            parameterElement->SetText(value);
+            return 0;
         }
         motorElement = motorElement->NextSiblingElement("Motor");
     }
@@ -50,9 +49,8 @@ float ConfigXML::readMotorParameter(int const alias, char const* parameter){
             tinyxml2::XMLElement* parameterElement = motorElement->FirstChildElement(parameter);
             if(parameterElement == nullptr){
                 return std::numeric_limits<float>::min();
-            }else{
-                return parameterElement->FloatText();
             }
+            return parameterElement->FloatText();
         }
         motorElement = motorElement->NextSiblingElement("Motor");
     }
@@ -66,9 +64,8 @@ float ConfigXML::readDeviceParameter(char const* bus, char const* type, char con
             tinyxml2::XMLElement* parameterElement = deviceElement->FirstChildElement(parameter);
             if(parameterElement == nullptr){
                 return 0.0;
-            }else{
-                return parameterElement->FloatText();
             }
+            return parameterElement->FloatText();
         }
         deviceElement = deviceElement->NextSiblingElement("Device");
     }
@@ -109,9 +106,8 @@ int ConfigXML::canAttribute(char const* name){
         tinyxml2::XMLAttribute const* attribute = mastersElement->FindAttribute(name);
         if(attribute == nullptr){
             return 0;
-        }else{
-            return attribute->IntValue();
         }
+        return attribute->IntValue();
     }
     return 0;
 }
@@ -123,9 +119,8 @@ std::string ConfigXML::masterDevice(char const* bus, int const order, char const
             tinyxml2::XMLAttribute const* attribute = masterElement->FindAttribute(name);
             if(attribute == nullptr){
                 return "";
-            }else{
-                return attribute->Value();
             }
+            return attribute->Value();
         }
         masterElement = masterElement->NextSiblingElement("Master");
     }
@@ -139,9 +134,8 @@ int ConfigXML::masterAttribute(char const* bus, int const order, char const* nam
             tinyxml2::XMLAttribute const* attribute = masterElement->FindAttribute(name);
             if(attribute == nullptr){
                 return 0;
-            }else{
-                return attribute->IntValue();
             }
+            return attribute->IntValue();
         }
         masterElement = masterElement->NextSiblingElement("Master");
     }
@@ -155,9 +149,15 @@ bool ConfigXML::masterFeature(char const* bus, int const order, char const* name
             tinyxml2::XMLAttribute const* attribute = masterElement->FindAttribute(name);
             if(attribute == nullptr){
                 return false;
-            }else{
-                return attribute->BoolValue();
             }
+            int val = 0;
+            if(attribute->QueryIntValue(&val) == tinyxml2::XML_SUCCESS){
+                if(val == 1){
+                    return true;
+                }
+                return false;
+            }
+            return attribute->BoolValue();
         }
         masterElement = masterElement->NextSiblingElement("Master");
     }
@@ -198,7 +198,16 @@ std::vector<std::vector<bool>> ConfigXML::domainWatchdogs(char const* bus){
         while(ret[master].size() <= order){
             ret[master].push_back(false);
         }
-        ret[master][order] = domainElement->BoolAttribute("watchdog");
+        int val = 0;
+        if(domainElement->QueryIntAttribute("watchdog", &val) == tinyxml2::XML_SUCCESS){
+            if(val == 1){
+                ret[master][order] = true;
+            }else{
+                ret[master][order] = false;
+            }
+        }else{
+            ret[master][order] = domainElement->BoolAttribute("watchdog");
+        }
         domainElement = domainElement->NextSiblingElement("Domain");
     }
     return ret;
@@ -242,7 +251,6 @@ std::string ConfigXML::typeCategory(char const* bus, char const* type){
         }
         categoryElement = categoryElement->NextSiblingElement("Category");
     }
-    printf("the category is not specified of device type %s\n", type);
     return "";
 }
 
@@ -294,9 +302,8 @@ int ConfigXML::txDivision(tinyxml2::XMLElement* const deviceElement, char const*
             tinyxml2::XMLAttribute const* attribute = txPDOsElement->FindAttribute("division");
             if(attribute == nullptr){
                 return 1;
-            }else{
-                return attribute->IntValue();
             }
+            return attribute->IntValue();
         }
         txPDOsElement = txPDOsElement->NextSiblingElement("TxPDOs");
     }

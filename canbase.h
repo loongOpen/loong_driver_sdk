@@ -21,6 +21,7 @@
 #include <mutex>
 #include <unistd.h>
 #include <limits>
+#include <typeinfo>
 
 namespace DriverSDK{
 class CAN;

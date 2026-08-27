@@ -81,11 +81,14 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
         std::string const& type = itr->second;
         std::string const category = configXML->typeCategory("CAN", type.c_str());
         if(category == "driver"){
+            if(slaveID > 31){
+                printf("slave_id of driver with alias %d must be lighter than 32\n", alias);
+                exit(-1);
+            }
             if(type.starts_with("RealMan")){
                 printf("RealMan driver not supported on canemu bus\n");
                 exit(-1);
-            }
-            if(type.starts_with("CANopen")){
+            }else if(type.starts_with("CANopen")){
                 printf("CANopen driver not supported on canemu bus\n");
                 exit(-1);
             }
@@ -96,6 +99,9 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
                 itr_->second->load(itr_->first);
             }
             alias2parameters[alias] = itr_->second;
+        }else if(category == ""){
+            printf("the category is not specified of device type %s\n", type.c_str());
+            exit(-1);
         }
         printf("\talias %d, type %s, master_ids", alias, type.c_str());
         i = 0;

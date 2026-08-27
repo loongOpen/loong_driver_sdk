@@ -889,50 +889,50 @@
     </Domains>
     <Slaves>
         <!-- Left Leg -->
-        <Slave master="0" domain="0"  alias="1"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="1"  alias="2"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="2"  alias="3"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="3"  alias="4"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="4"  alias="5"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="5"  alias="6"   type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0" alias="1"   type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0" alias="2"   type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0" alias="3"   type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0" alias="4"   type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0" alias="5"   type="Elmo"       >0</Slave>
+        <Slave master="1" domain="0" alias="6"   type="Elmo"       >0</Slave>
         <!-- Right Leg -->
-        <Slave master="0" domain="6"  alias="7"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="7"  alias="8"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="8"  alias="9"   type="Elmo"       >0</Slave>
-        <Slave master="0" domain="9"  alias="10"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="10" alias="11"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="11" alias="12"  type="Elmo"       >0</Slave>
+        <Slave master="2" domain="0" alias="7"   type="Elmo"       >0</Slave>
+        <Slave master="2" domain="0" alias="8"   type="Elmo"       >0</Slave>
+        <Slave master="2" domain="0" alias="9"   type="Elmo"       >0</Slave>
+        <Slave master="2" domain="0" alias="10"  type="Elmo"       >0</Slave>
+        <Slave master="2" domain="0" alias="11"  type="Elmo"       >0</Slave>
+        <Slave master="2" domain="0" alias="12"  type="Elmo"       >0</Slave>
         <!-- Left Arm -->
-        <Slave master="1" domain="0"  alias="13"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="14"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="15"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="16"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="17"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="18"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="0"  alias="19"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="2"  alias="220" type="KunweiTech" >0</Slave>
-        <Slave master="1" domain="3"  alias="200" type="Tsinghua"   >0</Slave>
-        <Slave master="1" domain="4"  alias="200" type="Ruiyan_1dof">0</Slave>
-        <Slave master="1" domain="4"  alias="200" type="Ruiyan_6dof">0</Slave>
+        <Slave master="3" domain="0" alias="13"  type="Elmo"       >0</Slave>
+        <Slave master="3" domain="0" alias="14"  type="Elmo"       >0</Slave>
+        <Slave master="3" domain="0" alias="15"  type="Elmo"       >0</Slave>
+        <Slave master="3" domain="0" alias="16"  type="Elmo"       >0</Slave>
+        <Slave master="3" domain="0" alias="17"  type="Elmo"       >0</Slave>
+        <Slave master="3" domain="0" alias="18"  type="Elmo"       >0</Slave>
+        <Slave master="3" domain="0" alias="19"  type="Elmo"       >0</Slave>
+        <Slave master="3" domain="0" alias="220" type="KunweiTech" >0</Slave>
+        <Slave master="3" domain="0" alias="200" type="Tsinghua"   >0</Slave>
+        <Slave master="3" domain="0" alias="200" type="Ruiyan_1dof">0</Slave>
+        <Slave master="3" domain="0" alias="200" type="Ruiyan_6dof">0</Slave>
         <!-- Right Arm -->
-        <Slave master="1" domain="1"  alias="20"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="21"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="22"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="23"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="24"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="25"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="1"  alias="26"  type="Elmo"       >0</Slave>
-        <Slave master="1" domain="2"  alias="221" type="KunweiTech" >0</Slave>
-        <Slave master="1" domain="3"  alias="201" type="Tsinghua"   >0</Slave>
-        <Slave master="1" domain="4"  alias="201" type="Ruiyan_1dof">0</Slave>
-        <Slave master="1" domain="4"  alias="201" type="Ruiyan_6dof">0</Slave>
+        <Slave master="4" domain="0" alias="20"  type="Elmo"       >0</Slave>
+        <Slave master="4" domain="0" alias="21"  type="Elmo"       >0</Slave>
+        <Slave master="4" domain="0" alias="22"  type="Elmo"       >0</Slave>
+        <Slave master="4" domain="0" alias="23"  type="Elmo"       >0</Slave>
+        <Slave master="4" domain="0" alias="24"  type="Elmo"       >0</Slave>
+        <Slave master="4" domain="0" alias="25"  type="Elmo"       >0</Slave>
+        <Slave master="4" domain="0" alias="26"  type="Elmo"       >0</Slave>
+        <Slave master="4" domain="0" alias="221" type="KunweiTech" >0</Slave>
+        <Slave master="4" domain="0" alias="201" type="Tsinghua"   >0</Slave>
+        <Slave master="4" domain="0" alias="201" type="Ruiyan_1dof">0</Slave>
+        <Slave master="4" domain="0" alias="201" type="Ruiyan_6dof">0</Slave>
         <!-- Waist -->
-        <Slave master="0" domain="12" alias="27"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="13" alias="28"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="14" alias="29"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="0" alias="27"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="0" alias="28"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="0" alias="29"  type="Elmo"       >0</Slave>
         <!-- Neck -->
-        <Slave master="0" domain="15" alias="30"  type="Elmo"       >0</Slave>
-        <Slave master="0" domain="16" alias="31"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="0" alias="30"  type="Elmo"       >0</Slave>
+        <Slave master="0" domain="0" alias="31"  type="Elmo"       >0</Slave>
     </Slaves>
 </ECAT>
 <CAN>

@@ -95,6 +95,10 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         std::string const& type = itr->second;
         std::string const category = configXML->typeCategory("CAN", type.c_str());
         if(category == "driver"){
+            if(slaveID > 31){
+                printf("slave_id of driver with alias %d must be lighter than 32\n", alias);
+                exit(-1);
+            }
             if(type.starts_with("RealMan") && (slaveID < 1 || slaveID > 7)){
                 printf("slave_id of RealMan driver with alias %d must be within [1, 7]\n", alias);
                 exit(-1);
@@ -106,6 +110,9 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
                 itr_->second->load(itr_->first);
             }
             alias2parameters[alias] = itr_->second;
+        }else if(category == ""){
+            printf("the category is not specified of device type %s\n", type.c_str());
+            exit(-1);
         }
         printf("\talias %d, type %s, master_ids", alias, type.c_str());
         i = 0;

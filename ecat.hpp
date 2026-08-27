@@ -30,7 +30,7 @@ float kunweiTech(int const value);
 class ECAT{
 public:
     bool sdoRequestable, regRequestable;
-    int order, * domainSizes, cpu, domainCount, * workingCounters, previousIncompleteness, tryCount;
+    int order, localEffectorAlias, localSensorAlias, * domainSizes, cpu, domainCount, * workingCounters, previousIncompleteness, tryCount;
     static int effectorAlias, sensorAlias;
     std::atomic<int> stalled;
     std::map<int, std::string> alias2type;
