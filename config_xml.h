@@ -31,6 +31,7 @@ public:
     ConfigXML(char const* name);
     int writeMotorParameter(int const alias, char const* parameter, float const value);
     float readMotorParameter(int const alias, char const* parameter);
+    float readIMUParameter(char const* bus, int const alias, char const* parameter);
     float readDeviceParameter(char const* bus, char const* type, char const* parameter);
     std::vector<std::vector<int>> motorAlias();
     std::string imuAttribute(char const* name);
@@ -45,7 +46,8 @@ public:
     tinyxml2::XMLElement* device(char const* bus, char const* type);
     std::string deviceType(tinyxml2::XMLElement const* deviceElement);
     std::string typeCategory(char const* bus, char const* type);
-    std::string typeAttribute(char const* bus, char const* type, char const* name);
+    int typeAttribute(char const* bus, char const* type, char const* name);
+    bool typeFeature(char const* bus, char const* type, char const* name);
     unsigned int vendorID(tinyxml2::XMLElement const* deviceElement);
     unsigned int productCode(tinyxml2::XMLElement const* deviceElement);
     std::vector<std::vector<std::string>> pdos(tinyxml2::XMLElement* const deviceElement, char const* rxtx);

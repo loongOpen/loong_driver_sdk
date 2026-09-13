@@ -24,6 +24,15 @@
 namespace DriverSDK{
 extern ConfigXML* configXML;
 
+unsigned int crc32(unsigned int crc, unsigned char const* buff, unsigned int const length){
+    int i = 0;
+    while(i < length){
+        crc = Table[(crc ^ buff[i]) & 0xff] ^ crc >> 8;
+        ++i;
+    }
+    return crc;
+}
+
 void print(unsigned char const* data, int const length){
     int i = 0;
     while(i < length){
@@ -327,6 +336,9 @@ MotorParameters::~MotorParameters(){
 }
 
 IMUParameters::IMUParameters(){
+    x = y = z = 0.0;
+    q = nullptr;
+    transform = false;
 }
 
 #ifndef NIIC
@@ -334,6 +346,21 @@ int IMUParameters::load(std::string const& bus, int const alias, std::string con
 #else
 int IMUParameters::load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler){
 #endif
+    if(alias == 240 && configXML->xmlDoc.FirstChildElement("Config")->FirstChildElement("IMU") != nullptr){
+        x = configXML->readIMUParameter(         "", alias, "x") * Pi;
+        y = configXML->readIMUParameter(         "", alias, "y") * Pi;
+        z = configXML->readIMUParameter(         "", alias, "z") * Pi;
+    }else{
+        x = configXML->readIMUParameter(bus.c_str(), alias, "x") * Pi;
+        y = configXML->readIMUParameter(bus.c_str(), alias, "y") * Pi;
+        z = configXML->readIMUParameter(bus.c_str(), alias, "z") * Pi;
+    }
+    q = new Eigen::Quaternionf(Eigen::Quaternionf(std::cos(z / 2.0), 0.0, 0.0, std::sin(z / 2.0)) *
+                               Eigen::Quaternionf(std::cos(y / 2.0), 0.0, std::sin(y / 2.0), 0.0) *
+                               Eigen::Quaternionf(std::cos(x / 2.0), std::sin(x / 2.0), 0.0, 0.0));
+    if(x != 0.0 || y != 0.0 || z != 0.0){
+        transform = true;
+    }
     return 0;
 }
 
@@ -343,6 +370,9 @@ void IMUParameters::load(ecat::sdo_request* const sdoHandler){
 #endif
 
 IMUParameters::~IMUParameters(){
+    if(q != nullptr){
+        delete q;
+    }
 }
 
 EffectorParameters::EffectorParameters(){
@@ -391,6 +421,8 @@ int TransferrerParameters::load(std::string const& bus, int const alias, std::st
 #else
 int TransferrerParameters::load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler){
 #endif
+    dof = configXML->typeAttribute("ECAT", type.c_str(), "dof");
+    canfd = configXML->typeFeature("ECAT", type.c_str(), "canfd");
     return 0;
 }
 

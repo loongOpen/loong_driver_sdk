@@ -32,7 +32,7 @@ int CANEmu::orderSlaveID2alias[10][256];
 int* CANEmu::orderMasterID2slaveID[10][2048];
 canEmuRXFunction CANEmu::rxFuncs[10][256];
 canEmuTXFunction* CANEmu::txFuncs[10][2048];
-int CANEmu::alias2channel[256];
+int CANEmu::alias2slot[256];
 
 CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
     static bool initialized = false;
@@ -86,10 +86,10 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
                 exit(-1);
             }
             if(type.starts_with("RealMan")){
-                printf("RealMan driver not supported on canemu bus\n");
+                printf("RealMan driver is not supported on canemu bus\n");
                 exit(-1);
             }else if(type.starts_with("CANopen")){
-                printf("CANopen driver not supported on canemu bus\n");
+                printf("CANopen driver is not supported on canemu bus\n");
                 exit(-1);
             }
             alias2status[alias] = 0x0000;
@@ -99,6 +99,9 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
                 itr_->second->load(itr_->first);
             }
             alias2parameters[alias] = itr_->second;
+        }else if(category == "imu"){
+            printf("imu is not supported on canemu bus\n");
+            exit(-1);
         }else if(category == ""){
             printf("the category is not specified of device type %s\n", type.c_str());
             exit(-1);

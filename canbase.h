@@ -451,7 +451,9 @@ int weiyiRX(int const alias, int* const slaveID, unsigned char* const data, int*
         case 0x0007:
             break;
         case 0x0001:
-            static unsigned char count[32] = {
+            static unsigned char count[64] = {
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
                 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
                 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
             };
@@ -522,7 +524,11 @@ int weiyiRX(int const alias, int* const slaveID, unsigned char* const data, int*
         }
         break;
     }
-    static unsigned int count[32] = {
+    static unsigned int count[64] = {
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -889,7 +895,11 @@ bool canopenCheck(long const period, int const count){
 
 template<typename T>
 int canopenEyouRX(int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff, T* const can){
-    static unsigned int count[32] = {
+    static unsigned int count[64] = {
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -933,7 +943,11 @@ void canopenEyouTX(int const masterID, unsigned char* const data, int const leng
 
 template<typename T>
 int canopenEyouRX_(int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff, T* const can){
-    static unsigned int count[32] = {
+    static unsigned int count[64] = {
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -991,7 +1005,11 @@ void canopenEyouTX_(int const masterID, unsigned char* const data, int const len
 
 /* template<typename T>
 int canopenElmoRX(int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff, T* const can){
-    static unsigned int count[32] = {
+    static unsigned int count[64] = {
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -1168,33 +1186,73 @@ int yesenseRX(int const alias, int* const slaveID, unsigned char* const data, in
 template<typename T>
 void yesenseTX(int const masterID, unsigned char* const data, int const length, T* const can){
     int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
-    if(stdID > 0x500){
-        if(length != 6){
-            return;
-        }
-        imus[alias - 240].tx.next()->acc[0] =   *((unsigned short*)data + 1) * 0.01 - 320.0;
-        imus[alias - 240].tx.next()->acc[1] = -(*((unsigned short*)data + 0) * 0.01 - 320.0);
-        imus[alias - 240].tx.next()->acc[2] =   *((unsigned short*)data + 2) * 0.01 - 320.0;
-    }else if(stdID > 0x200){
+    if(masterID >= 0x0cf03000){
         if(length != 8){
             return;
         }
-        imus[alias - 240].tx.next()->gyr[0] =  ((*(int*)(data + 2) >> 4 & 0x000fffff) * 0.0078125 - 4000.0) * Pi / 180.0;
-        imus[alias - 240].tx.next()->gyr[1] = -((*(int*)(data + 0) >> 0 & 0x000fffff) * 0.0078125 - 4000.0) * Pi / 180.0;
-        imus[alias - 240].tx.next()->gyr[2] =  ((*(int*)(data + 5) >> 0 & 0x000fffff) * 0.0078125 - 4000.0) * Pi / 180.0;
-    }else if(stdID > 0x100){
+        imus[alias - 240].tx.next()->q  [0] = (*((unsigned short*)data + 0) * 0.000030519 - 1.0);
+        imus[alias - 240].tx.next()->q  [1] = (*((unsigned short*)data + 1) * 0.000030519 - 1.0);
+        imus[alias - 240].tx.next()->q  [2] = (*((unsigned short*)data + 2) * 0.000030519 - 1.0);
+        imus[alias - 240].tx.next()->q  [3] = (*((unsigned short*)data + 3) * 0.000030519 - 1.0);
+        imus[alias - 240].tx.next()->quaternion = true;
+    }else if(masterID >= 0x0cf02d00){
         if(length != 6){
             return;
         }
-        imus[alias - 240].tx.next()->rpy[0] =  (*((unsigned short*)data + 0) * 0.0078125 - 250.0) * Pi / 180.0;
-        imus[alias - 240].tx.next()->rpy[1] = -(*((unsigned short*)data + 1) * 0.0078125 - 250.0) * Pi / 180.0;
-        imus[alias - 240].tx.next()->rpy[2] =  (*((unsigned short*)data + 2) * 0.0078125 - 250.0) * Pi / 180.0;
-    }else{
+        imus[alias - 240].tx.next()->acc[0] = *((unsigned short*)data + 0) * 0.01 - 320.0;
+        imus[alias - 240].tx.next()->acc[1] = *((unsigned short*)data + 1) * 0.01 - 320.0;
+        imus[alias - 240].tx.next()->acc[2] = *((unsigned short*)data + 2) * 0.01 - 320.0;
+    }else if(masterID >= 0x0cf02a00){
+        if(length != 8){
+            return;
+        }
+        imus[alias - 240].tx.next()->gyr[0] = ((*(int*)(data + 0) >> 0 & 0x000fffff) * 0.0078125 - 4000.0) * Pi / 180.0;
+        imus[alias - 240].tx.next()->gyr[1] = ((*(int*)(data + 2) >> 4 & 0x000fffff) * 0.0078125 - 4000.0) * Pi / 180.0;
+        imus[alias - 240].tx.next()->gyr[2] = ((*(int*)(data + 5) >> 0 & 0x000fffff) * 0.0078125 - 4000.0) * Pi / 180.0;
+    }else if(masterID >= 0x0cf02900){
+        /* if(length != 6){
+            return;
+        }
+        imus[alias - 240].tx.next()->rpy[0] = (*((unsigned short*)data + 0) * 0.0078125 - 250.0) * Pi / 180.0;
+        imus[alias - 240].tx.next()->rpy[1] = (*((unsigned short*)data + 1) * 0.0078125 - 250.0) * Pi / 180.0;
+        imus[alias - 240].tx.next()->rpy[2] = (*((unsigned short*)data + 2) * 0.0078125 - 250.0) * Pi / 180.0; */
         can->mask__ |= 1 << slaveID % 32;
         if(can->mask__ == can->MASK__){
             can->txSwap__->advanceNodePtr();
             can->mask__ = 0;
         }
+    }
+}
+
+template<typename T>
+int forsenseRX(int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff, T* const can){
+    return std::numeric_limits<int>::min();
+}
+
+template<typename T>
+void forsenseTX(int const masterID, unsigned char* const data, int const length, T* const can){
+    if(length != 64){
+        return;
+    }
+    if(crc32(1, data, 60) != *(unsigned int*)(data + 60)){
+        return;
+    }
+    int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
+    imus[alias - 240].tx.next()->gyr[0] = *(float*)(data +  7) * Pi / 180.0;
+    imus[alias - 240].tx.next()->gyr[1] = *(float*)(data + 11) * Pi / 180.0;
+    imus[alias - 240].tx.next()->gyr[2] = *(float*)(data + 15) * Pi / 180.0;
+    imus[alias - 240].tx.next()->acc[0] = *(float*)(data + 19);
+    imus[alias - 240].tx.next()->acc[1] = *(float*)(data + 23);
+    imus[alias - 240].tx.next()->acc[2] = *(float*)(data + 27);
+    imus[alias - 240].tx.next()->q  [0] = *(float*)(data + 33);
+    imus[alias - 240].tx.next()->q  [1] = *(float*)(data + 37);
+    imus[alias - 240].tx.next()->q  [2] = *(float*)(data + 41);
+    imus[alias - 240].tx.next()->q  [3] = *(float*)(data + 45);
+    imus[alias - 240].tx.next()->quaternion = true;
+    can->mask__ |= 1 << slaveID;
+    if(can->mask__ == can->MASK__){
+        can->txSwap__->advanceNodePtr();
+        can->mask__ = 0;
     }
 }
 
@@ -1265,7 +1323,7 @@ public:
     static int* orderMasterID2slaveID[10][2048];
     static canEmuRXFunction rxFuncs[10][256];
     static canEmuTXFunction* txFuncs[10][2048];
-    static int alias2channel[256];
+    static int alias2slot[256];
     CANEmu(int const order);
     int config();
     static int run(std::vector<CANEmu>& canemus);

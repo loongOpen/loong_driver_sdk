@@ -933,6 +933,7 @@
         <!-- Neck -->
         <Slave master="0" domain="15" alias="30"  type="Elmo"       >0</Slave>
         <Slave master="0" domain="16" alias="31"  type="Elmo"       >0</Slave>
+        <!-- Tail -->
     </Slaves>
 </ECAT>
 <CAN>
@@ -1053,6 +1054,7 @@
     </Devices>
     <Categories>
         <Category name="imu">
+            <Type>Forsense</Type>
             <Type>YESENSE</Type>
         </Category>
         <Category name="battery">
@@ -1135,8 +1137,10 @@
         <Slave master="4" master_ids="21"                slave_id="5" alias="31" type="Damiao DM-J4310-2EC_"     >0</Slave>
         <Slave master="4" master_ids="388 900 1412 1796" slave_id="4" alias="30" type="CANopen Eyou"             >0</Slave><!-- master_ids="384+slave_id 896+slave_id 1408+slave_id 1792+slave_id" -->
         <Slave master="4" master_ids="389 901 1413 1797" slave_id="5" alias="31" type="CANopen Eyou"             >0</Slave>
+        <!-- Tail -->
         <!-- IMU -->
-        <Slave master="5" master_ids="217066841 217066073 217065817 217067609" slave_id="89" alias="242" type="YESENSE">0</Slave><!-- master_ids="217066752+slave_id 217065984+slave_id 217065728+slave_id" 217067520+slave_id -->
+        <Slave master="5" master_ids="512" slave_id="0" alias="242" type="Forsense" x="0.0" y="0.0" z="0.0">0</Slave><!-- x-y-z extrinsic in unit of Pi -->
+        <Slave master="5" master_ids="217066841 217066073 217065817 217067609" slave_id="89" alias="243" type="YESENSE" x="0.0" y="0.0" z="0.0">0</Slave><!-- master_ids="217066752+slave_id 217065984+slave_id 217065728+slave_id 217067520+slave_id" x-y-z extrinsic in unit of Pi -->
     </Slaves>
 </CAN>
 <RS485Emu>
@@ -1215,12 +1219,12 @@
         </Category>
     </Categories>
     <Masters>
-        <Master order="0" device="/dev/ttyTHS3" baudrate="460800"/>
-        <Master order="1" device="/dev/ttyUSB0" baudrate="115200"/>
+        <Master order="0" device="/dev/ttyTHS3" type="tty" baudrate="460800"/>
+        <Master order="1" device="/dev/ttyUSB0" type="tty" baudrate="115200"/>
     </Masters>
     <Slaves>
-        <Slave master="0" alias="240" type="Xsens" >1</Slave>
-        <Slave master="1" alias="241" type="HiPNUC">0</Slave>
+        <Slave master="0" alias="240" type="Xsens"  x="0.0" y="0.0" z="0.0">0</Slave><!-- x-y-z extrinsic in unit of Pi -->
+        <Slave master="1" alias="241" type="HiPNUC" x="0.0" y="0.0" z="0.0">0</Slave><!-- x-y-z extrinsic in unit of Pi -->
     </Slaves>
 </RS232>
 <Motors>
@@ -1860,6 +1864,7 @@
         <MinimumPosition>-0.69813172</MinimumPosition>
         <MaximumPosition>0.69813172</MaximumPosition>
     </Motor><!-- CANopen Elmo -->
+    <!-- Tail -->
 </Motors>
-<!--<IMU device="/dev/ttyTHS3" baudrate="460800" type="Xsens"/>--><!-- type="Xsens/HiPNUC/Forsense/YESENSE/YESENSE_/Lins-Tech" -->
+<!--<IMU device="/dev/ttyTHS3" baudrate="460800" type="Xsens" x="0.0" y="0.0" z="0.0"/>--><!-- type="Xsens/HiPNUC/Forsense/YESENSE/YESENSE_/Lins-Tech" x-y-z extrinsic in unit of Pi -->
 </Config>

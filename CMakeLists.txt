@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 option(AARCH64 "aarch64" OFF)
 option(RISCV64 "riscv64" OFF)
 option(LOONGARCH64 "loongarch64" OFF)
+option(XENOMAI "xenomai" OFF)
 option(NIIC "necro" OFF)
 option(ENPHT "enpht" OFF)
 option(GD32 "gd32" OFF)
@@ -23,13 +24,16 @@ else(AARCH64)
     set(arch x64)
     set(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/../../third_party/lib_lin_x64")
 endif(AARCH64)
-set(CMAKE_C_COMPILER ${march}-linux-gnu-gcc)
-set(CMAKE_CXX_COMPILER ${march}-linux-gnu-g++)
+set(CMAKE_C_COMPILER ${march}-linux-gnu-gcc-10)
+set(CMAKE_CXX_COMPILER ${march}-linux-gnu-g++-10)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-project(driver_test VERSION 4.4.4 LANGUAGES C CXX)
+project(driver_test VERSION 4.4.5 LANGUAGES C CXX)
 set(CMAKE_INSTALL_PREFIX ..)
 configure_file(version.h.in version.h)
+if(XENOMAI)
+    add_definitions(-DXENOMAI)
+endif(XENOMAI)
 if(NIIC)
     add_definitions(-DNIIC)
     set(Necro_DIR ${PROJECT_SOURCE_DIR}/../loong_third_party/necro/lib/cmake/necro)
@@ -76,6 +80,7 @@ target_include_directories(loong_driver_sdk_${arch} PRIVATE
     ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/include
     ${PROJECT_SOURCE_DIR}/../loong_third_party/netlink/include
     ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/include
+    ${PROJECT_SOURCE_DIR}/../loong_third_party/eigen/include
 )
 target_link_directories(loong_driver_sdk_${arch} PRIVATE
     ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat-cpp/lib

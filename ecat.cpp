@@ -48,8 +48,8 @@ extern WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
 extern WrapperPair<ConverterRXData, ConverterTXData, EffectorParameters> converters[2];
 extern WrapperPair<SensorRXData, SensorTXData, SensorParameters> sensors[2];
 extern WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters>* transferrers;
-extern std::vector<unsigned short> processorsECAT;
-extern std::vector<unsigned short> maxCurrent;
+extern std::vector<unsigned short> ecatProcessors;
+extern std::vector<unsigned short> maxCurrents;
 extern std::vector<RS485>* rs485sPtr;
 extern std::vector<CANEmu>* canemusPtr;
 WrapperPair<HandRXData, HandTXData, EffectorParameters> hands[2];
@@ -95,7 +95,7 @@ ECAT::ECAT(int const order){
     refSlave = configXML->masterFeature  ("ECAT", order, "ref_slave");
     period   = configXML->masterAttribute("ECAT", order, "period"   );
     cpu      = configXML->masterAttribute("ECAT", order, "cpu"      );
-    adjustCPU(&cpu, processorsECAT[order]);
+    adjustCPU(&cpu, ecatProcessors[order]);
     alias2domain    = ecatAlias2domain   [order];
     domainDivisions = ecatDomainDivisions[order];
     domainWatchdogs = ecatDomainWatchdogs[order];
@@ -187,7 +187,7 @@ int ECAT::readAlias(unsigned short const slave, std::string const& category, uns
 
 int ECAT::requestState(unsigned short const slave, char const* stateString){
     unsigned char state = 0x00;
-    if(strcmp(stateString, "INIT") == 0) {
+    if(strcmp(stateString, "INIT") == 0){
         state = 0x01;
     }else if(strcmp(stateString, "PREOP") == 0){
         state = 0x02;
@@ -298,6 +298,13 @@ int ECAT::check(){
                 printf("\tdevice type contradicts that(%s) in xml\n", itr->second.c_str());
                 return -1;
             }
+        }else{
+            std::string transferrerType;
+            std::tie(std::ignore, std::ignore, transferrerType) = aliases2domain2type[localTransferrerCount - 1];
+            if(type != transferrerType){
+                printf("\tdevice type contradicts that(%s) in xml\n", transferrerType.c_str());
+                return -1;
+            }
         }
         alias2slave.insert(std::make_pair(alias, i));
         ++i;
@@ -341,6 +348,10 @@ int ECAT::config(){
         std::string type;
         if(alias < 0){
             std::tie(aliases, domain, type) = aliases2domain2type[-alias - 1];
+            while(domain2transferrers.size() <= domain){
+                domain2transferrers.push_back(std::vector<int>());
+            }
+            domain2transferrers[domain].push_back(-alias - 1);
         }else{
             domain = alias2domain.find(alias)->second;
             type = alias2type.find(alias)->second;
@@ -485,7 +496,7 @@ int ECAT::config(){
                 }
                 break;
             }
-            u16 = maxCurrent[alias - 1];
+            u16 = maxCurrents[alias - 1];
             while(ecrt_master_sdo_download(master, slave, 0x6072, 0x00, (unsigned char*)&u16, sizeof(u16), &abortCode) < 0){
                 sleep(1);
             }
@@ -603,7 +614,7 @@ int ECAT::config(){
                 return -1;
             }
         }else if(category == "transferrer"){
-            if(type == "Encos_6dof"){
+            if(type == "Encos_6dof" || type == "Encos_64dof"){
                 if(transferrers[-alias - 1].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler, regHandler) != 0){
                     printf("\transferrers[%d] init failed\n", -alias - 1);
                     return -1;
@@ -790,6 +801,12 @@ void* ECAT::rxtx(void* arg){
     }
     printf("\n");
     unsigned int count = 0xffffffff;
+    unsigned char sdoSkip[64] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
     SDOMsg* sdoMsg = nullptr;
     ec_master_state_t masterState;
     ec_domain_state_t domainStates[domainCount];
@@ -803,8 +820,16 @@ void* ECAT::rxtx(void* arg){
         if(sdoMsg == nullptr){
             sdoMsg = ecat->sdoRequestQueue.get_nonblocking();
         }else{
-            if(tryCount > 500){
+            if(sdoSkip[sdoMsg->alias] > 0){
+                sdoMsg->state = -2;
+                ecat->sdoResponseQueue.put(sdoMsg);
+                sdoMsg = nullptr;
+                --sdoSkip[sdoMsg->alias];
+                break;
+            }
+            if(tryCount > 50){
                 sdoMsg->state = -1;
+                sdoSkip[sdoMsg->alias] = 0xff;
             }
             if(sdoMsg->state == 0){
                 switch(ecrt_sdo_request_state(sdoMsg->sdoHandler)){
@@ -1017,22 +1042,27 @@ void* ECAT::rxtx(void* arg){
                     ++j;
                 }
                 j = 0;
-                while(j < transferrerCount){
-                    if(transferrers[j].order != ecat->order || transferrers[j].domain != i){
+                while(j < ecat->domain2transferrers[i].size()){
+                    int index = ecat->domain2transferrers[i][j], dof = transferrers[index].parameters.dof;
+                    TransferrerSlot* slots = nullptr;
+                    if(dof == 6){
+                        slots = ((TransferrerTXData_*)transferrers[index].tx.current())->slots;
+                    }else if(dof == 64){
+                        slots = transferrers[index].tx->slots;
+                    }else{
                         ++j;
                         continue;
                     }
-                    TransferrerChannel* const channels = transferrers[j].tx->channels;
                     std::vector<CANEmu>& canemus = *canemusPtr;
                     int k = 0;
-                    while(k < 6){
-                        channels[k].ID &= 0x1fffffff;
-                        if(channels[k].ID > 0){
-                            int const stdID = channels[k].ID & 0x7ff, extID = channels[k].ID >> 11;
-                            if(CANEmu::txFuncs[j][stdID] == nullptr){
-                                printf("unexpected frame with master_id %d and length %d on canemus[%d]\n", channels[k].ID, channels[k].DLC, j);
+                    while(k < dof){
+                        slots[k].ID &= 0x1fffffff;
+                        if(slots[k].ID > 0){
+                            int const stdID = slots[k].ID & 0x7ff, extID = slots[k].ID >> 11;
+                            if(CANEmu::txFuncs[index][stdID] == nullptr){
+                                printf("unexpected frame with master_id %d and length %d on canemus[%d]\n", slots[k].ID, slots[k].DLC, index);
                             }else{
-                                CANEmu::txFuncs[j][stdID][extID](channels[k].ID, channels[k].Byte, channels[k].DLC, &canemus[j]);
+                                CANEmu::txFuncs[index][stdID][extID](slots[k].ID, slots[k].Byte, slots[k].DLC, &canemus[index]);
                             }
                         }
                         ++k;

@@ -153,7 +153,7 @@ int ECAT::readAlias(unsigned short const slave, std::string const& category, uns
 
 int ECAT::requestState(unsigned short const slave, char const* stateString){
     ecat::al_state_type state;
-    if(strcmp(stateString, "INIT") == 0) {
+    if(strcmp(stateString, "INIT") == 0){
         state = ecat::al_state_type::init;
     }else if(strcmp(stateString, "PREOP") == 0){
         state = ecat::al_state_type::preop;
@@ -649,11 +649,25 @@ int ECAT::config(){
         }
     });
     task->set_cycle_callback([this](){
+        static unsigned char sdoSkip[64] = {
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        };
         if(sdoMsg == nullptr){
             sdoMsg = sdoRequestQueue.get_nonblocking();
         }else{
-            if(tryCount > 500){
+            if(sdoSkip[sdoMsg->alias] > 0){
+                sdoMsg->state = -2;
+                ecat->sdoResponseQueue.put(sdoMsg);
+                sdoMsg = nullptr;
+                --sdoSkip[sdoMsg->alias];
+                return;
+            }
+            if(tryCount > 50){
                 sdoMsg->state = -1;
+                sdoSkip[sdoMsg->alias] = 0xff;
             }
             if(sdoMsg->state == 0){
                 sdoMsg->sdoHandler->index({sdoMsg->index, sdoMsg->subindex}, false);

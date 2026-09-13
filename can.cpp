@@ -28,8 +28,8 @@ extern std::vector<std::map<int, std::string>> canAlias2type;
 extern std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs;
 extern std::vector<std::map<int, int>> canAlias2slaveID;
 extern int dofEffector, imuCount;
-extern std::vector<unsigned short> processorsCAN;
-extern std::vector<unsigned short> maxCurrent;
+extern std::vector<unsigned short> canProcessors;
+extern std::vector<unsigned short> maxCurrents;
 
 pthread_t CAN::rxPth, CAN::txPth, CAN::txPth_;
 int CAN::rxCPU, CAN::txCPU, CAN::txCPU_;
@@ -48,9 +48,9 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         rxCPU  = configXML->canAttribute("rx_cpu" );
         txCPU  = configXML->canAttribute("tx_cpu" );
         txCPU_ = configXML->canAttribute("tx_cpu_");
-        adjustCPU(&rxCPU,  processorsCAN[0]);
-        adjustCPU(&txCPU,  processorsCAN[1]);
-        adjustCPU(&txCPU_, processorsCAN[2]);
+        adjustCPU(&rxCPU,  canProcessors[0]);
+        adjustCPU(&txCPU,  canProcessors[1]);
+        adjustCPU(&txCPU_, canProcessors[2]);
         alias2status = new unsigned short[dofAll + 1];
         alias2parameters = new DriverParameters*[dofAll + 1];
         int i = 0;
@@ -110,6 +110,11 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
                 itr_->second->load(itr_->first);
             }
             alias2parameters[alias] = itr_->second;
+        }else if(category == "imu"){
+            if(alias < 240 || alias > 255){
+                printf("invalid imu alias %d which must be within [240, 255]\n", alias);
+            }
+            exit(-1);
         }else if(category == ""){
             printf("the category is not specified of device type %s\n", type.c_str());
             exit(-1);
@@ -158,6 +163,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
                 txFuncs[order][stdID][extID] = linkerBotTX<CAN>;
             }else if(type == "YESENSE"){
                 txFuncs[order][stdID][extID] = yesenseTX<CAN>;
+            }else if(type == "Forsense"){
+                txFuncs[order][stdID][extID] = forsenseTX<CAN>;
             }
             ++i;
         }
@@ -190,6 +197,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
             rxFuncs[order][slaveID] = linkerBotRX<CAN>;
         }else if(type == "YESENSE"){
             rxFuncs[order][slaveID] = yesenseRX<CAN>;
+        }else if(type == "Forsense"){
+            rxFuncs[order][slaveID] = forsenseRX<CAN>;
         }
         ++itr;
     }
@@ -761,7 +770,7 @@ int CAN::canopenConfig(){
         j = 0;
         while(j < correspondences.size()){
             do{
-                if(transfer(alias, &txIndices, &txIndex2division, maxCurrent[canopenAliases[i] - 1], correspondences[j].rx) == -1){
+                if(transfer(alias, &txIndices, &txIndex2division, maxCurrents[canopenAliases[i] - 1], correspondences[j].rx) == -1){
                     break;
                 }
                 if(correspondences[j].tx.functionCode != 0x000){
@@ -787,7 +796,7 @@ int CAN::canopenConfig(){
                 if(tryCount > 4){
                     break;
                 }
-                transfer(canopenAliases[i], nullptr, nullptr, maxCurrent[canopenAliases[i] - 1], Correspondence_.rx);
+                transfer(canopenAliases[i], nullptr, nullptr, maxCurrents[canopenAliases[i] - 1], Correspondence_.rx);
                 checkMutex.lock();
                 checkSlaveIDs.clear();
                 checkSlaveIDs.push_back(alias2slaveID.find(canopenAliases[i])->second);

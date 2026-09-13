@@ -57,6 +57,28 @@ float ConfigXML::readMotorParameter(int const alias, char const* parameter){
     return std::numeric_limits<float>::min();
 }
 
+float ConfigXML::readIMUParameter(char const* bus, int const alias, char const* parameter){
+    if(strcmp(bus, "") == 0){
+        tinyxml2::XMLAttribute const* parameterAttribute = xmlDoc.FirstChildElement("Config")->FirstChildElement("IMU")->FindAttribute(parameter);
+        if(parameterAttribute == nullptr){
+            return 0.0;
+        }
+        return parameterAttribute->FloatValue();
+    }
+    tinyxml2::XMLElement* slaveElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Slaves")->FirstChildElement("Slave");
+    while(slaveElement != nullptr){
+        if(slaveElement->IntAttribute("alias") == alias){
+            tinyxml2::XMLAttribute const* parameterAttribute = slaveElement->FindAttribute(parameter);
+            if(parameterAttribute == nullptr){
+                return 0.0;
+            }
+            return parameterAttribute->FloatValue();
+        }
+        slaveElement = slaveElement->NextSiblingElement("Slave");
+    }
+    return 0.0;
+}
+
 float ConfigXML::readDeviceParameter(char const* bus, char const* type, char const* parameter){
     tinyxml2::XMLElement* deviceElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Devices")->FirstChildElement("Device");
     while(deviceElement != nullptr){
@@ -245,7 +267,11 @@ std::string ConfigXML::typeCategory(char const* bus, char const* type){
         tinyxml2::XMLElement* typeElement = categoryElement->FirstChildElement("Type");
         while(typeElement != nullptr){
             if(strcmp(typeElement->GetText(), type) == 0){
-                return categoryElement->Attribute("name");
+                tinyxml2::XMLAttribute const* attribute = categoryElement->FindAttribute("name");
+                if(attribute == nullptr){
+                    return "";
+                }
+                return attribute->Value();
             }
             typeElement = typeElement->NextSiblingElement("Type");
         }
@@ -254,20 +280,51 @@ std::string ConfigXML::typeCategory(char const* bus, char const* type){
     return "";
 }
 
-std::string ConfigXML::typeAttribute(char const* bus, char const* type, char const* name){
+int ConfigXML::typeAttribute(char const* bus, char const* type, char const* name){
     tinyxml2::XMLElement* categoryElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Categories")->FirstChildElement("Category");
     while(categoryElement != nullptr){
         tinyxml2::XMLElement* typeElement = categoryElement->FirstChildElement("Type");
         while(typeElement != nullptr){
             if(strcmp(typeElement->GetText(), type) == 0){
-                return typeElement->Attribute(name);
+                tinyxml2::XMLAttribute const* attribute = typeElement->FindAttribute(name);
+                if(attribute == nullptr){
+                    return 0;
+                }
+                return attribute->IntValue();
             }
             typeElement = typeElement->NextSiblingElement("Type");
         }
         categoryElement = categoryElement->NextSiblingElement("Category");
     }
-    printf("the attribute %s is not found of device type %s\n", name, type);
-    return "";
+    printf("the attribute %s is not found of device type %s on bus %s\n", name, type, bus);
+    return 0;
+}
+
+bool ConfigXML::typeFeature(char const* bus, char const* type, char const* name){
+    tinyxml2::XMLElement* categoryElement = xmlDoc.FirstChildElement("Config")->FirstChildElement(bus)->FirstChildElement("Categories")->FirstChildElement("Category");
+    while(categoryElement != nullptr){
+        tinyxml2::XMLElement* typeElement = categoryElement->FirstChildElement("Type");
+        while(typeElement != nullptr){
+            if(strcmp(typeElement->GetText(), type) == 0){
+                tinyxml2::XMLAttribute const* attribute = typeElement->FindAttribute(name);
+                if(attribute == nullptr){
+                    return false;
+                }
+                int val = 0;
+                if(attribute->QueryIntValue(&val) == tinyxml2::XML_SUCCESS){
+                    if(val == 1){
+                        return true;
+                    }
+                    return false;
+                }
+                return attribute->BoolValue();
+            }
+            typeElement = typeElement->NextSiblingElement("Type");
+        }
+        categoryElement = categoryElement->NextSiblingElement("Category");
+    }
+    printf("the attribute %s is not found of device type %s on bus %s\n", name, type, bus);
+    return false;
 }
 
 unsigned int ConfigXML::vendorID(tinyxml2::XMLElement const* deviceElement){
@@ -380,8 +437,12 @@ std::vector<std::map<int, std::string>> ConfigXML::alias2type(char const* bus, s
                 std::vector<int> items;
                 std::stringstream ss(slaveElement->Attribute("aliases"));
                 std::string token;
-                while(std::getline(ss, token, ' ')){
-                    items.push_back(atoi(token.c_str()));
+                while(std::getline(ss, token, '|')){
+                    std::stringstream ss_(token);
+                    std::string token_;
+                    while(std::getline(ss_, token_, ' ')){
+                        items.push_back(atoi(token_.c_str()));
+                    }
                 }
                 if(items.size() == 0){
                     printf("invalid aliases of device on bus %s\n", bus);

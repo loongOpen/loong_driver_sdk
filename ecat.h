@@ -39,6 +39,7 @@ public:
     std::map<int, int> alias2slave, alias2domain;
     std::vector<int> domainDivisions;
     std::vector<bool> domainWatchdogs;
+    std::vector<std::vector<int>> domain2transferrers;
     ec_domain_t** domains;
     unsigned char** domainPtrs;
     SwapList** rxPDOSwaps, ** txPDOSwaps;
