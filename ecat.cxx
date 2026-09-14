@@ -35,8 +35,8 @@ extern int dofAll;
 extern sensorFunction sensorFuncs[2];
 extern WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
 extern WrapperPair<SensorRXData, SensorTXData, SensorParameters> sensors[2];
-extern std::vector<unsigned short> processorsECAT;
-extern std::vector<unsigned short> maxCurrent;
+extern std::vector<unsigned short> ecatProcessors;
+extern std::vector<unsigned short> maxCurrents;
 
 int ECAT::effectorAlias, ECAT::sensorAlias;
 
@@ -63,7 +63,7 @@ ECAT::ECAT(int const order){
     eni      = configXML->masterDevice   ("ECAT", order, "eni"   );
     period   = configXML->masterAttribute("ECAT", order, "period");
     cpu      = configXML->masterAttribute("ECAT", order, "cpu"   );
-    adjustCPU(&cpu, processorsECAT[order]);
+    adjustCPU(&cpu, ecatProcessors[order]);
     alias2domain    = ecatAlias2domain   [order];
     domainDivisions = ecatDomainDivisions[order];
     domainWatchdogs = ecatDomainWatchdogs[order];
@@ -395,7 +395,7 @@ int ECAT::config(){
             }
             break;
         }
-        u16 = maxCurrent[alias - 1];
+        u16 = maxCurrents[alias - 1];
         while(true){
             try{
                 master->sdo_download(slave, {0x6072, 0x00}, false, u16);
@@ -660,7 +660,7 @@ int ECAT::config(){
         }else{
             if(sdoSkip[sdoMsg->alias] > 0){
                 sdoMsg->state = -2;
-                ecat->sdoResponseQueue.put(sdoMsg);
+                sdoResponseQueue.put(sdoMsg);
                 sdoMsg = nullptr;
                 --sdoSkip[sdoMsg->alias];
                 return;
