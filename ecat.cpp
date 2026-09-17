@@ -354,6 +354,9 @@ int ECAT::config(){
             domain2transferrers[domain].push_back(-alias - 1);
         }else{
             domain = alias2domain.find(alias)->second;
+            while(domain2transferrers.size() <= domain){
+                domain2transferrers.push_back(std::vector<int>());
+            }
             type = alias2type.find(alias)->second;
         }
         std::string const category = configXML->typeCategory("ECAT", type.c_str());
