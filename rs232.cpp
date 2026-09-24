@@ -21,6 +21,8 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <pthread.h>
+#include <sys/ioctl.h>
+#include <linux/spi/spidev.h>
 #ifdef NIIC
 #include <qiuniu/init.h>
 #endif
@@ -189,6 +191,7 @@ RS232::RS232(int const order, char const* device){
     baudrate = configXML->masterAttribute("RS232", order, "baudrate");
     this->type = (char*)malloc(strlen(type.c_str()) + 1);
     strcpy(this->type, type.c_str());
+    type_ = configXML->masterDevice("RS232", order, "type");
 }
 
 RS232::RS232(char const* device, int const baudrate, char const* type){
@@ -203,6 +206,7 @@ RS232::RS232(char const* device, int const baudrate, char const* type){
     this->baudrate = baudrate;
     this->type = (char*)malloc(strlen(type) + 1);
     strcpy(this->type, type);
+    type_ = "tty";
 }
 
 int RS232::config(){
@@ -295,52 +299,92 @@ void RS232::cleanup(void* arg){
 
 void* RS232::recv(void* arg){
     RS232* rs232 = (RS232*)arg;
-    int    speedArray[] = {B921600, B576000, B460800, B230400, B115200, B57600, B38400, B19200, B9600, B4800, B2400, B1200, B300};
-    int baudrateArray[] = { 921600,  576000,  460800,  230400,  115200,  57600,  38400,  19200,  9600,  4800,  2400,  1200,  300};
-    int i = 0, j;
-    while(i < 13){
-        if(baudrateArray[i] == rs232->baudrate){
-            break;
+    if(rs232->type_ == "" || rs232->type_ == "tty"){
+        int    speedArray[] = {B921600, B576000, B460800, B230400, B115200, B57600, B38400, B19200, B9600, B4800, B2400, B1200, B300};
+        int baudrateArray[] = { 921600,  576000,  460800,  230400,  115200,  57600,  38400,  19200,  9600,  4800,  2400,  1200,  300};
+        int i = 0;
+        while(i < 13){
+            if(baudrateArray[i] == rs232->baudrate){
+                break;
+            }
+            ++i;
         }
-        ++i;
-    }
-    if(i == 13){
-        printf("invalid rs232s[%d] baudrate %d\n", rs232->order, rs232->baudrate);
-        exit(-1);
-    }
+        if(i == 13){
+            printf("invalid rs232s[%d] baudrate %d\n", rs232->order, rs232->baudrate);
+            exit(-1);
+        }
 #ifndef NIIC
-    rs232->fd = open(rs232->device, O_RDONLY | O_NOCTTY);
+        rs232->fd = open(rs232->device, O_RDONLY | O_NOCTTY);
 #else
-    rs232->fd = __RT(open(rs232->device, O_RDONLY | O_NOCTTY));
+        rs232->fd = __RT(open(rs232->device, O_RDONLY | O_NOCTTY));
 #endif
-    if(rs232->fd < 0){
-        printf("opening rs232s[%d] device %s failed\n", rs232->order, rs232->device);
+        if(rs232->fd < 0){
+            printf("opening rs232s[%d] device %s failed\n", rs232->order, rs232->device);
+            exit(-1);
+        }
+        struct termios opt;
+        tcgetattr(rs232->fd, &opt);
+        cfsetispeed(&opt, speedArray[i]);
+        cfsetospeed(&opt, speedArray[i]);
+        opt.c_cflag &= ~CSIZE;
+        opt.c_cflag |= CS8;
+        opt.c_cflag &= ~PARENB;
+        opt.c_cflag &= ~CSTOPB;
+        opt.c_cflag &= ~CRTSCTS;
+        opt.c_cflag |= (CLOCAL | CREAD);
+        opt.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+        opt.c_iflag &= ~INPCK;
+        opt.c_iflag &= ~(ICRNL | INLCR);
+        opt.c_iflag &= ~(IXON | IXOFF | IXANY);
+        opt.c_oflag &= ~OPOST;
+        opt.c_oflag &= ~(OCRNL | ONLCR);
+        opt.c_cc[VTIME] = 0;
+        opt.c_cc[VMIN] = 1;
+        tcsetattr(rs232->fd, TCSANOW, &opt);
+        tcflush(rs232->fd, TCIOFLUSH);
+        printf("opened rs232s[%d] device %s baudrate %d\n", rs232->order, rs232->device, rs232->baudrate);
+    }else if(rs232->type_ == "spi"){
+        unsigned char mode        = configXML->masterAttribute("RS232", rs232->order, "mode"         );
+        unsigned char bitsPerWord = configXML->masterAttribute("RS232", rs232->order, "bits_per_word");
+        unsigned int  maxSpeedHz  = configXML->masterAttribute("RS232", rs232->order, "max_speed_hz" );
+        unsigned char lsbFirst    = configXML->masterAttribute("RS232", rs232->order, "lsb_first"    );
+#ifndef NIIC
+        rs232->fd = open(rs232->device, O_RDWR | O_CLOEXEC);
+#else
+        rs232->fd = __RT(open(rs232->device, O_RDWR | O_CLOEXEC));
+#endif
+        if(rs232->fd < 0){
+            printf("opening rs232s[%d] device %s failed\n", rs232->order, rs232->device);
+            exit(-1);
+        }
+#ifndef NIIC
+        if(ioctl(rs232->fd, SPI_IOC_WR_MODE,          &mode       ) < 0 ||
+           ioctl(rs232->fd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord) < 0 ||
+           ioctl(rs232->fd, SPI_IOC_WR_MAX_SPEED_HZ,  &maxSpeedHz ) < 0 ||
+           ioctl(rs232->fd, SPI_IOC_WR_LSB_FIRST,     &lsbFirst   ) < 0){
+#else
+        if(__RT(ioctl(rs232->fd, SPI_IOC_WR_MODE,          &mode       )) < 0 ||
+           __RT(ioctl(rs232->fd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord)) < 0 ||
+           __RT(ioctl(rs232->fd, SPI_IOC_WR_MAX_SPEED_HZ,  &maxSpeedHz )) < 0 ||
+           __RT(ioctl(rs232->fd, SPI_IOC_WR_LSB_FIRST,     &lsbFirst   )) < 0){
+#endif
+            printf("configuring rs232s[%d] device %s failed\n", rs232->order, rs232->device);
+#ifndef NIIC
+            close(rs232->fd);
+#else
+            __RT(close(rs232->fd));
+#endif
+            rs232->fd = -1;
+            exit(-1);
+        }
+        printf("opened rs232s[%d] device %s speed %u\n", rs232->order, rs232->device, maxSpeedHz);
+    }else{
+        printf("invalid rs232s[%d] type %s\n", rs232->order, rs232->type_.c_str());
         exit(-1);
     }
-    struct termios opt;
-    tcgetattr(rs232->fd, &opt);
-    cfsetispeed(&opt, speedArray[i]);
-    cfsetospeed(&opt, speedArray[i]);
-    opt.c_cflag &= ~CSIZE;
-    opt.c_cflag |= CS8;
-    opt.c_cflag &= ~PARENB;
-    opt.c_cflag &= ~CSTOPB;
-    opt.c_cflag &= ~CRTSCTS;
-    opt.c_cflag |= (CLOCAL | CREAD);
-    opt.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-    opt.c_iflag &= ~INPCK;
-    opt.c_iflag &= ~(ICRNL | INLCR);
-    opt.c_iflag &= ~(IXON | IXOFF | IXANY);
-    opt.c_oflag &= ~OPOST;
-    opt.c_oflag &= ~(OCRNL | ONLCR);
-    opt.c_cc[VTIME] = 0;
-    opt.c_cc[VMIN] = 1;
-    tcsetattr(rs232->fd, TCSANOW, &opt);
-    tcflush(rs232->fd, TCIOFLUSH);
-    printf("opened rs232s[%d] %s baudrate %d\n", rs232->order, rs232->device, rs232->baudrate);
     unsigned char buff[2 * rs232->frameLength], * buffA = buff, * buffB = buff + rs232->frameLength;
     ChainNode* node0 = new ChainNode(), * node = node0;
-    i = 0;
+    int i = 0;
     while(i < 2 * rs232->frameLength - 1){
         node->nr = i;
         node->next = new ChainNode();
@@ -353,7 +397,7 @@ void* RS232::recv(void* arg){
     node0->previous = node;
     node = node0;
     pthread_cleanup_push(cleanup, node0);
-    j = 0;
+    int j = 0;
     do{
 #ifndef NIIC
         j += read(rs232->fd, buffA + j, rs232->frameLength - j);

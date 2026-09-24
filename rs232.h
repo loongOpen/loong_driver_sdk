@@ -34,6 +34,7 @@ public:
     int order, baudrate, fd, frameLength;
     std::map<int, std::string> alias2type;
     char* device, * type;
+    std::string type_;
     unsigned char header0, header1;
     SwapList* rxSwap, * txSwap, * txSwap_;
     pthread_t pth;

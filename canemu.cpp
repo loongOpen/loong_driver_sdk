@@ -136,6 +136,8 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
                 txFuncs[order][stdID][extID] = encosTX<CANEmu>;
             }else if(type.starts_with("Damiao")){
                 txFuncs[order][stdID][extID] = damiaoTX<CANEmu>;
+            }else if(type.starts_with("Motorevo")){
+                txFuncs[order][stdID][extID] = motorevoTX<CANEmu>;
             }else if(type.starts_with("Weiyi")){
                 txFuncs[order][stdID][extID] = weiyiTX<CANEmu>;
             }else if(type == "AGIBOT"){
@@ -155,6 +157,8 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
             rxFuncs[order][slaveID] = encosRX<CANEmu>;
         }else if(type.starts_with("Damiao")){
             rxFuncs[order][slaveID] = damiaoRX<CANEmu>;
+        }else if(type.starts_with("Motorevo")){
+            rxFuncs[order][slaveID] = motorevoRX<CANEmu>;
         }else if(type.starts_with("Weiyi")){
             rxFuncs[order][slaveID] = weiyiRX<CANEmu>;
         }else if(type == "AGIBOT"){

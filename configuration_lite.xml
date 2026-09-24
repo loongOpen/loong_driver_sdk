@@ -3726,6 +3726,30 @@
             <MinT>-10.0</MinT>
             <MaxT>10.0</MaxT>
         </Device>
+        <Device type="Motorevo PA43-10-40">
+            <MinP>-12.5</MinP>
+            <MaxP>12.5</MaxP>
+            <MinV>-20.0</MinV>
+            <MaxV>20.0</MaxV>
+            <MinKp>0.0</MinKp>
+            <MaxKp>500.0</MaxKp>
+            <MinKd>0.0</MinKd>
+            <MaxKd>5.0</MaxKd>
+            <MinT>-18.0</MinT>
+            <MaxT>18.0</MaxT>
+        </Device>
+        <Device type="Motorevo PA43-10-25">
+            <MinP>-12.5</MinP>
+            <MaxP>12.5</MaxP>
+            <MinV>-65.0</MinV>
+            <MaxV>65.0</MaxV>
+            <MinKp>0.0</MinKp>
+            <MaxKp>500.0</MaxKp>
+            <MinKd>0.0</MinKd>
+            <MaxKd>5.0</MaxKd>
+            <MinT>-30.0</MinT>
+            <MaxT>30.0</MaxT>
+        </Device>
         <Device type="Weiyi HT142-160H-BD">
             <MaxV>6000.0</MaxV>
             <MaxC>45.0</MaxC>
@@ -3862,6 +3886,9 @@
             <Type>Damiao DM-J6248P-2EC</Type>
             <Type>Damiao DM-J4340P-2EC</Type>
             <Type>Damiao DM-J4310-2EC</Type>
+            <Type>Motorevo PA60-10-39</Type>
+            <Type>Motorevo PA43-10-40</Type>
+            <Type>Motorevo PA43-10-25</Type>
             <Type>Weiyi HT142-160H-BD</Type>
             <Type>Weiyi HT90-120H-BD</Type>
             <Type>RealMan WHJ60-S-D70-100-B</Type>
@@ -4040,7 +4067,7 @@
         <Slave master="1" alias="201" type="Inspire_"    >0</Slave>
     </Slaves>
 </RS485>
-<RS232><!-- TTY -->
+<RS232><!-- TTY / SPI -->
     <Categories>
         <Category name="imu">
             <Type>Xsens</Type>
@@ -4062,6 +4089,7 @@
     <Masters>
         <Master order="0" device="/dev/ttyUSB0" type="tty" baudrate="460800"/>
         <Master order="1" device="/dev/ttyUSB1" type="tty" baudrate="115200"/>
+        <Master order="2" device="/dev/spidev0.0" type="spi" mode="0" bits_per_word="8" max_speed_hz="200000000" lsb_first="0"/>
     </Masters>
     <Slaves>
         <Slave master="0" alias="240" type="Forsense" x="0.0" y="0.0" z="0.0">0</Slave><!-- x-y-z extrinsic in unit of Pi -->

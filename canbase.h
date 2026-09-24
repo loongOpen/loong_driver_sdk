@@ -178,6 +178,9 @@ unsigned char const EncosDamp           [3] = {0x69, 0x00, 0x00};
 unsigned char const DamiaoEnable        [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
 unsigned char const DamiaoDisable       [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
 unsigned char const DamiaoClrErr        [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfb};
+unsigned char const MotorevoEnable      [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
+unsigned char const MotorevoDisable     [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
+unsigned char const MotorevoClrErr      [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfb};
 unsigned char const WeiyiEnable         [2] = {0x2a, 0x01};
 unsigned char const WeiyiDisable        [2] = {0x2a, 0x00};
 unsigned char const WeiyiMode           [2] = {0x07, 0x0d};
@@ -291,20 +294,11 @@ int encosRX(int const alias, int* const slaveID, unsigned char* const data, int*
         break;
     }
     DriverParameters const* parameters = T::alias2parameters[alias];
-    unsigned short p, v, t, kp, kd;
-    if((T::alias2status[alias] & 0x0f7f) != 0x0007){
-         p = float2para(0.0,                                                          parameters->minP,  parameters->maxP,  16);
-         v = float2para(0.0,                                                          parameters->minV,  parameters->maxV,  12);
-        kp = 1;
-        kd = 1;
-         t = float2para(0.0,                                                          parameters->minT,  parameters->maxT,  12);
-    }else{
-         p = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetPosition, parameters->minP,  parameters->maxP,  16);
-         v = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity, parameters->minV,  parameters->maxV,  12);
-        kp = float2para(half2single(drivers[alias - 1].rx.previous()->ControlWord),   parameters->minKp, parameters->maxKp, 12);
-        kd = float2para(half2single(drivers[alias - 1].rx.previous()->TargetTorque),  parameters->minKd, parameters->maxKd,  9);
-         t = float2para(half2single(drivers[alias - 1].rx.previous()->TorqueOffset),  parameters->minT,  parameters->maxT,  12);
-    }
+    unsigned short  p = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetPosition, parameters->minP,  parameters->maxP,  16);
+    unsigned short  v = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity, parameters->minV,  parameters->maxV,  12);
+    unsigned short kp = float2para(half2single(drivers[alias - 1].rx.previous()->ControlWord),   parameters->minKp, parameters->maxKp, 12);
+    unsigned short kd = float2para(half2single(drivers[alias - 1].rx.previous()->TargetTorque),  parameters->minKd, parameters->maxKd,  9);
+    unsigned short  t = float2para(half2single(drivers[alias - 1].rx.previous()->TorqueOffset),  parameters->minT,  parameters->maxT,  12);
     data[0] = kp >> 7;
     data[1] = kp << 1 & 0x00ff | kd >> 8;
     data[2] = kd & 0x00ff;
@@ -325,16 +319,15 @@ void encosTX(int const masterID, unsigned char* const data, int const length, T*
     data[0] = data[2];
     unsigned short p = *(unsigned short*)(data + 0);
     data[2] = data[4];
-    unsigned short v = *(unsigned short*)(data + 2);
-    v >>= 4;
+    unsigned short v = *(unsigned short*)(data + 2) >> 4;
     data[3] = data[5];
     data[4] &= 0x0f;
     unsigned short t = *(unsigned short*)(data + 3);
-    int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
-    DriverParameters const* parameters = T::alias2parameters[alias];
     signed char temperatureMOS = (data[7] - 50) / 2, temperatureRotor = (data[6] - 50) / 2;
     bool error = err > 0 && (err != 1 && err != 2 && err != 4 || err == 1 && (temperatureMOS > 120 || temperatureRotor > 120));
-    if(temperatureMOS > 100 || temperatureRotor > 100){
+    int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
+    DriverParameters const* parameters = T::alias2parameters[alias];
+    if(temperatureMOS > 80 || temperatureRotor > 80){
         T::alias2status[alias] |= 0x0080;
     }else{
         T::alias2status[alias] &= ~0x0080;
@@ -411,23 +404,20 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
     data[0] = data[2];
     unsigned short p = *(unsigned short*)(data + 0);
     data[2] = data[4];
-    unsigned short v = *(unsigned short*)(data + 2);
-    v >>= 4;
+    unsigned short v = *(unsigned short*)(data + 2) >> 4;
     data[3] = data[5];
     data[4] &= 0x0f;
     unsigned short t = *(unsigned short*)(data + 3);
+    signed char temperatureMOS = data[6], temperatureRotor = data[7];
+    bool error = err > 1;
     int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
     DriverParameters const* parameters = T::alias2parameters[alias];
-    signed char temperatureMOS = data[6], temperatureRotor = data[7];
-    bool error = false;
-    if(err == 0){
+    if((err & 0x01) == 0){
         T::alias2status[alias] &= ~(0x0001 ^ 0x0007);
-    }else if(err == 1){
-        T::alias2status[alias] |= 0x0001 ^ 0x0007;
     }else{
-        error = true;
+        T::alias2status[alias] |= 0x0001 ^ 0x0007;
     }
-    if(temperatureMOS > 100 || temperatureRotor > 100){
+    if(temperatureMOS > 80 || temperatureRotor > 80){
         T::alias2status[alias] |= 0x0080;
     }else{
         T::alias2status[alias] &= ~0x0080;
@@ -437,6 +427,97 @@ void damiaoTX(int const masterID, unsigned char* const data, int const length, T
     *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
               drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
               drivers[alias - 1].tx.next()->Undefined      = temperatureMOS;
+              drivers[alias - 1].tx.next()->ModeDisplay    = temperatureRotor;
+              drivers[alias - 1].tx.next()->StatusWord     = error ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];
+              drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0x0000;
+    staging<T>(slaveID, alias, can);
+}
+
+template<typename T>
+int motorevoRX(int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff, T* const can){
+    switch(drivers[alias - 1].rx.previous()->Undefined){
+    case 1:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
+            break;
+        case 0x0001:
+            memcpy(data, MotorevoEnable, 8);
+            *slaveID += 0x100;
+            return 8;
+            break;
+        }
+        break;
+    case 0:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
+            memcpy(data, MotorevoDisable, 8);
+            *slaveID += 0x100;
+            return 8;
+            break;
+        case 0x0001:
+            break;
+        }
+        break;
+    case -1:
+        switch(T::alias2status[alias] & 0x0f7f){
+        case 0x0007:
+            break;
+        case 0x0001:
+            memcpy(data, MotorevoClrErr, 8);
+            *slaveID += 0x100;
+            return 8;
+            break;
+        }
+        break;
+    }
+    DriverParameters const* parameters = T::alias2parameters[alias];
+    unsigned short  p = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetPosition, parameters->minP,  parameters->maxP,  16);
+    unsigned short  v = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity, parameters->minV,  parameters->maxV,  12);
+    unsigned short kp = float2para(half2single(drivers[alias - 1].rx.previous()->ControlWord),   parameters->minKp, parameters->maxKp, 12);
+    unsigned short kd = float2para(half2single(drivers[alias - 1].rx.previous()->TargetTorque),  parameters->minKd, parameters->maxKd, 12);
+    unsigned short  t = float2para(half2single(drivers[alias - 1].rx.previous()->TorqueOffset),  parameters->minT,  parameters->maxT,  12);
+    data[0] =  p >> 8;
+    data[1] =  p & 0x00ff;
+    data[2] =  v >> 4;
+    data[3] =  v << 4 & 0x00ff | kp >> 8;
+    data[4] = kp & 0x00ff;
+    data[5] = kd >> 4;
+    data[6] = kd << 4 & 0x00ff |  t >> 8;
+    data[7] =  t & 0x00ff;
+    *slaveID += 0x200;
+    return 8;
+}
+
+template<typename T>
+void motorevoTX(int const masterID, unsigned char* const data, int const length, T* const can){
+    if(length != 8){
+        return;
+    }
+    unsigned short err = *(unsigned short*)(data + 6);
+    signed char temperatureRotor = data[5] - 40;
+    data[5] = data[3] & 0x0f;
+    unsigned short   t = *(unsigned short*)(data + 4);
+    data[4] = data[2];
+    unsigned short   v = *(unsigned short*)(data + 3) >> 4;
+    data[2] = data[0];
+    unsigned short   p = *(unsigned short*)(data + 1);
+    bool error = (err & 0xfeff) > 0 && ((err & 0x0c29) == 0 || (err & 0x0800) > 0 && temperatureRotor > 120);
+    int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
+    DriverParameters const* parameters = T::alias2parameters[alias];
+    if((err & 0x0100) == 0){
+        T::alias2status[alias] &= ~(0x0001 ^ 0x0007);
+    }else{
+        T::alias2status[alias] |= 0x0001 ^ 0x0007;
+    }
+    if(temperatureRotor > 80){
+        T::alias2status[alias] |= 0x0080;
+    }else{
+        T::alias2status[alias] &= ~0x0080;
+    }
+    T::alias2status[alias] &= ~0x4000;
+    *(float*)&drivers[alias - 1].tx.next()->ActualPosition =             para2float(p, parameters->minP, parameters->maxP, 16);
+    *(float*)&drivers[alias - 1].tx.next()->ActualVelocity =             para2float(v, parameters->minV, parameters->maxV, 12);
+              drivers[alias - 1].tx.next()->ActualTorque   = single2half(para2float(t, parameters->minT, parameters->maxT, 12));
               drivers[alias - 1].tx.next()->ModeDisplay    = temperatureRotor;
               drivers[alias - 1].tx.next()->StatusWord     = error ? T::alias2status[alias] | 0x0008 : T::alias2status[alias];
               drivers[alias - 1].tx.next()->ErrorCode      = error ? err : 0x0000;
@@ -780,8 +861,8 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
         }
         if((T::alias2status[alias] & 0x0f7f) == 0x0050){
             T::alias2status[alias] = 0x0250;
-            signed char temperature = *(short*)(data + 4) * 0.1;
             unsigned short err = *(unsigned short*)(data + 0);
+            signed char temperature = *(short*)(data + 4) * 0.1;
             if(temperature > 80){
                 T::alias2status[alias] |= 0x0080;
             }else{
@@ -826,8 +907,8 @@ void realManTX(int const masterID, unsigned char* const data, int const length, 
     }else{
         return;
     }
-    signed char temperature = *(short*)(data + 16) * 0.1;
     unsigned short err = *(unsigned short*)(data + 12);
+    signed char temperature = *(short*)(data + 16) * 0.1;
     if(temperature > 80){
         T::alias2status[alias] |= 0x0080;
     }else{

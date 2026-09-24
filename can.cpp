@@ -113,8 +113,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         }else if(category == "imu"){
             if(alias < 240 || alias > 255){
                 printf("invalid imu alias %d which must be within [240, 255]\n", alias);
+                exit(-1);
             }
-            exit(-1);
         }else if(category == ""){
             printf("the category is not specified of device type %s\n", type.c_str());
             exit(-1);
@@ -149,6 +149,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
                 txFuncs[order][stdID][extID] = encosTX<CAN>;
             }else if(type.starts_with("Damiao")){
                 txFuncs[order][stdID][extID] = damiaoTX<CAN>;
+            }else if(type.starts_with("Motorevo")){
+                txFuncs[order][stdID][extID] = motorevoTX<CAN>;
             }else if(type.starts_with("Weiyi")){
                 txFuncs[order][stdID][extID] = weiyiTX<CAN>;
             }else if(type.starts_with("RealMan")){
@@ -178,6 +180,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
             rxFuncs[order][slaveID] = encosRX<CAN>;
         }else if(type.starts_with("Damiao")){
             rxFuncs[order][slaveID] = damiaoRX<CAN>;
+        }else if(type.starts_with("Motorevo")){
+            rxFuncs[order][slaveID] = motorevoRX<CAN>;
         }else if(type.starts_with("Weiyi")){
             rxFuncs[order][slaveID] = weiyiRX<CAN>;
         }else if(type.starts_with("RealMan")){

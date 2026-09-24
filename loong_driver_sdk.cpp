@@ -464,7 +464,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
         printf("rs232s[0] created\n");
     }
     i = 0;
-    while(i < imuCount){
+    while(i < rs232s.size()){
         if(rs232s[i].config() < 0){
             printf("rs232s[%d] config failed\n", i);
             return -1;
@@ -472,7 +472,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
         ++i;
     }
     i = 0;
-    while(i < imuCount){
+    while(i < rs232s.size()){
         if(rs232s[i].run() < 0){
             printf("rs232s[%d] run failed\n", i);
             return -1;

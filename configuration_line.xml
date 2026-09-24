@@ -1150,7 +1150,7 @@
         <Slave master="1" alias="201" type="Inspire_"    >0</Slave>
     </Slaves>
 </RS485>
-<RS232><!-- TTY -->
+<RS232><!-- TTY / SPI -->
     <Categories>
         <Category name="imu">
             <Type>Xsens</Type>
@@ -1172,6 +1172,7 @@
     <Masters>
         <Master order="0" device="/dev/ttyTHS1" type="tty" baudrate="460800"/>
         <Master order="1" device="/dev/ttyUSB0" type="tty" baudrate="115200"/>
+        <Master order="2" device="/dev/spidev0.0" type="spi" mode="0" bits_per_word="8" max_speed_hz="200000000" lsb_first="0"/>
     </Masters>
     <Slaves>
         <Slave master="0" alias="240" type="Xsens"  x="0.0" y="0.0" z="0.0">0</Slave><!-- x-y-z extrinsic in unit of Pi -->
