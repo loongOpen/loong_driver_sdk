@@ -277,7 +277,8 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
         printf("a parameter of motor with alias %d is incorrectly set in xml\n", alias);
         return -1;
     }
-    if(minimumPosition >= maximumPosition){
+    span = maximumPosition - minimumPosition;
+    if(span <= 0.0){
         printf("MinimumPosition of motor with alias %d should be lighter than MaximumPosition of that motor\n", alias);
         return -1;
     }

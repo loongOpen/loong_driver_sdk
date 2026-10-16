@@ -834,6 +834,8 @@ int CAN::canopenConfig(){
                     txFuncs[order][stdID][extID] = canopenEyouTX_<CAN>;
                 }else if(subType == "Elmo"){
                     txFuncs[order][stdID][extID] = canopenElmoTX<CAN>;
+                }else if(subType == "Leadshine"){
+                    txFuncs[order][stdID][extID] = canopenLeadshineTX<CAN>;
                 }else{
                     printf("invalid CANopen driver subType %s\n", subType.c_str());
                     return -1;
@@ -847,6 +849,8 @@ int CAN::canopenConfig(){
             rxFuncs[order][slaveID] = canopenEyouRX_<CAN>;
         }else if(subType == "Elmo"){
             rxFuncs[order][slaveID] = canopenElmoRX<CAN>;
+        }else if(subType == "Leadshine"){
+            rxFuncs[order][slaveID] = canopenLeadshineRX<CAN>;
         }else{
             printf("invalid CANopen driver subType %s\n", subType.c_str());
             return -1;

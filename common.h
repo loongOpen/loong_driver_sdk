@@ -160,7 +160,7 @@ public:
 
 class MotorParameters{
 public:
-    float polarity, countBias, encoderResolution, gearRatioTor, gearRatioPosVel, ratedCurrent, torqueConstant, ratedTorque, maximumTorque, minimumPosition, maximumPosition;
+    float polarity, countBias, encoderResolution, gearRatioTor, gearRatioPosVel, ratedCurrent, torqueConstant, ratedTorque, maximumTorque, minimumPosition, maximumPosition, span;
     SDOMsg sdoTemplate, temperatureSDO, clearErrorSDO;
     MotorParameters();
 #ifndef NIIC
@@ -248,21 +248,6 @@ struct HandTXData{
     unsigned short ActualCurrentMiddle;
     unsigned short ActualCurrentRing;
     unsigned short ActualCurrentLittle;
-};
-
-struct ConverterChannel{
-    unsigned short Index;
-    unsigned short ID;
-    unsigned short Length;
-    unsigned char Data[64];
-};
-
-struct ConverterRXData{
-    ConverterChannel channels[8];
-};
-
-struct ConverterTXData{
-    ConverterChannel channels[8];
 };
 
 class EffectorParameters{
@@ -404,6 +389,7 @@ template<typename RXData, typename TXData, typename Parameters>
 class WrapperPair{
 public:
     int busCode, order, domain, slave, alias, enabled;
+    float pos;
     std::string bus, type;
     DataWrapper<RXData> rx;
     DataWrapper<TXData> tx;
@@ -421,6 +407,7 @@ public:
         slave = -1;
         alias = 0;
         enabled = 0;
+        pos = 0.0;
         bus = "";
         type = "";
         sdoHandler = nullptr;

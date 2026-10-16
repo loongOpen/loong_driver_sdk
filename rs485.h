@@ -21,19 +21,18 @@
 #include <modbus-rtu.h>
 
 namespace DriverSDK{
-using effectorFunction = void (*)(modbus_t* const, int const);
+using function = void (*)(modbus_t* const, int const);
 
 class RS485{
 public:
-    int order, baudrate, fdR, fdS;
+    int order, baudrate;
     std::map<int, std::string> alias2type;
-    char* device, * deviceR, * deviceS;
+    char* device;
     long period;
-    SwapList* rxSwap, * txSwap;
+    SwapList* rxSwap, * txSwap, * rxSwap_, * txSwap_;
     modbus_t* ctx;
     pthread_t pth;
-    effectorFunction leftRX, rightRX, leftTX, rightTX;
-    RS485(int const order, char const* deviceR, char const* deviceS);
+    std::map<int, function> alias2rxFunction, alias2txFunction;
     RS485(int const order, char const* device);
     int config();
     static void* rxtx(void* arg);

@@ -45,12 +45,10 @@ extern int dofAll, dofLeftEffector, dofEffector, transferrerCount;
 extern sensorFunction sensorFuncs[2];
 extern WrapperPair<DriverRXData, DriverTXData, MotorParameters>* drivers;
 extern WrapperPair<DigitRXData, DigitTXData, EffectorParameters>* digits;
-extern WrapperPair<ConverterRXData, ConverterTXData, EffectorParameters> converters[2];
 extern WrapperPair<SensorRXData, SensorTXData, SensorParameters> sensors[2];
 extern WrapperPair<TransferrerRXData, TransferrerTXData, TransferrerParameters>* transferrers;
 extern std::vector<unsigned short> ecatProcessors;
 extern std::vector<unsigned short> maxCurrents;
-extern std::vector<RS485>* rs485sPtr;
 extern std::vector<CANEmu>* canemusPtr;
 WrapperPair<HandRXData, HandTXData, EffectorParameters> hands[2];
 
@@ -590,11 +588,6 @@ int ECAT::config(){
                     printf("\thands[%d] init failed\n", alias - 200);
                     return -1;
                 }
-            }else if(type == "Ruiyan_1dof" || type == "Ruiyan_6dof"){
-                if(converters[alias - 200].init("ECAT", 0, order, domain, slave, alias, type, rxPDOOffset, txPDOOffset, sdoHandler, regHandler) != 0){
-                    printf("\tconverters[%d] init failed\n", alias - 200);
-                    return -1;
-                }
             }else{
                 printf("\tinvalid effector type %s\n", type.c_str());
                 return -1;
@@ -732,22 +725,6 @@ int ECAT::config(){
                 break;
             case -1:
                 printf("\thands[%d] config failed\n", j);
-                return -1;
-                break;
-            }
-            ++j;
-        }
-        j = 0;
-        while(j < 2){
-            switch(converters[j].config("ECAT", order, i, rxPDOSwaps[i], txPDOSwaps[i])){
-            case 2:
-                break;
-            case 1:
-                break;
-            case 0:
-                break;
-            case -1:
-                printf("\tconverters[%d] config failed\n", j);
                 return -1;
                 break;
             }
@@ -1004,47 +981,6 @@ void* ECAT::rxtx(void* arg){
             if(domainStates[i].wc_state == EC_WC_COMPLETE){
                 ecat->txPDOSwaps[i]->copyFrom(ecat->domainPtrs[i], ecat->domainSizes[i]);
                 int j = 0;
-                while(j < 2){
-                    if(converters[j].order != ecat->order || converters[j].domain != i){
-                        ++j;
-                        continue;
-                    }
-                    ConverterChannel const& channel = converters[j].tx->channels[0];
-                    if(channel.Index == converters[j].enabled){
-                        ++j;
-                        continue;
-                    }
-                    converters[j].enabled = channel.Index;
-                    if(channel.Length < 1){
-                        ++j;
-                        continue;
-                    }
-                    printf("Index: %8d ", channel.Index);
-                    std::vector<RS485> const& rs485s = *rs485sPtr;
-                    int k = 0;
-                    while(k < rs485s.size()){
-                        if(rs485s[k].fdR < 0){
-                            ++k;
-                            continue;
-                        }
-                        if(rs485s[k].alias2type.begin()->first - 200 != j){
-                            ++k;
-                            continue;
-                        }
-                        int l = 0;
-                        while(l < channel.Length){
-                            printf("%02x.", channel.Data[l]);
-                            ++l;
-                        }
-                        printf("\b\n");
-                        if(write(rs485s[k].fdR, channel.Data, channel.Length) != channel.Length){
-                            printf("write() failed\n");
-                        }
-                        ++k;
-                    }
-                    ++j;
-                }
-                j = 0;
                 while(j < ecat->domain2transferrers[i].size()){
                     int index = ecat->domain2transferrers[i][j], dof = transferrers[index].parameters.dof;
                     TransferrerSlot* slots = nullptr;

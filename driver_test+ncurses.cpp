@@ -38,7 +38,8 @@ int main(int argc, char** argv){
         1000, 1000, 1000, 1000, 1000, 600, 600,
         1000, 1000, 1000, 1000, 1000, 600, 600,
         1000, 1000, 1000,
-        600, 600
+        600, 600,
+        1000
     };
     driverSDK.setMaxCurr(maxCurr);
     std::vector<char> mode = {
@@ -47,7 +48,8 @@ int main(int argc, char** argv){
         8, 8, 8, 8, 8, 8, 8,
         8, 8, 8, 8, 8, 8, 8,
         8, 8, 8,
-        8, 8
+        8, 8,
+        1
     };
     driverSDK.setMode(mode);
     driverSDK.init("configuration.xml");
