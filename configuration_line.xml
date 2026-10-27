@@ -436,8 +436,6 @@
         </Category>
         <Category name="effector">
             <Type dof="6">Tsinghua</Type>
-            <Type dof="1">Ruiyan_1dof</Type>
-            <Type dof="6">Ruiyan_6dof</Type>
         </Category>
         <Category name="sensor">
             <Type>LinkTouch</Type>

@@ -21,7 +21,7 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <linux/can/raw.h>
-#ifndef IPROUTE2
+#ifdef IPROUTE2
 #include <libnetlink.h>
 #include <linux/can/netlink.h>
 #endif
@@ -120,7 +120,7 @@ int CANBase::ifaceUp(){
         return -1;
     }
     printf("starting iface %s...\n", device);
-#ifndef IPROUTE2
+#ifdef IPROUTE2
     rtnl_handle rtnl;
     if(rtnl_open(&rtnl, 0) == -1){
         printf("rtnl_open() failed\n");
@@ -149,7 +149,8 @@ int CANBase::ifaceUp(){
     struct rtattr* data = addattr_nest(&req.nlh, sizeof(req), IFLA_INFO_DATA);
     addattr32(&req.nlh, 1024, IFLA_CAN_RESTART_MS, 10);
     struct can_bittiming bt = {
-        .bitrate = (unsigned int)baudrate
+        .bitrate = (unsigned int)baudrate,
+        .sample_point = 750
     };
     addattr_l(&req.nlh, 1024, IFLA_CAN_BITTIMING, &bt, sizeof(bt));
     struct can_ctrlmode cm = {
@@ -160,7 +161,8 @@ int CANBase::ifaceUp(){
         cm.mask |= CAN_CTRLMODE_FD;
         cm.flags |= CAN_CTRLMODE_FD;
         struct can_bittiming dbt = {
-            .bitrate = (unsigned int)dbaudrate
+            .bitrate = (unsigned int)dbaudrate,
+            .sample_point = 750
         };
         addattr_l(&req.nlh, 1024, IFLA_CAN_DATA_BITTIMING, &dbt, sizeof(dbt));
         addattr_l(&req.nlh, 1024, IFLA_CAN_CTRLMODE, &cm, sizeof(cm));

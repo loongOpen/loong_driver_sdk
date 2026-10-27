@@ -347,6 +347,10 @@ int DriverSDK::impClass::init(char const* xmlFile){
         printf("6 ecat masters at most\n");
         return -1;
     }
+    if(rs485alias2type.size() > 4){
+        printf("4 rs485 masters at most\n");
+        return -1;
+    }
     if(canAlias2type.size() > 10){
         printf("10 can masters at most\n");
         return -1;
@@ -1221,7 +1225,7 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
             if(drivers[i].busCode == 0){
                 imp.putDriverSDORequest(drivers[i].parameters.temperatureSDO);
                 if(imp.getDriverSDOResponse(drivers[i].parameters.temperatureSDO) == 0){
-                    if(drivers[i].parameters.temperatureSDO.state < 0){
+                    if(drivers[i].parameters.temperatureSDO.state == -1){
                         printf("requesting drivers[%d] temperature failed\n", i);
                     }else{
                         data[i].temp[0] = drivers[i].parameters.temperatureSDO.value;

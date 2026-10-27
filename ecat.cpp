@@ -801,10 +801,10 @@ void* ECAT::rxtx(void* arg){
             sdoMsg = ecat->sdoRequestQueue.get_nonblocking();
         }else{
             if(sdoSkip[sdoMsg->alias] > 0){
+                --sdoSkip[sdoMsg->alias];
                 sdoMsg->state = -2;
                 ecat->sdoResponseQueue.put(sdoMsg);
                 sdoMsg = nullptr;
-                --sdoSkip[sdoMsg->alias];
                 break;
             }
             if(tryCount > 50){

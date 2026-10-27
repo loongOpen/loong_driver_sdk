@@ -659,10 +659,10 @@ int ECAT::config(){
             sdoMsg = sdoRequestQueue.get_nonblocking();
         }else{
             if(sdoSkip[sdoMsg->alias] > 0){
+                --sdoSkip[sdoMsg->alias];
                 sdoMsg->state = -2;
                 sdoResponseQueue.put(sdoMsg);
                 sdoMsg = nullptr;
-                --sdoSkip[sdoMsg->alias];
                 return;
             }
             if(tryCount > 50){
@@ -784,10 +784,17 @@ int ECAT::config(){
                 sensors[alias - 220].tx.next()->Mz = *(int*)mz[count]->dataPtr;
                 ++itr;
             }
-            txPDOSwaps[0]->advanceNodePtr();
-        }else if(domainWatchdogs[0]){
-            ++incompleteness;
+        }else{
+            if(domainWatchdogs[0]){
+                ++incompleteness;
+            }
+            auto itr = driverAlias2slave.begin();
+            while(itr != driverAlias2slave.end()){
+                drivers[itr->first - 1].tx.next()->StatusWord |= 0x4000; // timeout
+                ++itr;
+            }
         }
+        txPDOSwaps[0]->advanceNodePtr();
         if(incompleteness != previousIncompleteness){
             stalled.store(incompleteness);
             previousIncompleteness = incompleteness;

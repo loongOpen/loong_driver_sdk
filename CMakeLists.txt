@@ -6,7 +6,8 @@ option(XENOMAI "xenomai" OFF)
 option(NIIC "necro" OFF)
 option(ENPHT "enpht" OFF)
 option(GD32 "gd32" OFF)
-option(IPROUTE2 "iproute2" OFF)
+option(IPROUTE2 "iproute2" ON)
+option(TEST "test" ON)
 if(AARCH64)
     set(march aarch64)
     set(arch a64)
@@ -94,6 +95,7 @@ if(NIIC)
 else(NIIC)
     target_link_libraries(loong_driver_sdk_${arch} PRIVATE ethercat_${march} modbus_${march} netlink_${march} util_${march} tinyxml2_${march} pthread hbcanhal_${march})
 endif(NIIC)
+if(TEST)
 add_executable(driver_test_${march} driver_test.cpp)
 if(LOONGARCH64)
     target_include_directories(driver_test_${march} PRIVATE ${PROJECT_SOURCE_DIR}/../loong_third_party/ncurses/include/loongarch64-linux-gnu)
@@ -109,3 +111,9 @@ install(TARGETS loong_driver_sdk_${arch} hbcanhal_${march} driver_test_${march}
     RUNTIME DESTINATION .
     LIBRARY DESTINATION .
 )
+else(TEST)
+install(TARGETS loong_driver_sdk_${march} hbcanhal_${march}
+    RUNTIME DESTINATION .
+    LIBRARY DESTINATION .
+)
+endif(TEST)

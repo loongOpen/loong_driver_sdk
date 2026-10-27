@@ -163,6 +163,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
                 txFuncs[order][stdID][extID] = humanoidShanghaiTX<CAN>;
             }else if(type == "LinkerBot"){
                 txFuncs[order][stdID][extID] = linkerBotTX<CAN>;
+            }else if(type == "Ruiyan"){
+                txFuncs[order][stdID][extID] = ruiyanTX<CAN>;
             }else if(type == "YESENSE"){
                 txFuncs[order][stdID][extID] = yesenseTX<CAN>;
             }else if(type == "Forsense"){
@@ -199,6 +201,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
             rxFuncs[order][slaveID] = humanoidShanghaiRX<CAN>;
         }else if(type == "LinkerBot"){
             rxFuncs[order][slaveID] = linkerBotRX<CAN>;
+        }else if(type == "Ruiyan"){
+            rxFuncs[order][slaveID] = ruiyanRX<CAN>;
         }else if(type == "YESENSE"){
             rxFuncs[order][slaveID] = yesenseRX<CAN>;
         }else if(type == "Forsense"){
@@ -364,7 +368,7 @@ void* CAN::rx(void* arg){
         ++count;
         i = 0;
         while(i < cans.size()){
-            if((cans[i].rxSwap != nullptr || cans[i].rxSwap_ != nullptr) && count % cans[i].division == 0){
+            if((cans[i].rxSwap != nullptr || cans[i].rxSwap_ != nullptr || cans[i].rxSwap__ != nullptr) && count % cans[i].division == 0){
                 if(cans[i].canhal == 1){
                     packInfo.data_num = 0;
                 }

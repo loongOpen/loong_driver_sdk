@@ -436,8 +436,6 @@
         </Category>
         <Category name="effector">
             <Type dof="6">Tsinghua</Type>
-            <Type dof="1">Ruiyan_1dof</Type>
-            <Type dof="6">Ruiyan_6dof</Type>
         </Category>
         <Category name="sensor">
             <Type>LinkTouch</Type>
@@ -744,6 +742,7 @@
         <Category name="battery">
         </Category>
         <Category name="driver">
+            <Type>Leadshine</Type>
         </Category>
         <Category name="effector">
             <Type dof="1">ChangingTek</Type>
@@ -1444,6 +1443,20 @@
         <MaximumPosition>0.69813172</MaximumPosition>
     </Motor><!-- CANopen Elmo -->
     <!-- Tail -->
+    <Motor limb="6" motor="0" alias="32">
+        <Polarity>1</Polarity>
+        <CountBias>0</CountBias>
+        <EncoderResolution>131072</EncoderResolution>
+        <GearRatioTor>1</GearRatioTor>
+        <GearRatioPosVel>1</GearRatioPosVel>
+        <RatedCurrent>10</RatedCurrent>
+        <TorqueConstant>0.127</TorqueConstant>
+        <GearEfficiency>0.91</GearEfficiency>
+        <RatedTorque>1.27</RatedTorque>
+        <MaximumTorque>3.81</MaximumTorque>
+        <MinimumPosition>-3.0</MinimumPosition>
+        <MaximumPosition>3.0</MaximumPosition>
+    </Motor><!-- Leadshine -->
 </Motors>
 <!--<IMU device="/dev/ttyTHS3" baudrate="460800" type="Xsens" x="0.0" y="0.0" z="0.0"/>--><!-- type="Xsens/HiPNUC/Forsense/YESENSE/YESENSE_/Lins-Tech" x-y-z extrinsic in unit of Pi -->
 </Config>

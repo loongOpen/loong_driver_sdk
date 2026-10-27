@@ -194,6 +194,7 @@ unsigned char const RealManDisable      [3] = {0x02, 0x0a, 0x00};
 unsigned char const RealManClrErr       [3] = {0x02, 0x0f, 0x01};
 unsigned char const AgibotData          [8] = {0x00, 0x00, 0x7f, 0x7f, 0x7f, 0x7f, 0x00, 0x00};
 unsigned char const HumanoidShanghaiData[8] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+unsigned char const RuiyanData          [8] = {0xa1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 unsigned short float2para(float const f, float const min, float const max, int const bit);
 float para2float(unsigned short const us, float const min, float const max, int const bit);
@@ -236,7 +237,7 @@ void staging(int const slaveID, int const alias, T* const can){
         while(i < 32){
             if((x & 1 << i) > 0){
                 int a = T::orderSlaveID2alias[can->order][i];
-                T::alias2status[a] |= 0x4000;
+                T::alias2status[a] |= 0x4000;   // timeout
                 drivers[a - 1].tx.next()->StatusWord = T::alias2status[a];
             }
             ++i;
@@ -294,11 +295,20 @@ int encosRX(int const alias, int* const slaveID, unsigned char* const data, int*
         break;
     }
     DriverParameters const* parameters = T::alias2parameters[alias];
-    unsigned short  p = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetPosition, parameters->minP,  parameters->maxP,  16);
-    unsigned short  v = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity, parameters->minV,  parameters->maxV,  12);
-    unsigned short kp = float2para(half2single(drivers[alias - 1].rx.previous()->ControlWord),   parameters->minKp, parameters->maxKp, 12);
-    unsigned short kd = float2para(half2single(drivers[alias - 1].rx.previous()->TargetTorque),  parameters->minKd, parameters->maxKd,  9);
-    unsigned short  t = float2para(half2single(drivers[alias - 1].rx.previous()->TorqueOffset),  parameters->minT,  parameters->maxT,  12);
+    unsigned short p, v, t, kp, kd;
+    if((T::alias2status[alias] & 0x0f7f) != 0x0007){
+         p = float2para(0.0,                                                          parameters->minP,  parameters->maxP,  16);
+         v = float2para(0.0,                                                          parameters->minV,  parameters->maxV,  12);
+        kp = 1;
+        kd = 1;
+         t = float2para(0.0,                                                          parameters->minT,  parameters->maxT,  12);
+    }else{
+         p = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetPosition, parameters->minP,  parameters->maxP,  16);
+         v = float2para(  *(float*)&drivers[alias - 1].rx.previous()->TargetVelocity, parameters->minV,  parameters->maxV,  12);
+        kp = float2para(half2single(drivers[alias - 1].rx.previous()->ControlWord),   parameters->minKp, parameters->maxKp, 12);
+        kd = float2para(half2single(drivers[alias - 1].rx.previous()->TargetTorque),  parameters->minKd, parameters->maxKd,  9);
+         t = float2para(half2single(drivers[alias - 1].rx.previous()->TorqueOffset),  parameters->minT,  parameters->maxT,  12);
+    }
     data[0] = kp >> 7;
     data[1] = kp << 1 & 0x00ff | kd >> 8;
     data[2] = kd & 0x00ff;
@@ -1298,6 +1308,43 @@ void linkerBotTX(int const masterID, unsigned char* const data, int const length
     int j = 0;
     while(j < 6){
         digits[i + j].tx.next()->ActualPosition = (255 - data[j + 1]) * 90 / 255;
+        ++j;
+    }
+    can->mask_ |= 1 << slaveID % 32;
+    if(can->mask_ == can->MASK_){
+        can->txSwap_->advanceNodePtr();
+        can->mask_ = 0;
+    }
+}
+
+template<typename T>
+int ruiyanRX(int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff, T* const can){
+    int i = 0;
+    if(alias == 201){
+        i = dofLeftEffector;
+    }
+    int j = 0;
+    while(j < 6){
+                    memcpy(data + 8 * j + 0, RuiyanData, 8);
+        *(unsigned short*)(data + 8 * j + 1) = digits[i + j].rx.previous()->TargetPosition * 4096 / 90;
+        ++j;
+    }
+    return 48;
+}
+
+template<typename T>
+void ruiyanTX(int const masterID, unsigned char* const data, int const length, T* const can){
+    if(length != 48){
+        return;
+    }
+    int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
+    int i = 0;
+    if(alias == 201){
+        i = dofLeftEffector;
+    }
+    int j = 0;
+    while(j < 6){
+        digits[i + j].tx.next()->ActualPosition = (*(unsigned short*)(data + 8 * j + 2) & 0x0fff) * 90 / 4096;
         ++j;
     }
     can->mask_ |= 1 << slaveID % 32;

@@ -99,6 +99,11 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
                 itr_->second->load(itr_->first);
             }
             alias2parameters[alias] = itr_->second;
+        }else if(category == "effector"){
+            if(type == "Ruiyan"){
+                printf("Ruiyan effector is not supported on canemu bus\n");
+                exit(-1);
+            }
         }else if(category == "imu"){
             printf("imu is not supported on canemu bus\n");
             exit(-1);
