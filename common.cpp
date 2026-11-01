@@ -188,17 +188,17 @@ SwapList::SwapList(int const size){
 }
 
 void SwapList::advanceNodePtr(){
-    nodePtr.store(nodePtr.load()->next);
+    nodePtr.store(nodePtr.load(std::memory_order_relaxed)->next, std::memory_order_release);
 }
 
 void SwapList::copyTo(unsigned char* const domainPtr, int const domainSize){
-    memcpy(domainPtr, nodePtr.load()->previous->memPtr, domainSize);
+    memcpy(domainPtr, nodePtr.load(std::memory_order_acquire)->previous->memPtr, domainSize);
 }
 
 void SwapList::copyFrom(unsigned char const* domainPtr, int const domainSize){
-    SwapNode* node = nodePtr.load();
+    SwapNode* node = nodePtr.load(std::memory_order_relaxed);
     memcpy(node->next->memPtr, domainPtr, domainSize);
-    nodePtr.store(node->next);
+    nodePtr.store(node->next, std::memory_order_release);
 }
 
 SwapList::~SwapList(){
@@ -209,6 +209,33 @@ SwapList::~SwapList(){
         node->previous->next = nullptr;
         delete node;
     }
+}
+
+bool SDOMsg::match(SDOMsg const& draft){
+    if(alias == draft.alias && index == draft.index && subindex == draft.subindex && operation == draft.operation){
+        return true;
+    }
+    return false;
+}
+
+bool SDOMsg::recycle(){
+    ++recycled;
+    if(recycled >= 64){
+        return true;
+    }
+    return false;
+}
+
+bool REGMsg::match(REGMsg const& draft){
+    return false;
+}
+
+bool REGMsg::recycle(){
+    ++recycled;
+    if(recycled >= 64){
+        return true;
+    }
+    return false;
 }
 
 DriverParameters::DriverParameters(){

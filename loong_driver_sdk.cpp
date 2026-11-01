@@ -21,10 +21,11 @@
 #include "rs232.h"
 #include "rs485.h"
 #include "canbase.h"
-#ifndef NIIC
-#include "ecat.h"
-#else
+#ifdef NIIC
+#include <qiuniu/init.h>
 #include "ecat.hpp"
+#else
+#include "ecat.h"
 #endif
 #include <atomic>
 #include <sstream>
@@ -76,9 +77,9 @@ public:
     int effectorCheck(std::vector<std::map<int, std::string>> const& alias2type, char const* bus);
     int driverCheck();
     int init(char const* xmlFile);
-    int putDriverSDORequest(SDOMsg const& msg, int const priority = QUE_PRI_LOW);
+    int putDriverSDORequest(SDOMsg const& msg);
     int getDriverSDOResponse(SDOMsg& msg);
-    int putDriverREGRequest(REGMsg const& msg, int const priority = QUE_PRI_LOW);
+    int putDriverREGRequest(REGMsg const& msg);
     int getDriverREGResponse(REGMsg& msg);
     void rs485Update();
     void rs485Update_();
@@ -560,38 +561,31 @@ int DriverSDK::impClass::init(char const* xmlFile){
     return 0;
 }
 
-int DriverSDK::impClass::putDriverSDORequest(SDOMsg const& msg, int const priority){
+int DriverSDK::impClass::putDriverSDORequest(SDOMsg const& msg){
     if(ecats[drivers[msg.alias - 1].order].sdoRequestable){
         SDOMsg* sdoMsg = new SDOMsg();
         *sdoMsg = msg;
         sdoMsg->state = 0;
-        ecats[drivers[msg.alias - 1].order].sdoRequestQueue.put(sdoMsg, priority);
-        return 0;
+        if(ecats[drivers[msg.alias - 1].order].sdoRequestQueue.put(sdoMsg)){
+            return 0;
+        }
+        delete sdoMsg;
     }
     return -1;
 }
 
 int DriverSDK::impClass::getDriverSDOResponse(SDOMsg& msg){
-    SDOMsg* sdoMsg = ecats[drivers[msg.alias - 1].order].sdoResponseQueue.get_nonblocking();
+    SDOMsg* sdoMsg = ecats[drivers[msg.alias - 1].order].sdoResponseQueue.get(msg);
     if(sdoMsg != nullptr){
-        if(sdoMsg->alias == msg.alias && sdoMsg->index == msg.index && sdoMsg->subindex == msg.subindex && sdoMsg->operation == msg.operation){
-            msg.state = sdoMsg->state;
-            msg.value = sdoMsg->value;
-            delete sdoMsg;
-            return 0;
-        }else{
-            ++sdoMsg->recycled;
-            if(sdoMsg->recycled < dofAll){
-                ecats[drivers[msg.alias - 1].order].sdoResponseQueue.put(sdoMsg, QUE_PRI_HIGH);
-            }else{
-                delete sdoMsg;
-            }
-        }
+        msg.state = sdoMsg->state;
+        msg.value = sdoMsg->value;
+        delete sdoMsg;
+        return 0;
     }
     return -1;
 }
 
-int DriverSDK::impClass::putDriverREGRequest(REGMsg const& msg, int const priority){
+int DriverSDK::impClass::putDriverREGRequest(REGMsg const& msg){
     return -1;
 }
 
@@ -718,10 +712,10 @@ void DriverSDK::impClass::sdoRequestableUpdate(){
     if(ready){
         int i = 0;
         while(i < ecats.size()){
-            if(ecats[i].sdoRequestQueue.size() < dofAll && ecats[i].sdoResponseQueue.size() < dofAll){
-                ecats[i].sdoRequestable = true;
-            }else{
+            if(ecats[i].sdoRequestQueue.halfFull() || ecats[i].sdoResponseQueue.halfFull()){
                 ecats[i].sdoRequestable = false;
+            }else{
+                ecats[i].sdoRequestable = true;
             }
             ++i;
         }
@@ -773,6 +767,13 @@ DriverSDK& DriverSDK::instance(){
 }
 
 DriverSDK::DriverSDK(): imp(*new impClass()){
+#ifdef NIIC
+    static bool initialized = false;
+    if(!initialized){
+        qiuniu_init();
+        initialized = true;
+    }
+#endif
 }
 
 void DriverSDK::setCPU(unsigned short const cpu){
@@ -1134,7 +1135,7 @@ int DriverSDK::setMotorTarget(std::vector<motorTargetStruct> const& data){
                 }
                 imp.putDriverSDORequest(drivers[i].parameters.clearErrorSDO);
                 if(imp.getDriverSDOResponse(drivers[i].parameters.clearErrorSDO) == 0){
-                    if(drivers[i].parameters.clearErrorSDO.state < 0){
+                    if(drivers[i].parameters.clearErrorSDO.state == -1){
                         printf("requesting drivers[%d] clearError failed\n", i);
                     }
                 }

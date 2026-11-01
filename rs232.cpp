@@ -23,9 +23,6 @@
 #include <pthread.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
-#ifdef NIIC
-#include <qiuniu/init.h>
-#endif
 
 namespace DriverSDK{
 extern ConfigXML* configXML;
@@ -114,63 +111,63 @@ bool validLinstech(unsigned char const* buff){
 }
 
 void parseXsens(SwapList const* txSwap_, int const index){
-    imus[index].tx.next()->rpy[0] = quadchar2float(txSwap_->nodePtr.load()->memPtr +  7) * Pi / 180.0;
-    imus[index].tx.next()->rpy[1] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 11) * Pi / 180.0;
-    imus[index].tx.next()->rpy[2] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 15) * Pi / 180.0;
-    imus[index].tx.next()->gyr[0] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 37);
-    imus[index].tx.next()->gyr[1] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 41);
-    imus[index].tx.next()->gyr[2] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 45);
-    imus[index].tx.next()->acc[0] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 22);
-    imus[index].tx.next()->acc[1] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 26);
-    imus[index].tx.next()->acc[2] = quadchar2float(txSwap_->nodePtr.load()->memPtr + 30);
+    imus[index].tx.next()->rpy[0] = quadchar2float(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr +  7) * Pi / 180.0;
+    imus[index].tx.next()->rpy[1] = quadchar2float(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 11) * Pi / 180.0;
+    imus[index].tx.next()->rpy[2] = quadchar2float(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 15) * Pi / 180.0;
+    imus[index].tx.next()->gyr[0] = quadchar2float(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 37);
+    imus[index].tx.next()->gyr[1] = quadchar2float(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 41);
+    imus[index].tx.next()->gyr[2] = quadchar2float(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 45);
+    imus[index].tx.next()->acc[0] = quadchar2float(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 22);
+    imus[index].tx.next()->acc[1] = quadchar2float(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 26);
+    imus[index].tx.next()->acc[2] = quadchar2float(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 30);
 }
 
 void parseHipnuc(SwapList const* txSwap_, int const index){
-    imus[index].tx.next()->rpy[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 58) * Pi / 180.0;
-    imus[index].tx.next()->rpy[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 54) * Pi / 180.0;
-    imus[index].tx.next()->rpy[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 62) * Pi / 180.0;
-    imus[index].tx.next()->gyr[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 30) * Pi / 180.0;
-    imus[index].tx.next()->gyr[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 34) * Pi / 180.0;
-    imus[index].tx.next()->gyr[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 38) * Pi / 180.0;
-    imus[index].tx.next()->acc[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 18) * 9.81;
-    imus[index].tx.next()->acc[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 22) * 9.81;
-    imus[index].tx.next()->acc[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 26) * 9.81;
+    imus[index].tx.next()->rpy[0] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 58) * Pi / 180.0;
+    imus[index].tx.next()->rpy[1] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 54) * Pi / 180.0;
+    imus[index].tx.next()->rpy[2] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 62) * Pi / 180.0;
+    imus[index].tx.next()->gyr[0] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 30) * Pi / 180.0;
+    imus[index].tx.next()->gyr[1] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 34) * Pi / 180.0;
+    imus[index].tx.next()->gyr[2] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 38) * Pi / 180.0;
+    imus[index].tx.next()->acc[0] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 18) * 9.81;
+    imus[index].tx.next()->acc[1] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 22) * 9.81;
+    imus[index].tx.next()->acc[2] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 26) * 9.81;
 }
 
 void parseForsense(SwapList const* txSwap_, int const index){
-    imus[index].tx.next()->rpy[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 14) * Pi / 180.0;
-    imus[index].tx.next()->rpy[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 10) * Pi / 180.0;
-    imus[index].tx.next()->rpy[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 18) * Pi / 180.0;
-    imus[index].tx.next()->gyr[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 34) * Pi / 180.0;
-    imus[index].tx.next()->gyr[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 38) * Pi / 180.0;
-    imus[index].tx.next()->gyr[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 42) * Pi / 180.0;
-    imus[index].tx.next()->acc[0] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 22) * 9.81;
-    imus[index].tx.next()->acc[1] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 26) * 9.81;
-    imus[index].tx.next()->acc[2] = quadchar2float_(txSwap_->nodePtr.load()->memPtr + 30) * 9.81;
+    imus[index].tx.next()->rpy[0] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 14) * Pi / 180.0;
+    imus[index].tx.next()->rpy[1] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 10) * Pi / 180.0;
+    imus[index].tx.next()->rpy[2] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 18) * Pi / 180.0;
+    imus[index].tx.next()->gyr[0] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 34) * Pi / 180.0;
+    imus[index].tx.next()->gyr[1] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 38) * Pi / 180.0;
+    imus[index].tx.next()->gyr[2] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 42) * Pi / 180.0;
+    imus[index].tx.next()->acc[0] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 22) * 9.81;
+    imus[index].tx.next()->acc[1] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 26) * 9.81;
+    imus[index].tx.next()->acc[2] = quadchar2float_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 30) * 9.81;
 }
 
 void parseYesense(SwapList const* txSwap_, int const index){
-    imus[index].tx.next()->rpy[0] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 39) / 1000000.0 * Pi / 180.0;
-    imus[index].tx.next()->rpy[1] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 35) / 1000000.0 * Pi / 180.0;
-    imus[index].tx.next()->rpy[2] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 43) / 1000000.0 * Pi / 180.0;
-    imus[index].tx.next()->gyr[0] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 21) / 1000000.0 * Pi / 180.0;
-    imus[index].tx.next()->gyr[1] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 25) / 1000000.0 * Pi / 180.0;
-    imus[index].tx.next()->gyr[2] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 29) / 1000000.0 * Pi / 180.0;
-    imus[index].tx.next()->acc[0] = quadchar2int_(txSwap_->nodePtr.load()->memPtr +  7) / 1000000.0;
-    imus[index].tx.next()->acc[1] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 11) / 1000000.0;
-    imus[index].tx.next()->acc[2] = quadchar2int_(txSwap_->nodePtr.load()->memPtr + 15) / 1000000.0;
+    imus[index].tx.next()->rpy[0] = quadchar2int_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 39) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->rpy[1] = quadchar2int_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 35) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->rpy[2] = quadchar2int_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 43) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[0] = quadchar2int_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 21) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[1] = quadchar2int_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 25) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[2] = quadchar2int_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 29) / 1000000.0 * Pi / 180.0;
+    imus[index].tx.next()->acc[0] = quadchar2int_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr +  7) / 1000000.0;
+    imus[index].tx.next()->acc[1] = quadchar2int_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 11) / 1000000.0;
+    imus[index].tx.next()->acc[2] = quadchar2int_(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 15) / 1000000.0;
 }
 
 void parseLinstech(SwapList const* txSwap_, int const index){
-    imus[index].tx.next()->rpy[0] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 26) / 10000.0 * Pi / 180.0;
-    imus[index].tx.next()->rpy[1] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 30) / 10000.0 * Pi / 180.0;
-    imus[index].tx.next()->rpy[2] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 34) / 10000.0 * Pi / 180.0;
-    imus[index].tx.next()->gyr[0] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 14) / 10000.0 * Pi / 180.0;
-    imus[index].tx.next()->gyr[1] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 18) / 10000.0 * Pi / 180.0;
-    imus[index].tx.next()->gyr[2] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 22) / 10000.0 * Pi / 180.0;
-    imus[index].tx.next()->acc[0] = quadchar2int(txSwap_->nodePtr.load()->memPtr +  2) / 10000.0 * 9.81;
-    imus[index].tx.next()->acc[1] = quadchar2int(txSwap_->nodePtr.load()->memPtr +  6) / 10000.0 * 9.81;
-    imus[index].tx.next()->acc[2] = quadchar2int(txSwap_->nodePtr.load()->memPtr + 10) / 10000.0 * 9.81;
+    imus[index].tx.next()->rpy[0] = quadchar2int(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 26) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->rpy[1] = quadchar2int(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 30) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->rpy[2] = quadchar2int(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 34) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[0] = quadchar2int(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 14) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[1] = quadchar2int(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 18) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->gyr[2] = quadchar2int(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 22) / 10000.0 * Pi / 180.0;
+    imus[index].tx.next()->acc[0] = quadchar2int(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr +  2) / 10000.0 * 9.81;
+    imus[index].tx.next()->acc[1] = quadchar2int(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr +  6) / 10000.0 * 9.81;
+    imus[index].tx.next()->acc[2] = quadchar2int(txSwap_->nodePtr.load(std::memory_order_acquire)->memPtr + 10) / 10000.0 * 9.81;
 }
 
 RS232::RS232(int const order, char const* device){
@@ -313,11 +310,7 @@ void* RS232::recv(void* arg){
             printf("invalid rs232s[%d] baudrate %d\n", rs232->order, rs232->baudrate);
             exit(-1);
         }
-#ifndef NIIC
         rs232->fd = open(rs232->device, O_RDONLY | O_NOCTTY);
-#else
-        rs232->fd = __RT(open(rs232->device, O_RDONLY | O_NOCTTY));
-#endif
         if(rs232->fd < 0){
             printf("opening rs232s[%d] device %s failed\n", rs232->order, rs232->device);
             exit(-1);
@@ -348,32 +341,17 @@ void* RS232::recv(void* arg){
         unsigned char bitsPerWord = configXML->masterAttribute("RS232", rs232->order, "bits_per_word");
         unsigned int  maxSpeedHz  = configXML->masterAttribute("RS232", rs232->order, "max_speed_hz" );
         unsigned char lsbFirst    = configXML->masterAttribute("RS232", rs232->order, "lsb_first"    );
-#ifndef NIIC
         rs232->fd = open(rs232->device, O_RDWR | O_CLOEXEC);
-#else
-        rs232->fd = __RT(open(rs232->device, O_RDWR | O_CLOEXEC));
-#endif
         if(rs232->fd < 0){
             printf("opening rs232s[%d] device %s failed\n", rs232->order, rs232->device);
             exit(-1);
         }
-#ifndef NIIC
         if(ioctl(rs232->fd, SPI_IOC_WR_MODE,          &mode       ) < 0 ||
            ioctl(rs232->fd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord) < 0 ||
            ioctl(rs232->fd, SPI_IOC_WR_MAX_SPEED_HZ,  &maxSpeedHz ) < 0 ||
            ioctl(rs232->fd, SPI_IOC_WR_LSB_FIRST,     &lsbFirst   ) < 0){
-#else
-        if(__RT(ioctl(rs232->fd, SPI_IOC_WR_MODE,          &mode       )) < 0 ||
-           __RT(ioctl(rs232->fd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord)) < 0 ||
-           __RT(ioctl(rs232->fd, SPI_IOC_WR_MAX_SPEED_HZ,  &maxSpeedHz )) < 0 ||
-           __RT(ioctl(rs232->fd, SPI_IOC_WR_LSB_FIRST,     &lsbFirst   )) < 0){
-#endif
             printf("configuring rs232s[%d] device %s failed\n", rs232->order, rs232->device);
-#ifndef NIIC
             close(rs232->fd);
-#else
-            __RT(close(rs232->fd));
-#endif
             rs232->fd = -1;
             exit(-1);
         }
@@ -399,11 +377,7 @@ void* RS232::recv(void* arg){
     pthread_cleanup_push(cleanup, node0);
     int j = 0;
     do{
-#ifndef NIIC
         j += read(rs232->fd, buffA + j, rs232->frameLength - j);
-#else
-        j += __RT(read(rs232->fd, buffA + j, rs232->frameLength - j));
-#endif
     }while(j < rs232->frameLength);
     struct timespec step{0, 1000};
     i = 2;
@@ -411,38 +385,26 @@ void* RS232::recv(void* arg){
         if(node->nr == rs232->frameLength - 1){
             j = 0;
             do{
-#ifndef NIIC
                 j += read(rs232->fd, buffB + j, rs232->frameLength - j);
-#else
-                j += __RT(read(rs232->fd, buffB + j, rs232->frameLength - j));
-#endif
             }while(j < rs232->frameLength);
         }else if(node->nr == 2 * rs232->frameLength - 1){
             j = 0;
             do{
-#ifndef NIIC
                 j += read(rs232->fd, buffA + j, rs232->frameLength - j);
-#else
-                j += __RT(read(rs232->fd, buffA + j, rs232->frameLength - j));
-#endif
             }while(j < rs232->frameLength);
         }
         node = node->next;
         if(i < rs232->frameLength){
-            rs232->txSwap_->nodePtr.load()->next->memPtr[i] = buff[node->nr];
+            rs232->txSwap_->nodePtr.load(std::memory_order_relaxed)->next->memPtr[i] = buff[node->nr];
             ++i;
         }
         if(buff[node->previous->nr] == rs232->header0 && buff[node->nr] == rs232->header1){
-            if(rs232->valid(rs232->txSwap_->nodePtr.load()->next->memPtr)){
+            if(rs232->valid(rs232->txSwap_->nodePtr.load(std::memory_order_relaxed)->next->memPtr)){
                 rs232->txSwap_->advanceNodePtr();
             }
-            memset(rs232->txSwap_->nodePtr.load()->next->memPtr + 2, 0, rs232->frameLength - 2);
+            memset(rs232->txSwap_->nodePtr.load(std::memory_order_relaxed)->next->memPtr + 2, 0, rs232->frameLength - 2);
             i = 2;
-#ifndef NIIC
             nanosleep(&step, nullptr);
-#else
-            __RT(nanosleep(&step, nullptr));
-#endif
         }
     }
     pthread_cleanup_pop(1);
@@ -450,24 +412,13 @@ void* RS232::recv(void* arg){
 }
 
 int RS232::run(){
-#ifdef NIIC
-    static bool initialized = false;
-    if(!initialized){
-        qiuniu_init();
-        initialized = true;
-    }
-#endif
     if(alias2type.size() == 0){
         return 0;
     }
     if(strlen(device) == 0){
         return 1;
     }
-#ifndef NIIC
     if(pthread_create(&pth, nullptr, &recv, this) != 0){
-#else
-    if(__RT(pthread_create(&pth, nullptr, &recv, this)) != 0){
-#endif
         printf("creating rs232s[%d] recv thread failed\n", order);
         return -1;
     }
@@ -485,11 +436,7 @@ RS232::~RS232(){
         pth = 0;
     }
     if(fd > -1){
-#ifndef NIIC
         close(fd);
-#else
-        __RT(close(fd));
-#endif
         fd = -1;
     }
     if(rxSwap != nullptr){

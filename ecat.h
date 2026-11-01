@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "ptr_que.h"
 #include "common.h"
 
 namespace DriverSDK{
@@ -43,7 +42,8 @@ public:
     ec_domain_t** domains;
     unsigned char** domainPtrs;
     SwapList** rxPDOSwaps, ** txPDOSwaps;
-    PtrQue<SDOMsg> sdoRequestQueue, sdoResponseQueue, regRequestQueue, regResponseQueue;
+    PtrQue<SDOMsg, 256> sdoRequestQueue, regRequestQueue;
+    PtrQue<SDOMsg, 1024> sdoResponseQueue, regResponseQueue;
     ec_master_t* master;
     pthread_t pth;
     ECAT(int const order);

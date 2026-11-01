@@ -513,7 +513,13 @@ std::vector<std::map<int, int>> ConfigXML::alias2attribute(char const* bus, char
                 printf("missing %s of device with alias %d\n", name, alias);
                 exit(-1);
             }
-            ret[master].emplace(alias, slaveElement->IntAttribute(name));
+            tinyxml2::XMLAttribute const* attribute = slaveElement->FindAttribute(name);
+            int val = 0;
+            if(attribute->QueryIntValue(&val) == tinyxml2::XML_SUCCESS){
+                ret[master].emplace(alias, val);
+            }else{
+                ret[master].emplace(alias, strtoul(attribute->Value(), nullptr, 16));
+            }
         }
         slaveElement = slaveElement->NextSiblingElement("Slave");
     }
@@ -574,7 +580,7 @@ std::vector<std::map<int, std::vector<int>>> ConfigXML::alias2attribute_(char co
             std::stringstream ss(slaveElement->Attribute(name));
             std::string token;
             while(std::getline(ss, token, ' ')){
-                items.push_back(atoi(token.c_str()));
+                items.push_back(strtoul(token.c_str(), nullptr, token.starts_with("0x") || token.starts_with("0X") ? 16 : 10));
             }
             if(items.size() == 0){
                 printf("invalid %s of device with alias %d\n", name, alias);

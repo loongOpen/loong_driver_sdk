@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "ptr_que.h"
 #include "common.h"
 
 namespace DriverSDK{
@@ -43,7 +42,8 @@ public:
     SwapList** rxPDOSwaps, ** txPDOSwaps;
     SDOMsg* sdoMsg;
     REGMsg* regMsg;
-    PtrQue<SDOMsg> sdoRequestQueue, sdoResponseQueue, regRequestQueue, regResponseQueue;
+    PtrQue<SDOMsg, 256> sdoRequestQueue, regRequestQueue;
+    PtrQue<SDOMsg, 1024> sdoResponseQueue, regResponseQueue;
     ecat::task* task;
     ecat::master* master;
     ecat::PdoRegInfo** targetPosition, ** targetVelocity, ** targetTorque, ** controlWord, ** mode, ** torqueOffset, ** velocityOffset, ** actualPosition, ** actualVelocity, ** actualTorque, ** statusWord, ** modeDisplay, ** errorCode, ** fx, ** fy, ** fz, ** mx, ** my, ** mz;

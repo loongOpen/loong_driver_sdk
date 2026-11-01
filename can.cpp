@@ -153,6 +153,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
                 txFuncs[order][stdID][extID] = motorevoTX<CAN>;
             }else if(type.starts_with("Weiyi")){
                 txFuncs[order][stdID][extID] = weiyiTX<CAN>;
+            }else if(type.starts_with("Weiyi_")){
+                txFuncs[order][stdID][extID] = weiyiTX_<CAN>;
             }else if(type.starts_with("RealMan")){
                 txFuncs[order][stdID][extID] = realManTX<CAN>;
             }else if(type.starts_with("CANopen")){
@@ -186,6 +188,8 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
             rxFuncs[order][slaveID] = motorevoRX<CAN>;
         }else if(type.starts_with("Weiyi")){
             rxFuncs[order][slaveID] = weiyiRX<CAN>;
+        }else if(type.starts_with("Weiyi_")){
+            rxFuncs[order][slaveID] = weiyiRX_<CAN>;
         }else if(type.starts_with("RealMan")){
             rxFuncs[order][slaveID] = realManRX<CAN>;
         }else if(type.starts_with("CANopen")){
@@ -879,9 +883,6 @@ int CAN::run(std::vector<CAN>& cans){
         return 0;
     }
     if(CANHAL > 0){
-#ifdef GD32
-        canPeriod(period);
-#endif
         if(canInit() < 0){
             printf("canhal init failed\n");
             CANHAL = 0;

@@ -181,13 +181,13 @@ unsigned char const DamiaoClrErr        [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xf
 unsigned char const MotorevoEnable      [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
 unsigned char const MotorevoDisable     [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
 unsigned char const MotorevoClrErr      [8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfb};
-unsigned char const WeiyiEnable         [2] = {0x2a, 0x01};
-unsigned char const WeiyiDisable        [2] = {0x2a, 0x00};
-unsigned char const WeiyiMode           [2] = {0x07, 0x0d};
-unsigned char const WeiyiQuery          [1] = {0x94};
-unsigned char const WeiyiUnbrake        [2] = {0xf4, 0x01};
-unsigned char const Weiyibrake          [2] = {0xf4, 0x00};
-unsigned char const WeiyiClrErr         [1] = {0xfe};
+unsigned char const WeiyiEnable_        [2] = {0x2a, 0x01};
+unsigned char const WeiyiDisable_       [2] = {0x2a, 0x00};
+unsigned char const WeiyiMode_          [2] = {0x07, 0x0d};
+unsigned char const WeiyiQuery_         [1] = {0x94};
+unsigned char const WeiyiUnbrake_       [2] = {0xf4, 0x01};
+unsigned char const Weiyibrake_         [2] = {0xf4, 0x00};
+unsigned char const WeiyiClrErr_        [1] = {0xfe};
 unsigned char const RealManIAP          [3] = {0x02, 0x49, 0x00};
 unsigned char const RealManEnable       [3] = {0x02, 0x0a, 0x01};
 unsigned char const RealManDisable      [3] = {0x02, 0x0a, 0x00};
@@ -201,9 +201,9 @@ float para2float(unsigned short const us, float const min, float const max, int 
 
 template<typename T>
 void staging(int const slaveID, int const alias, T* const can){
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    long current = TIMEVAL2US(tv);
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    long current = TIMESPEC2NS(ts);
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
         if(!can->ready){
@@ -231,7 +231,7 @@ void staging(int const slaveID, int const alias, T* const can){
         can->txSwap->advanceNodePtr();
         can->mask = 0;
         can->previous = current;
-    }else if(current - can->previous > 20 * can->period / 1000){
+    }else if(current - can->previous > 20 * can->period){
         unsigned int x = can->mask ^ can->MASK;
         int i = 0;
         while(i < 32){
@@ -536,6 +536,15 @@ void motorevoTX(int const masterID, unsigned char* const data, int const length,
 
 template<typename T>
 int weiyiRX(int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff, T* const can){
+    return std::numeric_limits<int>::min();
+}
+
+template<typename T>
+void weiyiTX(int const masterID, unsigned char* const data, int const length, T* const can){
+}
+
+template<typename T>
+int weiyiRX_(int const alias, int* const slaveID, unsigned char* const data, int* const rtr, int* const eff, T* const can){
     switch(drivers[alias - 1].rx.previous()->Undefined){
     case 1:
         switch(T::alias2status[alias] & 0x0f7f){
@@ -550,22 +559,22 @@ int weiyiRX(int const alias, int* const slaveID, unsigned char* const data, int*
             };
             ++count[alias];
             if(count[alias] == 0){
-                memcpy(data, WeiyiUnbrake, 2);
+                memcpy(data, WeiyiUnbrake_, 2);
                 return 2;
             }else{
                 return std::numeric_limits<int>::min();
             }
             break;
         case 0x0250:
-            memcpy(data, WeiyiQuery, 1);
+            memcpy(data, WeiyiQuery_, 1);
             return 1;
             break;
         case 0x0050:
-            memcpy(data, WeiyiMode, 2);
+            memcpy(data, WeiyiMode_, 2);
             return 2;
             break;
         case 0x0000:
-            memcpy(data, WeiyiEnable, 2);
+            memcpy(data, WeiyiEnable_, 2);
             return 2;
             break;
         }
@@ -573,21 +582,21 @@ int weiyiRX(int const alias, int* const slaveID, unsigned char* const data, int*
     case 0:
         switch(T::alias2status[alias] & 0x0f7f){
         case 0x0007:
-            memcpy(data, WeiyiDisable, 2);
+            memcpy(data, WeiyiDisable_, 2);
             return 2;
             break;
         case 0x0001:
             break;
         case 0x0250:
-            memcpy(data, WeiyiQuery, 1);
+            memcpy(data, WeiyiQuery_, 1);
             return 1;
             break;
         case 0x0050:
-            memcpy(data, WeiyiMode, 2);
+            memcpy(data, WeiyiMode_, 2);
             return 2;
             break;
         case 0x0000:
-            memcpy(data, WeiyiEnable, 2);
+            memcpy(data, WeiyiEnable_, 2);
             return 2;
             break;
         }
@@ -597,19 +606,19 @@ int weiyiRX(int const alias, int* const slaveID, unsigned char* const data, int*
         case 0x0007:
             break;
         case 0x0001:
-            memcpy(data, WeiyiClrErr, 1);
+            memcpy(data, WeiyiClrErr_, 1);
             return 1;
             break;
         case 0x0250:
-            memcpy(data, WeiyiQuery, 1);
+            memcpy(data, WeiyiQuery_, 1);
             return 1;
             break;
         case 0x0050:
-            memcpy(data, WeiyiMode, 2);
+            memcpy(data, WeiyiMode_, 2);
             return 2;
             break;
         case 0x0000:
-            memcpy(data, WeiyiEnable, 2);
+            memcpy(data, WeiyiEnable_, 2);
             return 2;
             break;
         }
@@ -686,7 +695,7 @@ int weiyiRX(int const alias, int* const slaveID, unsigned char* const data, int*
 }
 
 template<typename T>
-void weiyiTX(int const masterID, unsigned char* const data, int const length, T* const can){
+void weiyiTX_(int const masterID, unsigned char* const data, int const length, T* const can){
     int const stdID = masterID & 0x7ff, extID = masterID >> 11, slaveID = T::orderMasterID2slaveID[can->order][stdID][extID], alias = T::orderSlaveID2alias[can->order][slaveID];
     DriverParameters const* parameters = T::alias2parameters[alias];
     if(length == 2){

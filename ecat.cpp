@@ -798,15 +798,14 @@ void* ECAT::rxtx(void* arg){
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     while(true){
         if(sdoMsg == nullptr){
-            sdoMsg = ecat->sdoRequestQueue.get_nonblocking();
-        }else{
-            if(sdoSkip[sdoMsg->alias] > 0){
-                --sdoSkip[sdoMsg->alias];
-                sdoMsg->state = -2;
-                ecat->sdoResponseQueue.put(sdoMsg);
+            sdoMsg = ecat->sdoRequestQueue.get();
+        }else if(sdoSkip[sdoMsg->alias] > 0 && sdoMsg->state == 0){
+            --sdoSkip[sdoMsg->alias];
+            sdoMsg->state = -2;
+            if(ecat->sdoResponseQueue.put(sdoMsg)){
                 sdoMsg = nullptr;
-                break;
             }
+        }else{
             if(tryCount > 50){
                 sdoMsg->state = -1;
                 sdoSkip[sdoMsg->alias] = 0xff;
@@ -901,9 +900,10 @@ void* ECAT::rxtx(void* arg){
                     break;
                 }
             }else if(sdoMsg->state == 3 || sdoMsg->state == -1){
-                ecat->sdoResponseQueue.put(sdoMsg);
-                sdoMsg = nullptr;
                 tryCount = 0;
+                if(ecat->sdoResponseQueue.put(sdoMsg)){
+                    sdoMsg = nullptr;
+                }
             }
         }
         if(ecat->dc){

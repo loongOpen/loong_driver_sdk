@@ -656,15 +656,14 @@ int ECAT::config(){
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         };
         if(sdoMsg == nullptr){
-            sdoMsg = sdoRequestQueue.get_nonblocking();
-        }else{
-            if(sdoSkip[sdoMsg->alias] > 0){
-                --sdoSkip[sdoMsg->alias];
-                sdoMsg->state = -2;
-                sdoResponseQueue.put(sdoMsg);
+            sdoMsg = sdoRequestQueue.get();
+        }else if(sdoSkip[sdoMsg->alias] > 0 && sdoMsg->state == 0){
+            --sdoSkip[sdoMsg->alias];
+            sdoMsg->state = -2;
+            if(sdoResponseQueue.put(sdoMsg)){
                 sdoMsg = nullptr;
-                return;
             }
+        }else{
             if(tryCount > 50){
                 sdoMsg->state = -1;
                 sdoSkip[sdoMsg->alias] = 0xff;
@@ -733,9 +732,10 @@ int ECAT::config(){
                     break;
                 }
             }else if(sdoMsg->state == 3 || sdoMsg->state == -1){
-                sdoResponseQueue.put(sdoMsg);
-                sdoMsg = nullptr;
                 tryCount = 0;
+                if(sdoResponseQueue.put(sdoMsg)){
+                    sdoMsg = nullptr;
+                }
             }
         }
     });

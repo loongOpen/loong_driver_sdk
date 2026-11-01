@@ -17,10 +17,10 @@
 
 #pragma once
 
-#ifndef NIIC
-#include <ecrt.h>
-#else
+#ifdef NIIC
 #include <ecat/task.hpp>
+#else
+#include <ecrt.h>
 #endif
 #include <string>
 #include <atomic>
@@ -29,9 +29,7 @@
 
 namespace DriverSDK{
 #define NSEC_PER_SEC 1000000000L
-#define USEC_PER_SEC 1000000L
 #define TIMESPEC2NS(T) (T.tv_sec * NSEC_PER_SEC + T.tv_nsec)
-#define TIMEVAL2US(T) (T.tv_sec * USEC_PER_SEC + T.tv_usec)
 
 float const Pi = std::acos(-1);
 
@@ -83,6 +81,61 @@ float nullSensor(int const value);
 float linkTouch(int const value);
 float kunweiTech(int const value);
 
+template<typename T, unsigned int const N>
+class PtrQue{
+private:
+    __attribute__((aligned(64))) T* slots[N];
+    alignas(64) std::atomic<unsigned short> head;
+    alignas(64) std::atomic<unsigned short> tail;
+public:
+    PtrQue(){
+        head.store(0);
+        tail.store(0);
+    }
+    bool put(T* msg){
+        unsigned short h = head.load(std::memory_order_relaxed), t = tail.load(std::memory_order_acquire);
+        if((unsigned short)(h - t) == N){
+            return false;
+        }
+        slots[h % N] = msg;
+        head.store(h + 1, std::memory_order_release);
+        return true;
+    }
+    T* get(){
+        unsigned short h = head.load(std::memory_order_acquire), t = tail.load(std::memory_order_relaxed);
+        if(h == t){
+            return nullptr;
+        }
+        T* msg = slots[t % N];
+        tail.store(t + 1, std::memory_order_release);
+        return msg;
+    }
+    T* get(T const& draft){
+        unsigned short h = head.load(std::memory_order_acquire), t = tail.load(std::memory_order_relaxed);
+        if(h == t){
+            return nullptr;
+        }
+        T* msg = slots[t % N];
+        if(msg->match(draft)){
+            tail.store(t + 1, std::memory_order_release);
+            return msg;
+        }else if(msg->recycle()){
+            tail.store(t + 1, std::memory_order_release);
+            delete msg;
+        }
+        return nullptr;
+    }
+    bool halfFull(){
+        unsigned short h = head.load(std::memory_order_acquire), t = tail.load(std::memory_order_acquire);
+        if((unsigned short)(h - t) >= N / 2){
+            return true;
+        }
+        return false;
+    }
+    ~PtrQue(){
+    }
+};
+
 class SwapNode{
 public:
     unsigned char* memPtr;
@@ -101,7 +154,8 @@ public:
     ~SwapList();
 };
 
-struct SDOMsg{
+class SDOMsg{
+public:
 #ifndef NIIC
     ec_sdo_request_t* sdoHandler;
 #else
@@ -116,9 +170,12 @@ struct SDOMsg{
     unsigned char bitLength;    // 8, 16 or 32
     unsigned char operation;    // 0: write; 1: read
     int recycled;
+    bool match(SDOMsg const& draft);
+    bool recycle();
 };
 
-struct REGMsg{
+class REGMsg{
+public:
 #ifndef NIIC
     ec_reg_request_t* regHandler;
 #else
@@ -127,6 +184,8 @@ struct REGMsg{
     long value;
     int alias;
     int recycled;
+    bool match(REGMsg const& draft);
+    bool recycle();
 };
 
 struct DriverRXData{
@@ -297,30 +356,30 @@ public:
     ~SensorParameters();
 };
 
-struct __attribute__((__packed__)) TransferrerSlot{
+struct __attribute__((packed)) TransferrerSlot{
     unsigned int ID;
     unsigned char RTR;  // rtr or canfd << 1 | eff
     unsigned char DLC;
     unsigned char Byte[8];
 };
 
-struct __attribute__((__packed__)) TransferrerRXData_{
+struct __attribute__((packed)) TransferrerRXData_{
     unsigned char Count;
     unsigned char IDE;  // eff
     TransferrerSlot slots[6];
 };
 
-struct __attribute__((__packed__)) TransferrerTXData_{
+struct __attribute__((packed)) TransferrerTXData_{
     unsigned char Count;
     unsigned char IDE;
     TransferrerSlot slots[6];
 };
 
-struct __attribute__((__packed__)) TransferrerRXData{
+struct __attribute__((packed)) TransferrerRXData{
     TransferrerSlot slots[64];
 };
 
-struct __attribute__((__packed__)) TransferrerTXData{
+struct __attribute__((packed)) TransferrerTXData{
     TransferrerSlot slots[64];
 };
 
@@ -358,25 +417,25 @@ public:
     }
     Data* operator->(){
         if(swap != nullptr){
-            return (Data*)(swap->nodePtr.load()->memPtr + offset);
+            return (Data*)(swap->nodePtr.load(std::memory_order_acquire)->memPtr + offset);
         }
         return data;
     }
     Data* previous(){
         if(swap != nullptr){
-            return (Data*)(swap->nodePtr.load()->previous->memPtr + offset);
+            return (Data*)(swap->nodePtr.load(std::memory_order_acquire)->previous->memPtr + offset);
         }
         return data;
     }
     Data* current(){
         if(swap != nullptr){
-            return (Data*)(swap->nodePtr.load()->memPtr + offset);
+            return (Data*)(swap->nodePtr.load(std::memory_order_acquire)->memPtr + offset);
         }
         return data;
     }
     Data* next(){
         if(swap != nullptr){
-            return (Data*)(swap->nodePtr.load()->next->memPtr + offset);
+            return (Data*)(swap->nodePtr.load(std::memory_order_acquire)->next->memPtr + offset);
         }
         return data;
     }
