@@ -20,7 +20,17 @@ make install
 cd ..
 
 cd build
+cmake -DAARCH64=ON -DXENOMAI=ON ..
+make install
+cd ..
+
+cd build
 cmake -DAARCH64=ON -DNIIC=ON ..
+make install
+cd ..
+
+cd build
+cmake -DAARCH64=ON -DGD32=ON ..
 make install
 cd ..
 

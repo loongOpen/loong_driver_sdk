@@ -242,27 +242,27 @@ DriverParameters::DriverParameters(){
 }
 
 void DriverParameters::load(std::string const& type){
-    minP        = configXML->readDeviceParameter("CAN", type.c_str(),        "MinP");
-    maxP        = configXML->readDeviceParameter("CAN", type.c_str(),        "MaxP");
-    minV        = configXML->readDeviceParameter("CAN", type.c_str(),        "MinV");
-    maxV        = configXML->readDeviceParameter("CAN", type.c_str(),        "MaxV");
-    minKp       = configXML->readDeviceParameter("CAN", type.c_str(),       "MinKp");
-    maxKp       = configXML->readDeviceParameter("CAN", type.c_str(),       "MaxKp");
-    minKd       = configXML->readDeviceParameter("CAN", type.c_str(),       "MinKd");
-    maxKd       = configXML->readDeviceParameter("CAN", type.c_str(),       "MaxKd");
-    minT        = configXML->readDeviceParameter("CAN", type.c_str(),        "MinT");
-    maxT        = configXML->readDeviceParameter("CAN", type.c_str(),        "MaxT");
-    maxC        = configXML->readDeviceParameter("CAN", type.c_str(),        "MaxC");
-    gearRatio   = configXML->readDeviceParameter("CAN", type.c_str(),   "GearRatio");
-    tConstant   = configXML->readDeviceParameter("CAN", type.c_str(),   "TConstant");
-    pUnit       = configXML->readDeviceParameter("CAN", type.c_str(),       "PUnit");
+    minP        = configXML->readDeviceParameter("CAN", type.c_str(), "MinP"       );
+    maxP        = configXML->readDeviceParameter("CAN", type.c_str(), "MaxP"       );
+    minV        = configXML->readDeviceParameter("CAN", type.c_str(), "MinV"       );
+    maxV        = configXML->readDeviceParameter("CAN", type.c_str(), "MaxV"       );
+    minKp       = configXML->readDeviceParameter("CAN", type.c_str(), "MinKp"      );
+    maxKp       = configXML->readDeviceParameter("CAN", type.c_str(), "MaxKp"      );
+    minKd       = configXML->readDeviceParameter("CAN", type.c_str(), "MinKd"      );
+    maxKd       = configXML->readDeviceParameter("CAN", type.c_str(), "MaxKd"      );
+    minT        = configXML->readDeviceParameter("CAN", type.c_str(), "MinT"       );
+    maxT        = configXML->readDeviceParameter("CAN", type.c_str(), "MaxT"       );
+    maxC        = configXML->readDeviceParameter("CAN", type.c_str(), "MaxC"       );
+    gearRatio   = configXML->readDeviceParameter("CAN", type.c_str(), "GearRatio"  );
+    tConstant   = configXML->readDeviceParameter("CAN", type.c_str(), "TConstant"  );
+    pUnit       = configXML->readDeviceParameter("CAN", type.c_str(), "PUnit"      );
     targetVUnit = configXML->readDeviceParameter("CAN", type.c_str(), "TargetVUnit");
     actualVUnit = configXML->readDeviceParameter("CAN", type.c_str(), "ActualVUnit");
     vOffsetUnit = configXML->readDeviceParameter("CAN", type.c_str(), "VOffsetUnit");
     targetCUnit = configXML->readDeviceParameter("CAN", type.c_str(), "TargetCUnit");
     actualCUnit = configXML->readDeviceParameter("CAN", type.c_str(), "ActualCUnit");
     cOffsetUnit = configXML->readDeviceParameter("CAN", type.c_str(), "COffsetUnit");
-    transType   = configXML->readDeviceParameter("CAN", type.c_str(),   "TransType");
+    transType   = configXML->readDeviceParameter("CAN", type.c_str(), "TransType"  );
 }
 
 DriverParameters::~DriverParameters(){
@@ -279,17 +279,17 @@ int MotorParameters::load(std::string const& bus, int const alias, std::string c
 #else
 int MotorParameters::load(std::string const& bus, int const alias, std::string const& type, ecat::sdo_request* const sdoHandler){
 #endif
-    polarity          = configXML->readMotorParameter(alias,          "Polarity");
-    countBias         = configXML->readMotorParameter(alias,         "CountBias");
+    polarity          = configXML->readMotorParameter(alias, "Polarity"         );
+    countBias         = configXML->readMotorParameter(alias, "CountBias"        );
     encoderResolution = configXML->readMotorParameter(alias, "EncoderResolution");
-    gearRatioTor      = configXML->readMotorParameter(alias,      "GearRatioTor");
-    gearRatioPosVel   = configXML->readMotorParameter(alias,   "GearRatioPosVel");
-    ratedCurrent      = configXML->readMotorParameter(alias,      "RatedCurrent");
-    torqueConstant    = configXML->readMotorParameter(alias,    "TorqueConstant");
-    ratedTorque       = configXML->readMotorParameter(alias,       "RatedTorque");
-    maximumTorque     = configXML->readMotorParameter(alias,     "MaximumTorque");
-    minimumPosition   = configXML->readMotorParameter(alias,   "MinimumPosition");
-    maximumPosition   = configXML->readMotorParameter(alias,   "MaximumPosition");
+    gearRatioTor      = configXML->readMotorParameter(alias, "GearRatioTor"     );
+    gearRatioPosVel   = configXML->readMotorParameter(alias, "GearRatioPosVel"  );
+    ratedCurrent      = configXML->readMotorParameter(alias, "RatedCurrent"     );
+    torqueConstant    = configXML->readMotorParameter(alias, "TorqueConstant"   );
+    ratedTorque       = configXML->readMotorParameter(alias, "RatedTorque"      );
+    maximumTorque     = configXML->readMotorParameter(alias, "MaximumTorque"    );
+    minimumPosition   = configXML->readMotorParameter(alias, "MinimumPosition"  );
+    maximumPosition   = configXML->readMotorParameter(alias, "MaximumPosition"  );
     if( polarity          == std::numeric_limits<float>::min() ||
         countBias         == std::numeric_limits<float>::min() ||
         encoderResolution == std::numeric_limits<float>::min() ||

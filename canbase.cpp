@@ -63,12 +63,29 @@ CANBase::CANBase(int const order, char const* device){
     rxSwap = txSwap = rxSwap_ = txSwap_ = rxSwap__ = txSwap__ = nullptr;
     MASK = mask = MASK_ = mask_ = MASK__ = mask__ = 0;
     this->order = order;
-    canhal      = configXML->masterFeature("CAN", order, "canhal");
-    autoRestart = configXML->masterFeature("CAN", order, "auto_restart");
-    baudrate    = configXML->masterAttribute("CAN", order, "baudrate");
-    canfd       = configXML->masterFeature("CAN", order, "canfd");
-    dbaudrate   = configXML->masterAttribute("CAN", order, "dbaudrate");
-    division    = configXML->masterAttribute("CAN", order, "division");
+    canhal       = configXML->masterFeature("CAN", order, "canhal"      );
+    canfd        = configXML->masterFeature("CAN", order, "canfd"       );
+    autoRestart  = configXML->masterFeature("CAN", order, "auto_restart");
+    baudrate     = configXML->masterAttribute("CAN", order, "baudrate"     );
+    samplePoint  = configXML->masterAttribute("CAN", order, "sample_point" );
+    dbaudrate    = configXML->masterAttribute("CAN", order, "dbaudrate"    );
+    dsamplePoint = configXML->masterAttribute("CAN", order, "dsample_point");
+    division     = configXML->masterAttribute("CAN", order, "division"     );
+    if(baudrate == 0){
+        baudrate = 1000000;
+    }
+    if(samplePoint == 0){
+        samplePoint = 750;
+    }
+    if(dbaudrate == 0){
+        dbaudrate = 5000000;
+    }
+    if(dsamplePoint == 0){
+        dsamplePoint = 750;
+    }
+    if(division == 0){
+        division = 1;
+    }
     sock = -1;
     slaveCount = 0;
     canopenSyncAlias = 0;
@@ -150,7 +167,7 @@ int CANBase::ifaceUp(){
     addattr32(&req.nlh, 1024, IFLA_CAN_RESTART_MS, 10);
     struct can_bittiming bt = {
         .bitrate = (unsigned int)baudrate,
-        .sample_point = 750
+        .sample_point = (unsigned int)samplePoint
     };
     addattr_l(&req.nlh, 1024, IFLA_CAN_BITTIMING, &bt, sizeof(bt));
     struct can_ctrlmode cm = {
@@ -162,7 +179,7 @@ int CANBase::ifaceUp(){
         cm.flags |= CAN_CTRLMODE_FD;
         struct can_bittiming dbt = {
             .bitrate = (unsigned int)dbaudrate,
-            .sample_point = 750
+            .sample_point = (unsigned int)dsamplePoint
         };
         addattr_l(&req.nlh, 1024, IFLA_CAN_DATA_BITTIMING, &dbt, sizeof(dbt));
         addattr_l(&req.nlh, 1024, IFLA_CAN_CTRLMODE, &cm, sizeof(cm));

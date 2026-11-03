@@ -18,11 +18,8 @@
 #include "config_xml.h"
 #include "rs485.h"
 #include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <limits>
 #include <chrono>
-#include <pthread.h>
 
 namespace DriverSDK{
 extern ConfigXML* configXML;

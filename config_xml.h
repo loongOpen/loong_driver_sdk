@@ -29,10 +29,10 @@ public:
     char* name;
     tinyxml2::XMLDocument xmlDoc;
     ConfigXML(char const* name);
-    int writeMotorParameter(int const alias, char const* parameter, float const value);
-    float readMotorParameter(int const alias, char const* parameter);
-    float readIMUParameter(char const* bus, int const alias, char const* parameter);
-    float readDeviceParameter(char const* bus, char const* type, char const* parameter);
+    int writeMotorParameter(int const alias, char const* name, float const value);
+    float readMotorParameter(int const alias, char const* name);
+    float readIMUParameter(char const* bus, int const alias, char const* name);
+    float readDeviceParameter(char const* bus, char const* type, char const* name);
     std::vector<std::vector<int>> motorAlias();
     std::string imuAttribute(char const* name);
     int imuBaudrate();

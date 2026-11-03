@@ -18,10 +18,13 @@
 #pragma once
 
 #include "common.h"
-#include <mutex>
 #include <unistd.h>
+#include <mutex>
 #include <limits>
 #include <typeinfo>
+#ifdef XENOMAI
+#include <xenomai/init.h>
+#endif
 
 namespace DriverSDK{
 class CAN;
@@ -202,7 +205,11 @@ float para2float(unsigned short const us, float const min, float const max, int 
 template<typename T>
 void staging(int const slaveID, int const alias, T* const can){
     struct timespec ts;
+#ifdef XENOMAI
+    __COBALT(clock_gettime(CLOCK_MONOTONIC, &ts));
+#else
     clock_gettime(CLOCK_MONOTONIC, &ts);
+#endif
     long current = TIMESPEC2NS(ts);
     can->mask |= 1 << slaveID;
     if(can->mask == can->MASK){
@@ -1445,10 +1452,10 @@ class CANBase{
 public:
     std::map<int, std::string> alias2type;
     std::map<int, std::vector<int>> alias2masterIDs;
-    std::map<int, int> alias2slaveID;
+    std::map<int, int> alias2slaveID, alias2division;
     SwapList* rxSwap, * txSwap, * rxSwap_, * txSwap_, * rxSwap__, * txSwap__;
     unsigned int MASK, mask, MASK_, mask_, MASK__, mask__;
-    int order, canhal, autoRestart, baudrate, canfd, dbaudrate, division, sock, slaveCount, canopenSyncAlias;
+    int order, canhal, canfd, autoRestart, baudrate, samplePoint, dbaudrate, dsamplePoint, division, sock, slaveCount, canopenSyncAlias;
     char* device;
     bool ready;
     long previous;

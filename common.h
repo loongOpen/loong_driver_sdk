@@ -84,7 +84,7 @@ float kunweiTech(int const value);
 template<typename T, unsigned int const N>
 class PtrQue{
 private:
-    __attribute__((aligned(64))) T* slots[N];
+    alignas(64) T* slots[N];
     alignas(64) std::atomic<unsigned short> head;
     alignas(64) std::atomic<unsigned short> tail;
 public:
@@ -356,30 +356,30 @@ public:
     ~SensorParameters();
 };
 
-struct __attribute__((packed)) TransferrerSlot{
+struct __attribute__((__packed__)) TransferrerSlot{
     unsigned int ID;
     unsigned char RTR;  // rtr or canfd << 1 | eff
     unsigned char DLC;
     unsigned char Byte[8];
 };
 
-struct __attribute__((packed)) TransferrerRXData_{
+struct __attribute__((__packed__)) TransferrerRXData_{
     unsigned char Count;
     unsigned char IDE;  // eff
     TransferrerSlot slots[6];
 };
 
-struct __attribute__((packed)) TransferrerTXData_{
+struct __attribute__((__packed__)) TransferrerTXData_{
     unsigned char Count;
     unsigned char IDE;
     TransferrerSlot slots[6];
 };
 
-struct __attribute__((packed)) TransferrerRXData{
+struct __attribute__((__packed__)) TransferrerRXData{
     TransferrerSlot slots[64];
 };
 
-struct __attribute__((packed)) TransferrerTXData{
+struct __attribute__((__packed__)) TransferrerTXData{
     TransferrerSlot slots[64];
 };
 

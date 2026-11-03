@@ -62,7 +62,12 @@ ECAT::ECAT(int const order){
     sdoRequestable = regRequestable = false;
     master = nullptr;
     fd = -1;
+#ifdef XENOMAI
+    running.store(false);
+    terminal = -1;
+#else
     pth = 0;
+#endif
     this->order = order;
     alias2type = ecatAlias2type[order];
     aliases2domain2type = ecatAliases2domain2type[order];
@@ -768,6 +773,27 @@ int ECAT::config(){
     return 0;
 }
 
+#ifdef XENOMAI
+void ECAT::rxtx(void* arg){
+    ECAT* ecat = (ECAT*)arg;
+    char pipeName[10] = {'/', 'd', 'e', 'v', '/', 'r', 't', 'p', '\0', '\0'}, buffer[2048];
+    pipeName[8] = ecat->order + '0';
+    if(rt_pipe_create(&ecat->pipe, pipeName, P_MINOR_AUTO, 4096) != 0){
+        printf("creating pipe %s failed\n", pipeName);
+        exit(-1);
+    }
+    int domainCount = ecat->domainDivisions.size(), slavesResponding = 0, alStates = 0, workingCounters[domainCount], wcStates[domainCount], tryCount = 0;
+    int length = sprintf(buffer, "ecats[%d], period %ld, dc %d, domainCount %d, domainDivisions ", ecat->order, ecat->period, ecat->dc, domainCount);
+    int i = 0, previousIncompleteness = 0;
+    while(i < domainCount){
+        workingCounters[i] = 0;
+        wcStates[i] = 0;
+        length += sprintf(buffer + length, "%d ", ecat->domainDivisions[i]);
+        ++i;
+    }
+    length += sprintf(buffer + length, "\n");
+    rt_pipe_write(&ecat->pipe, buffer, length, P_NORMAL);
+#else
 void* ECAT::rxtx(void* arg){
     ECAT* ecat = (ECAT*)arg;
     int domainCount = ecat->domainDivisions.size(), slavesResponding = 0, alStates = 0, workingCounters[domainCount], wcStates[domainCount], tryCount = 0;
@@ -780,6 +806,7 @@ void* ECAT::rxtx(void* arg){
         ++i;
     }
     printf("\n");
+#endif
     unsigned int count = 0xffffffff;
     unsigned char sdoSkip[64] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -790,6 +817,16 @@ void* ECAT::rxtx(void* arg){
     SDOMsg* sdoMsg = nullptr;
     ec_master_state_t masterState;
     ec_domain_state_t domainStates[domainCount];
+#ifdef XENOMAI
+    struct timespec currentTime;
+    if(rt_task_set_periodic(nullptr, TM_NOW, ecat->period) != 0){
+        rt_pipe_delete(&ecat->pipe);
+        printf("setting ecats[%d] rxtx task periodic (period=%ld) failed\n", ecat->order, ecat->period);
+        exit(-1);
+    }
+    ecat->running.store(true);
+    while(ecat->running.load(std::memory_order_acquire)){
+#else
     struct timespec currentTime, wakeupTime, step{0, 6 * ecat->period / 100};
     while(step.tv_nsec >= NSEC_PER_SEC){
         step.tv_nsec -= NSEC_PER_SEC;
@@ -797,6 +834,7 @@ void* ECAT::rxtx(void* arg){
     }
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     while(true){
+#endif
         if(sdoMsg == nullptr){
             sdoMsg = ecat->sdoRequestQueue.get();
         }else if(sdoSkip[sdoMsg->alias] > 0 && sdoMsg->state == 0){
@@ -911,7 +949,11 @@ void* ECAT::rxtx(void* arg){
                 unsigned int time = 0;
                 ecrt_master_reference_clock_time(ecat->master, &time);
             }else{
+#ifdef XENOMAI
+                __COBALT(clock_gettime(CLOCK_MONOTONIC, &currentTime));
+#else
                 clock_gettime(CLOCK_MONOTONIC, &currentTime);
+#endif
                 ecrt_master_sync_reference_clock_to(ecat->master, TIMESPEC2NS(currentTime));
             }
             ecrt_master_sync_slave_clocks(ecat->master);
@@ -926,6 +968,11 @@ void* ECAT::rxtx(void* arg){
             ++i;
         }
         ecrt_master_send(ecat->master);
+#ifdef XENOMAI
+        if(rt_task_wait_period(nullptr) == -EINTR){
+            break;
+        }
+#else
         wakeupTime.tv_nsec += ecat->period;
         while(wakeupTime.tv_nsec >= NSEC_PER_SEC){
             wakeupTime.tv_nsec -= NSEC_PER_SEC;
@@ -947,19 +994,34 @@ void* ECAT::rxtx(void* arg){
                 }
             }
         }while(diff > 0);
+#endif
         if(ecat->dc){
+#ifdef XENOMAI
+            __COBALT(clock_gettime(CLOCK_MONOTONIC, &currentTime));
+#else
             clock_gettime(CLOCK_MONOTONIC, &currentTime);
+#endif
             ecrt_master_application_time(ecat->master, TIMESPEC2NS(currentTime));
         }
         ecrt_master_receive(ecat->master);
         ecrt_master_state(ecat->master, &masterState);
         if(masterState.slaves_responding != slavesResponding){
             slavesResponding = masterState.slaves_responding;
+#ifdef XENOMAI
+            length = sprintf(buffer, "master %d slaves_responding changed to %d\n", ecat->order, slavesResponding);
+            rt_pipe_write(&ecat->pipe, buffer, length, P_NORMAL);
+#else
             printf("master %d slaves_responding changed to %d\n", ecat->order, slavesResponding);
+#endif
         }
         if(masterState.al_states != alStates){
             alStates = masterState.al_states;
+#ifdef XENOMAI
+            length = sprintf(buffer, "master %d al_states changed to 0x%02x\n", ecat->order, alStates);
+            rt_pipe_write(&ecat->pipe, buffer, length, P_NORMAL);
+#else
             printf("master %d al_states changed to 0x%02x\n", ecat->order, alStates);
+#endif
         }
         int incompleteness = 0;
         i = 0;
@@ -972,11 +1034,21 @@ void* ECAT::rxtx(void* arg){
             ecrt_domain_state(ecat->domains[i], &domainStates[i]);
             if(domainStates[i].working_counter != workingCounters[i]){
                 workingCounters[i] = domainStates[i].working_counter;
+#ifdef XENOMAI
+                length = sprintf(buffer, "master %d domain %d working_counter changed to %d\n", ecat->order, i, workingCounters[i]);
+                rt_pipe_write(&ecat->pipe, buffer, length, P_NORMAL);
+#else
                 printf("master %d domain %d working_counter changed to %d\n", ecat->order, i, workingCounters[i]);
+#endif
             }
             if(domainStates[i].wc_state != wcStates[i]){
                 wcStates[i] = domainStates[i].wc_state;
+#ifdef XENOMAI
+                length = sprintf(buffer, "master %d domain %d wc_state changed to %d\n", ecat->order, i, wcStates[i]);
+                rt_pipe_write(&ecat->pipe, buffer, length, P_NORMAL);
+#else
                 printf("master %d domain %d wc_state changed to %d\n", ecat->order, i, wcStates[i]);
+#endif
             }
             if(domainStates[i].wc_state == EC_WC_COMPLETE){
                 ecat->txPDOSwaps[i]->copyFrom(ecat->domainPtrs[i], ecat->domainSizes[i]);
@@ -999,7 +1071,12 @@ void* ECAT::rxtx(void* arg){
                         if(slots[k].ID > 0){
                             int const stdID = slots[k].ID & 0x7ff, extID = slots[k].ID >> 11;
                             if(CANEmu::txFuncs[index][stdID] == nullptr){
+#ifdef XENOMAI
+                                length = sprintf(buffer, "unexpected frame with master_id %d and length %d on canemus[%d]\n", slots[k].ID, slots[k].DLC, index);
+                                rt_pipe_write(&ecat->pipe, buffer, length, P_NORMAL);
+#else
                                 printf("unexpected frame with master_id %d and length %d on canemus[%d]\n", slots[k].ID, slots[k].DLC, index);
+#endif
                             }else{
                                 CANEmu::txFuncs[index][stdID][extID](slots[k].ID, slots[k].Byte, slots[k].DLC, &canemus[index]);
                             }
@@ -1018,7 +1095,11 @@ void* ECAT::rxtx(void* arg){
             previousIncompleteness = incompleteness;
         }
     }
+#ifdef XENOMAI
+    rt_pipe_delete(&ecat->pipe);
+#else
     return nullptr;
+#endif
 }
 
 int ECAT::run(){
@@ -1028,18 +1109,48 @@ int ECAT::run(){
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(cpu, &cpuset);
+#ifdef XENOMAI
+    char pipeName[10] = {'/', 'd', 'e', 'v', '/', 'r', 't', 'p', '\0', '\0'};
+    pipeName[8] = order + '0';
+    if(access(pipeName, F_OK) == 0 && remove(pipeName) != 0){
+        printf("removing file %s failed\n", pipeName);
+        return -1;
+    }
+    char taskName[5] = {'r', 't', 't', '\0', '\0'};
+    taskName[3] = order + '0';
+    if(rt_task_create(&task, taskName, 0, 80, T_JOINABLE) != 0){
+        printf("creating ecats[%d] rxtx task failed\n", order);
+        return -1;
+    }
+    if(rt_task_set_affinity(&task, &cpuset) != 0){
+        printf("setting ecats[%d] rxtx task affinity (cpu=%d) failed\n", order, cpu);
+        return -1;
+    }
+    if(rt_task_start(&task, &rxtx, this) != 0){
+        printf("starting ecats[%d] rxtx task failed\n", order);
+        return -1;
+    }
+    while((terminal = open(pipeName, O_RDONLY | O_NONBLOCK | O_CLOEXEC)) == -1){
+        if(errno != ENXIO && errno != ENODEV && errno != ENOENT){
+            printf("opening pipe %s failed\n", pipeName);
+            return -1;
+        }
+        usleep(1);
+    }
+#else
     if(pthread_create(&pth, nullptr, &rxtx, this) != 0){
         printf("creating ecats[%d] rxtx thread failed\n", order);
         return -1;
     }
     if(pthread_setaffinity_np(pth, sizeof(cpu_set_t), &cpuset) != 0){
-        printf("setting ecats[%d] rxtx thread cpu affinity (cpu=%d) failed\n", order, cpu);
+        printf("setting ecats[%d] rxtx thread affinity (cpu=%d) failed\n", order, cpu);
         return -1;
     }
     if(pthread_detach(pth) != 0){
         printf("detaching ecats[%d] rxtx thread failed\n", order);
         return -1;
     }
+#endif
     printf("ecats[%d] rxtx on cpu %d\n", order, cpu);
     auto itr = alias2slave.begin();
     while(itr != alias2slave.end()){
@@ -1050,10 +1161,21 @@ int ECAT::run(){
 }
 
 void ECAT::clean(){
+#ifdef XENOMAI
+    if(terminal > -1){
+        close(terminal);
+        terminal = -1;
+    }
+    running.store(false, std::memory_order_release);
+    rt_task_unblock(&task);
+    rt_task_delete(&task);
+    rt_task_join(&task);
+#else
     if(pth > 0){
         pthread_cancel(pth);
         pth = 0;
     }
+#endif
     if(fd > -1){
         close(fd);
         fd = -1;

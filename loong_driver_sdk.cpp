@@ -36,7 +36,7 @@ ConfigXML* configXML;
 std::vector<std::map<int, std::string>> rs232alias2type, rs485alias2type, canAlias2type, canEmuAlias2type, ecatAlias2type;
 std::vector<std::vector<std::tuple<std::vector<int>, int, std::string>>> ecatAliases2domain2type;
 std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs, canEmuAlias2masterIDs;
-std::vector<std::map<int, int>> canAlias2slaveID, canEmuAlias2slaveID, ecatAlias2domain;
+std::vector<std::map<int, int>> canAlias2slaveID, canAlias2division, canEmuAlias2slaveID, ecatAlias2domain;
 std::vector<std::vector<int>> ecatDomainDivisions;
 std::vector<std::vector<bool>> ecatDomainWatchdogs;
 int dofLeg, dofArm, dofWaist, dofNeck, dofTail, dofAll, dofLeftEffector, dofRightEffector, dofEffector, imuCount, transferrerCount;
@@ -340,10 +340,10 @@ int DriverSDK::impClass::init(char const* xmlFile){
     }else if(dofAll > 0){
         drivers = new WrapperPair<DriverRXData, DriverTXData, MotorParameters>[dofAll];
     }
-    ecatAlias2type     = configXML->alias2type("ECAT",     &ecatAliases2domain2type      );
-    rs485alias2type    = configXML->alias2type("RS485",    nullptr                       );
-    canAlias2type      = configXML->alias2type("CAN",      nullptr                       );
-    canEmuAlias2type   = configXML->alias2type("CANEmu",   &ecatAliases2domain2type, true);
+    ecatAlias2type     = configXML->alias2type("ECAT",   &ecatAliases2domain2type      );
+    rs485alias2type    = configXML->alias2type("RS485",  nullptr                       );
+    canAlias2type      = configXML->alias2type("CAN",    nullptr                       );
+    canEmuAlias2type   = configXML->alias2type("CANEmu", &ecatAliases2domain2type, true);
     if(ecatAlias2type.size() > 6){
         printf("6 ecat masters at most\n");
         return -1;
@@ -390,6 +390,7 @@ int DriverSDK::impClass::init(char const* xmlFile){
     ecatAlias2domain      = configXML->alias2attribute ("ECAT",   "domain"                              );
     canAlias2masterIDs    = configXML->alias2attribute_("CAN",    "master_ids"                          );
     canAlias2slaveID      = configXML->alias2attribute ("CAN",    "slave_id"                            );
+    canAlias2division     = configXML->alias2attribute ("CAN",    "division"                            );
     canEmuAlias2masterIDs = configXML->alias2attribute_("CANEmu", "master_ids", &ecatAliases2domain2type);
     canEmuAlias2slaveID   = configXML->alias2attribute ("CANEmu", "slave_id",   &ecatAliases2domain2type);
     i = 0;
@@ -768,11 +769,7 @@ DriverSDK& DriverSDK::instance(){
 
 DriverSDK::DriverSDK(): imp(*new impClass()){
 #ifdef NIIC
-    static bool initialized = false;
-    if(!initialized){
-        qiuniu_init();
-        initialized = true;
-    }
+    qiuniu_init();
 #endif
 }
 
@@ -1257,6 +1254,14 @@ int DriverSDK::getMotorActual(std::vector<motorActualStruct>& data){
     int stalled = 0;
     i = 0;
     while(i < imp.ecats.size()){
+#ifdef XENOMAI
+        static char buffer[2048];
+        int length = 0;
+        while((length = read(imp.ecats[i].terminal, buffer, 1024)) > 0){
+            buffer[length] = '\0';
+            printf("%s", buffer);
+        }
+#endif
         stalled += imp.ecats[i].stalled.load();
         ++i;
     }

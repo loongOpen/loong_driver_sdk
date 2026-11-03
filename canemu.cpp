@@ -125,7 +125,7 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
                 }
             }
             if(orderMasterID2slaveID[order][stdID][extID] != -1){
-                printf("\ninvalid canemu bus configuration\n");
+                printf("\ninvalid canemu bus configuration due to master_ids confliction\n");
                 exit(-1);
             }
             orderMasterID2slaveID[order][stdID][extID] = slaveID;
@@ -154,7 +154,7 @@ CANEmu::CANEmu(int const order) : CANBase(order, "/dev/null"){
         }
         printf(", slave_id %d\n", slaveID);
         if(orderSlaveID2alias[order][slaveID] != 0){
-            printf("invalid canemu bus configuration\n");
+            printf("invalid canemu bus configuration due to slave_id confliction\n");
             exit(-1);
         }
         orderSlaveID2alias[order][slaveID] = alias;

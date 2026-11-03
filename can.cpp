@@ -26,7 +26,7 @@ namespace DriverSDK{
 extern ConfigXML* configXML;
 extern std::vector<std::map<int, std::string>> canAlias2type;
 extern std::vector<std::map<int, std::vector<int>>> canAlias2masterIDs;
-extern std::vector<std::map<int, int>> canAlias2slaveID;
+extern std::vector<std::map<int, int>> canAlias2slaveID, canAlias2division;
 extern int dofEffector, imuCount;
 extern std::vector<unsigned short> canProcessors;
 extern std::vector<unsigned short> maxCurrents;
@@ -84,6 +84,7 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
     alias2type      = canAlias2type     [order];
     alias2masterIDs = canAlias2masterIDs[order];
     alias2slaveID   = canAlias2slaveID  [order];
+    alias2division  = canAlias2division [order];
     if(alias2type.size() == 0){
         return;
     }
@@ -133,7 +134,7 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
                 }
             }
             if(orderMasterID2slaveID[order][stdID][extID] != -1){
-                printf("\ninvalid can bus configuration\n");
+                printf("\ninvalid can bus configuration due to master_ids confliction\n");
                 exit(-1);
             }
             orderMasterID2slaveID[order][stdID][extID] = slaveID;
@@ -176,7 +177,7 @@ CAN::CAN(int const order, char const* device) : CANBase(order, device){
         }
         printf(", slave_id %d\n", slaveID);
         if(orderSlaveID2alias[order][slaveID] != 0){
-            printf("invalid can bus configuration\n");
+            printf("invalid can bus configuration due to slave_id confliction\n");
             exit(-1);
         }
         orderSlaveID2alias[order][slaveID] = alias;
@@ -346,9 +347,22 @@ void CAN::cleanup(void* arg){
 
 void* CAN::rx(void* arg){
     std::vector<CAN>& cans = *(std::vector<CAN>*)arg;
+    int i = 0, alias2division_[64];
+    while(i < 64){
+        alias2division_[i] = 0xffffffff;
+        int j = 0;
+        while(j < cans.size()){
+            auto itr = cans[j].alias2division.find(i);
+            if(itr != cans[j].alias2division.end()){
+                alias2division_[i] = cans[j].division * itr->second;
+            }
+            ++j;
+        }
+        ++i;
+    };
     using sendFunction = int (CAN::*)(int const, unsigned char const*, int const, int const, int const);
     sendFunction sendFuncs[10] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-    int i = 0;
+    i = 0;
     while(i < cans.size()){
         if(cans[i].canfd == 1 || cans[i].device[0] == '/'){
             sendFuncs[i] = &CAN::sendfd;
@@ -378,7 +392,12 @@ void* CAN::rx(void* arg){
                 }
                 auto itr = cans[i].alias2slaveID.begin();
                 while(itr != cans[i].alias2slaveID.end()){
-                    int alias = itr->first, slaveID = itr->second, rtr = 0, eff = 0, length = rxFuncs[i][slaveID](alias, &slaveID, data, &rtr, &eff, &cans[i]);
+                    int alias = itr->first;
+                    if(count % alias2division_[alias] != 0){
+                        ++itr;
+                        continue;
+                    }
+                    int slaveID = itr->second, rtr = 0, eff = 0, length = rxFuncs[i][slaveID](alias, &slaveID, data, &rtr, &eff, &cans[i]);
                     bool supplemental = false;
                     if(length == std::numeric_limits<int>::max()){
                         length = data[64];
@@ -655,9 +674,9 @@ int CAN::transfer(int const alias, std::vector<unsigned short> const* txIndices,
             if(itr != txIndex2division->end()){
                 txDivision = itr->second;
             }
-            *(unsigned short*)(rx.data + 4) = txDivision * inverseHarmonicMean(txIndex2division) * division * period / 1000000;
+            *(unsigned short*)(rx.data + 4) = txDivision * inverseHarmonicMean(txIndex2division) * division * alias2division.find(alias)->second * period / 1000000;
         }else if(rx.data[1] == 0xc2 && rx.data[2] == 0x60 && rx.data[3] == 0x01){
-            *                 (rx.data + 4) =              inverseHarmonicMean(txIndex2division) * division * period / 1000000;
+            *                 (rx.data + 4) =              inverseHarmonicMean(txIndex2division) * division * alias2division.find(alias)->second * period / 1000000;
         }else if(rx.data[1] == 0x72 && rx.data[2] == 0x60 && rx.data[3] == 0x00){
             *(unsigned short*)(rx.data + 4) = maxCurr;
         }
@@ -917,7 +936,7 @@ int CAN::run(std::vector<CAN>& cans){
         return -1;
     }
     if(pthread_setaffinity_np(rxPth, sizeof(cpuset), &cpuset) != 0){
-        printf("setting can rx thread cpu affinity (cpu=%d) failed\n", rxCPU);
+        printf("setting can rx thread affinity (cpu=%d) failed\n", rxCPU);
         return -1;
     }
     if(pthread_detach(rxPth) != 0){
@@ -933,7 +952,7 @@ int CAN::run(std::vector<CAN>& cans){
             return -1;
         }
         if(pthread_setaffinity_np(txPth, sizeof(cpuset), &cpuset) != 0){
-            printf("setting socketcan tx thread cpu affinity (cpu=%d) failed\n", txCPU);
+            printf("setting socketcan tx thread affinity (cpu=%d) failed\n", txCPU);
             return -1;
         }
         if(pthread_detach(txPth) != 0){
@@ -950,7 +969,7 @@ int CAN::run(std::vector<CAN>& cans){
             return -1;
         }
         if(pthread_setaffinity_np(txPth_, sizeof(cpuset), &cpuset) != 0){
-            printf("setting canhal tx_ thread cpu affinity (cpu=%d) failed\n", txCPU_);
+            printf("setting canhal tx_ thread affinity (cpu=%d) failed\n", txCPU_);
             return -1;
         }
         if(pthread_detach(txPth_) != 0){

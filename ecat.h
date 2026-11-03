@@ -18,6 +18,10 @@
 #pragma once
 
 #include "common.h"
+#ifdef XENOMAI
+#include <alchemy/task.h>
+#include <alchemy/pipe.h>
+#endif
 
 namespace DriverSDK{
 using sensorFunction = float (*)(int const);
@@ -45,14 +49,25 @@ public:
     PtrQue<SDOMsg, 256> sdoRequestQueue, regRequestQueue;
     PtrQue<SDOMsg, 1024> sdoResponseQueue, regResponseQueue;
     ec_master_t* master;
+#ifdef XENOMAI
+    std::atomic<bool> running;
+    RT_TASK task;
+    int terminal;
+    RT_PIPE pipe;
+#else
     pthread_t pth;
+#endif
     ECAT(int const order);
     int init();
     int readAlias(unsigned short const slave, std::string const& category, unsigned short const index, unsigned char const subindex, unsigned char const bitLength);
     int requestState(unsigned short const slave, char const* stateString);
     int check();
     int config();
+#ifdef XENOMAI
+    static void rxtx(void* arg);
+#else
     static void* rxtx(void* arg);
+#endif
     int run();
     void clean();
     ~ECAT();
