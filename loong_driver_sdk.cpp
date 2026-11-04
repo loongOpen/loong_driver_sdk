@@ -25,6 +25,9 @@
 #include <qiuniu/init.h>
 #include "ecat.hpp"
 #else
+extern "C"{
+void cobalt_init();
+}
 #include "ecat.h"
 #endif
 #include <atomic>
@@ -768,8 +771,10 @@ DriverSDK& DriverSDK::instance(){
 }
 
 DriverSDK::DriverSDK(): imp(*new impClass()){
-#ifdef NIIC
+#if defined(NIIC)
     qiuniu_init();
+#elif defined(XENOMAI)
+    cobalt_init();
 #endif
 }
 

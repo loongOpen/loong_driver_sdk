@@ -776,8 +776,8 @@ int ECAT::config(){
 #ifdef XENOMAI
 void ECAT::rxtx(void* arg){
     ECAT* ecat = (ECAT*)arg;
-    char pipeName[10] = {'/', 'd', 'e', 'v', '/', 'r', 't', 'p', '\0', '\0'}, buffer[2048];
-    pipeName[8] = ecat->order + '0';
+    char pipeName[7] = {'p', 'r', 'i', 'n', 't', '\0', '\0'}, buffer[2048];
+    pipeName[5] = ecat->order + '0';
     if(rt_pipe_create(&ecat->pipe, pipeName, P_MINOR_AUTO, 4096) != 0){
         printf("creating pipe %s failed\n", pipeName);
         exit(-1);
@@ -1110,12 +1110,6 @@ int ECAT::run(){
     CPU_ZERO(&cpuset);
     CPU_SET(cpu, &cpuset);
 #ifdef XENOMAI
-    char pipeName[10] = {'/', 'd', 'e', 'v', '/', 'r', 't', 'p', '\0', '\0'};
-    pipeName[8] = order + '0';
-    if(access(pipeName, F_OK) == 0 && remove(pipeName) != 0){
-        printf("removing file %s failed\n", pipeName);
-        return -1;
-    }
     char taskName[5] = {'r', 't', 't', '\0', '\0'};
     taskName[3] = order + '0';
     if(rt_task_create(&task, taskName, 0, 80, T_JOINABLE) != 0){
@@ -1130,12 +1124,16 @@ int ECAT::run(){
         printf("starting ecats[%d] rxtx task failed\n", order);
         return -1;
     }
-    while((terminal = open(pipeName, O_RDONLY | O_NONBLOCK | O_CLOEXEC)) == -1){
+    char pipeName[7] = {'p', 'r', 'i', 'n', 't', '\0', '\0'};
+    pipeName[5] = order + '0';
+    std::string pipeFile("/proc/xenomai/registry/rtipc/xddp/");
+    pipeFile.append(pipeName);
+    while((terminal = open(pipeFile.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC)) == -1){
         if(errno != ENXIO && errno != ENODEV && errno != ENOENT){
             printf("opening pipe %s failed\n", pipeName);
             return -1;
         }
-        usleep(1);
+        sleep(1);
     }
 #else
     if(pthread_create(&pth, nullptr, &rxtx, this) != 0){
