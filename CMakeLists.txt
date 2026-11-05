@@ -93,9 +93,9 @@ if(NIIC)
 elseif(XENOMAI)
     target_include_directories(loong_driver_sdk_${arch} PRIVATE
         ${PROJECT_BINARY_DIR}
-        ${PROJECT_SOURCE_DIR}/../loong_third_party/xenomai/include/cobalt
         ${PROJECT_SOURCE_DIR}/../loong_third_party/xenomai/include
-        ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat/include
+        ${PROJECT_SOURCE_DIR}/../loong_third_party/xenomai/include/cobalt
+        ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat_rtdm/include
         ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/include
         ${PROJECT_SOURCE_DIR}/../loong_third_party/netlink/include
         ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/include
@@ -103,12 +103,12 @@ elseif(XENOMAI)
     )
     target_link_directories(loong_driver_sdk_${arch} PRIVATE
         ${PROJECT_SOURCE_DIR}/../loong_third_party/xenomai/lib/${march}-linux-gnu
-        ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat/lib
+        ${PROJECT_SOURCE_DIR}/../loong_third_party/ethercat_rtdm/lib/${march}-linux-gnu
         ${PROJECT_SOURCE_DIR}/../loong_third_party/modbus/lib
         ${PROJECT_SOURCE_DIR}/../loong_third_party/netlink/lib
         ${PROJECT_SOURCE_DIR}/../loong_third_party/tinyxml2/lib
     )
-    target_link_libraries(loong_driver_sdk_${arch} PRIVATE tinyxml2_${march} netlink_${march} util_${march} modbus_${march} ethercat_${march} bootstrap_pic alchemy pthread hbcanhal_${march})
+    target_link_libraries(loong_driver_sdk_${arch} PRIVATE tinyxml2_${march} netlink_${march} util_${march} modbus_${march} ethercat_rtdm bootstrap_pic alchemy pthread hbcanhal_${march})
 else(NIIC)
     target_include_directories(loong_driver_sdk_${arch} PRIVATE
         ${PROJECT_BINARY_DIR}
